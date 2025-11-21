@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K'UHUL Multi-Hive OS - Live Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+            color: #e9f5ff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(0, 204, 136, 0.3);
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #00cc88;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #0099ff;
+            letter-spacing: 2px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(5, 5, 15, 0.7);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 204, 136, 0.3);
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.8rem;
+            color: #7b8a9a;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.3rem;
+            color: #00cc88;
+            font-weight: bold;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .svg-container {
+            flex: 1;
+            min-width: 400px;
+            background: rgba(5, 5, 15, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 204, 136, 0.2);
+            border: 1px solid rgba(0, 204, 136, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .svg-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00cc88, transparent);
+        }
+
+        .info-panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(5, 5, 15, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(153, 102, 255, 0.2);
+            border: 1px solid rgba(153, 102, 255, 0.3);
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            color: #9966ff;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .agent-info {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(0, 153, 255, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid #0099ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agent-info:hover {
+            background: rgba(0, 153, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .agent-info.active {
+            background: rgba(0, 204, 136, 0.2);
+            border-left-color: #00cc88;
+        }
+
+        .agent-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .agent-title-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .agent-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .agent-name {
+            font-weight: bold;
+            color: #00cc88;
+        }
+
+        .agent-status {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: rgba(0, 204, 136, 0.2);
+            color: #00cc88;
+        }
+
+        .agent-status.busy {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+        }
+
+        .agent-status.error {
+            background: rgba(255, 102, 0, 0.2);
+            color: #ff6600;
+        }
+
+        .agent-desc {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #b8d4ff;
+        }
+
+        .agent-stats {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #7b8a9a;
+            display: flex;
+            gap: 15px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            background: rgba(0, 204, 136, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid rgba(0, 204, 136, 0.3);
+            transition: transform 0.3s, background 0.3s;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            background: rgba(0, 204, 136, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        .feature-name {
+            font-size: 0.85rem;
+            color: #00cc88;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(0, 153, 255, 0.2);
+            border: 1px solid #0099ff;
+            color: #e9f5ff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 153, 255, 0.4);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: rgba(0, 204, 136, 0.4);
+            border-color: #00cc88;
+        }
+
+        .memory-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(153, 102, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(153, 102, 255, 0.3);
+        }
+
+        .memory-title {
+            font-size: 1.1rem;
+            color: #9966ff;
+            margin-bottom: 10px;
+        }
+
+        .memory-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .memory-symbol {
+            color: #00cc88;
+        }
+
+        .memory-confidence {
+            color: #0099ff;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            border-top: 1px solid rgba(0, 204, 136, 0.3);
+            color: #7b8a9a;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .svg-container, .info-panel {
+                min-width: 100%;
+            }
+        }
+
+        /* Animation classes */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        .rotate {
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 204, 136, 0.95);
+            color: #0a0a1a;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>K'UHUL MULTI-HIVE OS</h1>
+            <div class="subtitle">ATOMIC OS · MULTI-AGENT COORDINATION</div>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">ACTIVE AGENTS</div>
+                <div class="status-value" id="stat-agents">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">PATTERNS LEARNED</div>
+                <div class="status-value" id="stat-patterns">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">MESSAGES ROUTED</div>
+                <div class="status-value" id="stat-messages">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">AVG CONFIDENCE</div>
+                <div class="status-value" id="stat-confidence">0%</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">SYSTEM STATUS</div>
+                <div class="status-value" style="color: #00cc88;" id="stat-status">READY</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="svg-container">
+                <svg width="100%" height="100%" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" id="hive-svg">
+                    <defs>
+                        <radialGradient id="hiveGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#00cc88" stop-opacity="0.8"/>
+                            <stop offset="40%" stop-color="#0099ff" stop-opacity="0.4"/>
+                            <stop offset="70%" stop-color="#9966ff" stop-opacity="0.2"/>
+                            <stop offset="100%" stop-color="#9966ff" stop-opacity="0"/>
+                        </radialGradient>
+
+                        <radialGradient id="coreGradient" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#00cc88"/>
+                            <stop offset="100%" stop-color="#0099ff"/>
+                        </radialGradient>
+
+                        <linearGradient id="orbitalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0099ff"/>
+                            <stop offset="50%" stop-color="#9966ff"/>
+                            <stop offset="100%" stop-color="#00cc88"/>
+                        </linearGradient>
+                    </defs>
+
+                    <rect x="0" y="0" width="400" height="400" fill="#0a0a1a"/>
+                    <circle cx="200" cy="200" r="160" fill="url(#hiveGlow)" opacity="0.6"/>
+
+                    <!-- Hexagonal hive pattern -->
+                    <g opacity="0.15" stroke="#00cc88" stroke-width="1" fill="none">
+                        <polygon points="200,80 220,90 220,110 200,120 180,110 180,90"/>
+                        <polygon points="160,105 180,115 180,135 160,145 140,135 140,115"/>
+                        <polygon points="200,105 220,115 220,135 200,145 180,135 180,115"/>
+                        <polygon points="240,105 260,115 260,135 240,145 220,135 220,115"/>
+                        <polygon points="140,140 160,150 160,170 140,180 120,170 120,150"/>
+                        <polygon points="180,140 200,150 200,170 180,180 160,170 160,150"/>
+                        <polygon points="220,140 240,150 240,170 220,180 200,170 200,150"/>
+                        <polygon points="260,140 280,150 280,170 260,180 240,170 240,150"/>
+                        <polygon points="160,175 180,185 180,205 160,215 140,205 140,185"/>
+                        <polygon points="200,175 220,185 220,205 200,215 180,205 180,185"/>
+                        <polygon points="240,175 260,185 260,205 240,215 220,205 220,185"/>
+                        <polygon points="140,210 160,220 160,240 140,250 120,240 120,220"/>
+                        <polygon points="180,210 200,220 200,240 180,250 160,240 160,220"/>
+                        <polygon points="220,210 240,220 240,240 220,250 200,240 200,220"/>
+                        <polygon points="260,210 280,220 280,240 260,250 240,240 240,220"/>
+                        <polygon points="160,245 180,255 180,275 160,285 140,275 140,255"/>
+                        <polygon points="200,245 220,255 220,275 200,285 180,275 180,255"/>
+                        <polygon points="240,245 260,255 260,275 240,285 220,275 220,255"/>
+                        <polygon points="200,280 220,290 220,310 200,320 180,310 180,290"/>
+                    </g>
+
+                    <!-- Multi-agent orbital rings -->
+                    <g fill="none" stroke="url(#orbitalGradient)" stroke-width="2.5" opacity="0.8">
+                        <ellipse cx="200" cy="200" rx="130" ry="70" transform="rotate(30 200 200)" class="rotate"/>
+                        <ellipse cx="200" cy="200" rx="110" ry="60" transform="rotate(-15 200 200)" class="rotate" style="animation-duration: 25s;"/>
+                        <ellipse cx="200" cy="200" rx="90" ry="50" transform="rotate(60 200 200)" class="rotate" style="animation-duration: 30s;"/>
+                    </g>
+
+                    <!-- Agent nodes on orbits -->
+                    <g id="agent-nodes">
+                        <circle id="agent-node-0" cx="200" cy="110" r="8" fill="#ffaa00" stroke="#00cc88" stroke-width="2" class="pulse float" data-agent="ω_coordinator">
+                            <animate attributeName="r" values="8;10;8" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+
+                        <circle id="agent-node-1" cx="280" cy="180" r="6" fill="#0099ff" stroke="#00cc88" stroke-width="2" class="pulse float" style="animation-delay: 0.5s;" data-agent="φ_theme">
+                            <animate attributeName="r" values="6;8;6" dur="2.5s" repeatCount="indefinite"/>
+                        </circle>
+
+                        <circle id="agent-node-2" cx="240" cy="270" r="6" fill="#9966ff" stroke="#00cc88" stroke-width="2" class="pulse float" style="animation-delay: 1s;" data-agent="τ_training">
+                            <animate attributeName="r" values="6;8;6" dur="3s" repeatCount="indefinite"/>
+                        </circle>
+
+                        <circle id="agent-node-3" cx="120" cy="240" r="6" fill="#ff6600" stroke="#00cc88" stroke-width="2" class="pulse float" style="animation-delay: 1.5s;" data-agent="ψ_viz">
+                            <animate attributeName="r" values="6;8;6" dur="2.7s" repeatCount="indefinite"/>
+                        </circle>
+
+                        <circle id="agent-node-4" cx="140" cy="150" r="6" fill="#00cc88" stroke="#0099ff" stroke-width="2" class="pulse float" style="animation-delay: 2s;" data-agent="σ_storage">
+                            <animate attributeName="r" values="6;8;6" dur="3.2s" repeatCount="indefinite"/>
+                        </circle>
+                    </g>
+
+                    <!-- Central core -->
+                    <circle cx="200" cy="200" r="50" fill="url(#coreGradient)" opacity="0.9" class="pulse"/>
+                    <circle cx="200" cy="200" r="45" fill="none" stroke="#001133" stroke-width="3"/>
+
+                    <!-- K'uhul text -->
+                    <text x="200" y="195" fill="#001133" font-size="32" font-family="'Courier New', monospace" font-weight="bold" text-anchor="middle" letter-spacing="2">K'UHUL</text>
+                    <text x="200" y="215" fill="#001133" font-size="10" font-family="monospace" text-anchor="middle" opacity="0.9">ATOMIC OS</text>
+
+                    <!-- Bottom subtitle -->
+                    <text x="200" y="360" fill="#00cc88" font-size="14" font-family="'Courier New', monospace" text-anchor="middle" letter-spacing="1" opacity="0.9">MULTI-AGENT COORDINATION</text>
+
+                    <!-- Corner accents -->
+                    <g stroke="#0099ff" stroke-width="2" fill="none" opacity="0.5">
+                        <path d="M 20,20 L 60,20 M 20,20 L 20,60"/>
+                        <path d="M 340,20 L 380,20 M 380,20 L 380,60"/>
+                        <path d="M 20,340 L 20,380 M 20,380 L 60,380"/>
+                        <path d="M 380,340 L 380,380 M 340,380 L 380,380"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="info-panel">
+                <h2 class="panel-title">LIVE AGENT STATUS</h2>
+
+                <div id="agents-container">
+                    <!-- Agents will be dynamically populated -->
+                </div>
+
+                <h3 class="panel-title" style="margin-top: 30px; font-size: 1.2rem;">ATOMIC OS FEATURES</h3>
+                <div class="features-grid">
+                    <div class="feature">
+                        <div class="feature-icon">🧠</div>
+                        <div class="feature-name">Pattern Learning</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <div class="feature-name">Real-time Routing</div>
+                    </div>
+                    <div class="feature-icon">🔒</div>
+                        <div class="feature-name">Secure Mesh</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-name">Smart Navigation</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🌐</div>
+                        <div class="feature-name">Distributed Nodes</div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📊</div>
+                        <div class="feature-name">Live Analytics</div>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn active" onclick="HiveShowcase.toggleAnimation('rotate', this)">Orbits</button>
+                    <button class="control-btn active" onclick="HiveShowcase.toggleAnimation('pulse', this)">Pulse</button>
+                    <button class="control-btn active" onclick="HiveShowcase.toggleAnimation('float', this)">Float</button>
+                    <button class="control-btn" onclick="HiveShowcase.testAgentRoute()">Test Agent</button>
+                    <button class="control-btn" onclick="HiveShowcase.refreshStats()">Refresh Stats</button>
+                </div>
+
+                <div class="memory-panel">
+                    <div class="memory-title">📦 Recent Patterns</div>
+                    <div id="memory-container">
+                        <!-- Memory patterns will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>K'UHUL Multi-Hive OS | Atomic OS Integration | © 2025</p>
+            <p style="margin-top: 5px; font-size: 0.8rem;">
+                <a href="/ui/training-dashboard.html" style="color: #0099ff;">Training Dashboard</a> |
+                <a href="/ui/agent-hive-demo.html" style="color: #0099ff;">Agent Hive</a> |
+                <a href="/ui/weights-visualizer.html" style="color: #0099ff;">3D Visualizer</a> |
+                <a href="/docs/ATOMIC_OS.md" style="color: #0099ff;">Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Load Atomic OS Components -->
+    <script src="/core/atomic-memory.js"></script>
+    <script src="/core/atomic-agents.js"></script>
+    <script src="/core/symbolic-router.js"></script>
+    <script src="/core/atomic-os-integration.js"></script>
+
+    <script>
+        const HiveShowcase = {
+            agents: [],
+            updateInterval: null,
+
+            init() {
+                console.log('🎯 Initializing K\'UHUL Hive Showcase...');
+
+                // Wait for Atomic OS to initialize
+                setTimeout(() => {
+                    this.loadAgents();
+                    this.updateStats();
+                    this.setupAgentNodes();
+                    this.startLiveUpdates();
+                    this.showTopPatterns();
+                }, 500);
+
+                console.log('✅ Hive Showcase ready');
+            },
+
+            loadAgents() {
+                if (typeof atomicAgents === 'undefined') {
+                    console.warn('Atomic Agents not loaded yet');
+                    return;
+                }
+
+                this.agents = atomicAgents.listAgents();
+                this.renderAgents();
+            },
+
+            renderAgents() {
+                const container = document.getElementById('agents-container');
+                if (!container) return;
+
+                const agentInfo = {
+                    'ω_coordinator': {
+                        name: 'COORDINATOR AGENT',
+                        color: '#ffaa00',
+                        desc: 'Orchestrates the entire hive, manages resource allocation, and coordinates communication between all specialized agents.'
+                    },
+                    'φ_theme': {
+                        name: 'THEME AGENT',
+                        color: '#0099ff',
+                        desc: 'Manages UI theming, pack coordination, and visual appearance across the entire system.'
+                    },
+                    'τ_training': {
+                        name: 'TRAINING AGENT',
+                        color: '#9966ff',
+                        desc: 'Coordinates training jobs, model management, and metrics tracking for the AI training pipeline.'
+                    },
+                    'ψ_viz': {
+                        name: 'VISUALIZATION AGENT',
+                        color: '#ff6600',
+                        desc: 'Generates 3D visualizations, charts, and weight representations for neural network analysis.'
+                    },
+                    'σ_storage': {
+                        name: 'STORAGE AGENT',
+                        color: '#00cc88',
+                        desc: 'Maintains persistent storage, cache management, and data export/import operations.'
+                    }
+                };
+
+                container.innerHTML = this.agents.map(agent => {
+                    const info = agentInfo[agent.id] || {
+                        name: agent.id.toUpperCase(),
+                        color: '#0099ff',
+                        desc: `Agent type: ${agent.type}`
+                    };
+
+                    return `
+                        <div class="agent-info" onclick="HiveShowcase.selectAgent('${agent.id}')">
+                            <div class="agent-title">
+                                <div class="agent-title-left">
+                                    <div class="agent-color" style="background: ${info.color};"></div>
+                                    <div class="agent-name">${info.name}</div>
+                                </div>
+                                <div class="agent-status ${agent.status === 'ready' ? '' : agent.status}">
+                                    ${agent.status.toUpperCase()}
+                                </div>
+                            </div>
+                            <div class="agent-desc">${info.desc}</div>
+                            <div class="agent-stats">
+                                <span>⚡ ${agent.messageCount} msgs</span>
+                                <span>✓ ${agent.successRate} success</span>
+                                <span>🎯 ${agent.capabilities.length} capabilities</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            setupAgentNodes() {
+                const nodes = document.querySelectorAll('#agent-nodes circle');
+
+                nodes.forEach(node => {
+                    node.addEventListener('click', (e) => {
+                        const agentId = node.getAttribute('data-agent');
+                        if (agentId) {
+                            this.selectAgent(agentId);
+                            this.highlightAgent(agentId);
+                        }
+                    });
+
+                    node.addEventListener('mouseover', function() {
+                        this.style.filter = 'drop-shadow(0 0 8px currentColor)';
+                    });
+
+                    node.addEventListener('mouseout', function() {
+                        this.style.filter = 'none';
+                    });
+                });
+            },
+
+            selectAgent(agentId) {
+                console.log('Selected agent:', agentId);
+
+                // Highlight in panel
+                document.querySelectorAll('.agent-info').forEach(el => {
+                    el.classList.remove('active');
+                });
+
+                const selectedDiv = Array.from(document.querySelectorAll('.agent-info')).find(el => {
+                    return el.innerHTML.includes(agentId);
+                });
+
+                if (selectedDiv) {
+                    selectedDiv.classList.add('active');
+                }
+
+                // Get agent status
+                if (typeof atomicAgents !== 'undefined') {
+                    const status = atomicAgents.getStatus(agentId);
+                    console.log('Agent status:', status);
+
+                    this.showToast(`Selected: ${status.id} (${status.successRate} success rate)`);
+                }
+            },
+
+            highlightAgent(agentId) {
+                const nodes = document.querySelectorAll('#agent-nodes circle');
+
+                nodes.forEach(node => {
+                    if (node.getAttribute('data-agent') === agentId) {
+                        node.style.filter = 'drop-shadow(0 0 12px currentColor)';
+                        setTimeout(() => {
+                            node.style.filter = 'none';
+                        }, 2000);
+                    }
+                });
+            },
+
+            updateStats() {
+                if (typeof atomicAgents === 'undefined' || typeof atomicMemory === 'undefined') {
+                    return;
+                }
+
+                const agentStats = atomicAgents.getStats();
+                const memoryStats = atomicMemory.getStats();
+
+                document.getElementById('stat-agents').textContent = agentStats.totalAgents;
+                document.getElementById('stat-patterns').textContent = memoryStats.totalPatterns;
+                document.getElementById('stat-messages').textContent = agentStats.totalMessages;
+                document.getElementById('stat-confidence').textContent =
+                    (memoryStats.avgConfidence * 100).toFixed(0) + '%';
+
+                const status = agentStats.errorAgents > 0 ? 'ERROR' :
+                              agentStats.busyAgents > 0 ? 'BUSY' : 'READY';
+                document.getElementById('stat-status').textContent = status;
+                document.getElementById('stat-status').style.color =
+                    status === 'ERROR' ? '#ff6600' :
+                    status === 'BUSY' ? '#ffaa00' : '#00cc88';
+            },
+
+            showTopPatterns() {
+                if (typeof atomicMemory === 'undefined') return;
+
+                const container = document.getElementById('memory-container');
+                if (!container) return;
+
+                const topPatterns = atomicMemory.getTopPatterns(5);
+
+                if (topPatterns.length === 0) {
+                    container.innerHTML = '<div class="memory-item" style="text-align: center; color: #7b8a9a;">No patterns learned yet</div>';
+                    return;
+                }
+
+                container.innerHTML = topPatterns.map(pattern => `
+                    <div class="memory-item">
+                        <span class="memory-symbol">${pattern.symbol}</span>
+                        <span class="memory-confidence">${(pattern.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                `).join('');
+            },
+
+            startLiveUpdates() {
+                this.updateInterval = setInterval(() => {
+                    this.updateStats();
+                    this.loadAgents();
+                }, 3000);
+            },
+
+            async testAgentRoute() {
+                if (typeof atomicAgents === 'undefined') {
+                    this.showToast('Atomic Agents not available');
+                    return;
+                }
+
+                this.showToast('Testing agent routing...');
+
+                const result = await atomicAgents.route('TEST_MESSAGE', {
+                    message: 'Hello from showcase',
+                    timestamp: Date.now()
+                });
+
+                console.log('Agent route result:', result);
+
+                if (result.success) {
+                    this.showToast(`✓ Routed to ${result.agent}`);
+                } else {
+                    this.showToast(`✗ ${result.error}`);
+                }
+
+                this.updateStats();
+            },
+
+            refreshStats() {
+                this.updateStats();
+                this.showTopPatterns();
+                this.showToast('Stats refreshed');
+            },
+
+            toggleAnimation(className, button) {
+                const elements = document.querySelectorAll(`.${className}`);
+
+                if (button.classList.contains('active')) {
+                    elements.forEach(el => {
+                        el.style.animationPlayState = 'paused';
+                    });
+                    button.classList.remove('active');
+                } else {
+                    elements.forEach(el => {
+                        el.style.animationPlayState = 'running';
+                    });
+                    button.classList.add('active');
+                }
+            },
+
+            showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        };
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            HiveShowcase.init();
+        });
+
+        // Expose globally
+        window.HiveShowcase = HiveShowcase;
+    </script>
+</body>
+</html>
