@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Weight Visualizer - K'UHUL</title>
+  <link rel="stylesheet" href="/assets/css/atomic-asx.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0f1c;
+      color: #e0e5f0;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #controls-panel {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(10, 15, 28, 0.95);
+      border: 1px solid rgba(22, 242, 170, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      min-width: 300px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    #info-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(10, 15, 28, 0.95);
+      border: 1px solid rgba(22, 242, 170, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #16f2aa;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #9ca3af;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .control-input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: #e0e5f0;
+      font-size: 0.9rem;
+    }
+
+    .control-input:focus {
+      outline: none;
+      border-color: #16f2aa;
+      box-shadow: 0 0 0 3px rgba(22, 242, 170, 0.1);
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #16f2aa;
+      cursor: pointer;
+    }
+
+    .slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #16f2aa;
+      cursor: pointer;
+      border: none;
+    }
+
+    .slider-value {
+      font-weight: 600;
+      color: #16f2aa;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #16f2aa 0%, #0ea578 100%);
+      color: #0a0f1c;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(22, 242, 170, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e5f0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .color-mode {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .color-option {
+      padding: 8px;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .color-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .color-option.active {
+      border-color: #16f2aa;
+      background: rgba(22, 242, 170, 0.2);
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+
+    .stat-label {
+      color: #9ca3af;
+    }
+
+    .stat-value {
+      color: #16f2aa;
+      font-weight: 600;
+    }
+
+    .layer-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .layer-item {
+      padding: 8px 12px;
+      margin-bottom: 5px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .layer-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .layer-item.active {
+      background: rgba(22, 242, 170, 0.2);
+      border: 1px solid #16f2aa;
+    }
+
+    .layer-name {
+      font-weight: 600;
+    }
+
+    .layer-size {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 15, 28, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-spinner {
+      font-size: 4rem;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 20px;
+      font-size: 1.25rem;
+      color: #16f2aa;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- Controls Panel -->
+  <div id="controls-panel">
+    <div class="panel-title">
+      🎨 Visualization Controls
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Model</label>
+      <select class="control-input" id="model-select">
+        <option value="demo">Demo Model (125M params)</option>
+        <option value="custom1">Custom Model 1</option>
+        <option value="custom2">Custom Model 2</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Visualization Type</label>
+      <select class="control-input" id="viz-type">
+        <option value="particles">Particle Field</option>
+        <option value="network">Neural Network</option>
+        <option value="heatmap">3D Heatmap</option>
+        <option value="flow">Flow Field</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Color Mode</label>
+      <div class="color-mode">
+        <div class="color-option active" data-mode="magnitude" onclick="WeightViz.setColorMode('magnitude')">
+          Magnitude
+        </div>
+        <div class="color-option" data-mode="sign" onclick="WeightViz.setColorMode('sign')">
+          Sign
+        </div>
+        <div class="color-option" data-mode="layer" onclick="WeightViz.setColorMode('layer')">
+          Layer
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Particle Count</label>
+      <div class="slider-container">
+        <input type="range" class="slider" id="particle-count" min="1000" max="100000" step="1000" value="10000" onchange="WeightViz.updateParticleCount(this.value)">
+        <span class="slider-value" id="particle-count-value">10000</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Rotation Speed</label>
+      <div class="slider-container">
+        <input type="range" class="slider" id="rotation-speed" min="0" max="100" value="20" onchange="WeightViz.setRotationSpeed(this.value)">
+        <span class="slider-value" id="rotation-speed-value">20</span>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label class="control-label">Point Size</label>
+      <div class="slider-container">
+        <input type="range" class="slider" id="point-size" min="1" max="10" step="0.5" value="2" onchange="WeightViz.setPointSize(this.value)">
+        <span class="slider-value" id="point-size-value">2</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="WeightViz.randomizeColors()">
+      🎨 Randomize Colors
+    </button>
+
+    <button class="btn btn-secondary" onclick="WeightViz.exportSVG()">
+      💾 Export as SVG
+    </button>
+
+    <button class="btn btn-secondary" onclick="WeightViz.reset()">
+      🔄 Reset View
+    </button>
+
+    <div class="control-group">
+      <label class="control-label">Layers</label>
+      <div class="layer-list" id="layer-list">
+        <!-- Layers will be populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Panel -->
+  <div id="info-panel">
+    <div class="panel-title">
+      📊 Model Info
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Parameters:</span>
+      <span class="stat-value" id="param-count">125,000,000</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Layers:</span>
+      <span class="stat-value" id="layer-count">48</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Active Layer:</span>
+      <span class="stat-value" id="active-layer">All Layers</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">FPS:</span>
+      <span class="stat-value" id="fps">60</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Particles:</span>
+      <span class="stat-value" id="particle-display">10,000</span>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading" style="display: none;">
+    <div class="loading-content">
+      <div class="loading-spinner">🧠</div>
+      <div class="loading-text">Loading weights...</div>
+    </div>
+  </div>
+
+  <!-- Three.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Visualization Script -->
+  <script>
+    const WeightViz = {
+      // Three.js objects
+      scene: null,
+      camera: null,
+      renderer: null,
+      particles: null,
+      animationId: null,
+
+      // State
+      colorMode: 'magnitude',
+      rotationSpeed: 0.002,
+      pointSize: 2.0,
+      particleCount: 10000,
+      activeLayer: null,
+
+      // Performance
+      lastTime: performance.now(),
+      frameCount: 0,
+
+      // Initialize
+      init() {
+        console.log('🎨 Initializing 3D Weight Visualizer...');
+
+        this.setupScene();
+        this.generateWeights();
+        this.populateLayers();
+        this.animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+
+        console.log('✅ Visualizer ready');
+      },
+
+      setupScene() {
+        // Create scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x0a0f1c);
+        this.scene.fog = new THREE.Fog(0x0a0f1c, 50, 200);
+
+        // Create camera
+        const container = document.getElementById('canvas-container');
+        this.camera = new THREE.PerspectiveCamera(
+          75,
+          container.clientWidth / container.clientHeight,
+          0.1,
+          1000
+        );
+        this.camera.position.z = 50;
+
+        // Create renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(this.renderer.domElement);
+
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0x16f2aa, 1, 100);
+        pointLight.position.set(10, 10, 10);
+        this.scene.add(pointLight);
+      },
+
+      generateWeights() {
+        // Generate random weight data (simulating neural network weights)
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(this.particleCount * 3);
+        const colors = new Float32Array(this.particleCount * 3);
+
+        for (let i = 0; i < this.particleCount; i++) {
+          const i3 = i * 3;
+
+          // Position - spherical distribution
+          const radius = 30 + Math.random() * 20;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(Math.random() * 2 - 1);
+
+          positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+          positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+          positions[i3 + 2] = radius * Math.cos(phi);
+
+          // Color based on magnitude
+          const magnitude = Math.random();
+          this.setParticleColor(colors, i, magnitude);
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // Create material
+        const material = new THREE.PointsMaterial({
+          size: this.pointSize,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.8,
+          sizeAttenuation: true
+        });
+
+        // Create particles
+        this.particles = new THREE.Points(geometry, material);
+        this.scene.add(this.particles);
+      },
+
+      setParticleColor(colors, index, value) {
+        const i3 = index * 3;
+
+        if (this.colorMode === 'magnitude') {
+          // Green to blue gradient
+          colors[i3] = 0.09 + value * 0.5;
+          colors[i3 + 1] = 0.95 - value * 0.5;
+          colors[i3 + 2] = 0.67 + value * 0.3;
+        } else if (this.colorMode === 'sign') {
+          // Red for negative, blue for positive
+          const sign = Math.random() > 0.5 ? 1 : -1;
+          if (sign > 0) {
+            colors[i3] = 0.09;
+            colors[i3 + 1] = 0.95;
+            colors[i3 + 2] = 0.67;
+          } else {
+            colors[i3] = 0.94;
+            colors[i3 + 1] = 0.27;
+            colors[i3 + 2] = 0.27;
+          }
+        } else if (this.colorMode === 'layer') {
+          // Rainbow gradient
+          const hue = (index / this.particleCount) * 360;
+          const rgb = this.hslToRgb(hue, 80, 60);
+          colors[i3] = rgb.r;
+          colors[i3 + 1] = rgb.g;
+          colors[i3 + 2] = rgb.b;
+        }
+      },
+
+      hslToRgb(h, s, l) {
+        s /= 100;
+        l /= 100;
+        const k = n => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = n =>
+          l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return { r: f(0), g: f(8), b: f(4) };
+      },
+
+      animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+
+        // Rotate particles
+        if (this.particles) {
+          this.particles.rotation.x += this.rotationSpeed;
+          this.particles.rotation.y += this.rotationSpeed * 1.5;
+        }
+
+        // Update FPS
+        this.frameCount++;
+        const currentTime = performance.now();
+        if (currentTime >= this.lastTime + 1000) {
+          document.getElementById('fps').textContent = this.frameCount;
+          this.frameCount = 0;
+          this.lastTime = currentTime;
+        }
+
+        this.renderer.render(this.scene, this.camera);
+      },
+
+      populateLayers() {
+        const layerList = document.getElementById('layer-list');
+        const layers = [
+          { name: 'Embedding', size: '768×50k' },
+          { name: 'Attention 1-12', size: '768×768×12' },
+          { name: 'FFN 1-12', size: '768×3072×12' },
+          { name: 'Layer Norm', size: '768×24' },
+          { name: 'Output', size: '768×50k' }
+        ];
+
+        layerList.innerHTML = layers.map((layer, i) => `
+          <div class="layer-item" onclick="WeightViz.selectLayer(${i}, this)">
+            <span class="layer-name">${layer.name}</span>
+            <span class="layer-size">${layer.size}</span>
+          </div>
+        `).join('');
+      },
+
+      // Controls
+
+      setColorMode(mode) {
+        this.colorMode = mode;
+        document.querySelectorAll('.color-option').forEach(el => {
+          el.classList.toggle('active', el.dataset.mode === mode);
+        });
+        this.updateColors();
+      },
+
+      updateColors() {
+        if (!this.particles) return;
+
+        const colors = this.particles.geometry.attributes.color.array;
+        for (let i = 0; i < this.particleCount; i++) {
+          const magnitude = Math.random();
+          this.setParticleColor(colors, i, magnitude);
+        }
+        this.particles.geometry.attributes.color.needsUpdate = true;
+      },
+
+      updateParticleCount(count) {
+        this.particleCount = parseInt(count);
+        document.getElementById('particle-count-value').textContent = count;
+        document.getElementById('particle-display').textContent = parseInt(count).toLocaleString();
+
+        // Regenerate particles
+        if (this.particles) {
+          this.scene.remove(this.particles);
+        }
+        this.generateWeights();
+      },
+
+      setRotationSpeed(speed) {
+        this.rotationSpeed = speed / 10000;
+        document.getElementById('rotation-speed-value').textContent = speed;
+      },
+
+      setPointSize(size) {
+        this.pointSize = parseFloat(size);
+        document.getElementById('point-size-value').textContent = size;
+        if (this.particles) {
+          this.particles.material.size = this.pointSize;
+        }
+      },
+
+      selectLayer(index, element) {
+        document.querySelectorAll('.layer-item').forEach(el => {
+          el.classList.remove('active');
+        });
+        element.classList.add('active');
+        document.getElementById('active-layer').textContent = element.querySelector('.layer-name').textContent;
+      },
+
+      randomizeColors() {
+        this.updateColors();
+      },
+
+      exportSVG() {
+        alert('SVG export coming soon!');
+      },
+
+      reset() {
+        this.camera.position.set(0, 0, 50);
+        this.camera.rotation.set(0, 0, 0);
+        if (this.particles) {
+          this.particles.rotation.set(0, 0, 0);
+        }
+      },
+
+      onWindowResize() {
+        const container = document.getElementById('canvas-container');
+        this.camera.aspect = container.clientWidth / container.clientHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+      }
+    };
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      WeightViz.init();
+    });
+
+    // Expose globally
+    window.WeightViz = WeightViz;
+  </script>
+</body>
+</html>
