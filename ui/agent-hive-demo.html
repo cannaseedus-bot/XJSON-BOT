@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Agent Hive - 50+ Specialist AI Micronauts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --ai-color: #16f2aa;
+    --frontend-color: #00f5ff;
+    --backend-color: #ff6b6b;
+    --design-color: #9c88ff;
+    --template-color: #ffd93d;
+    --css-color: #6bcf7f;
+    --game-color: #ff6b9d;
+    --ssg-color: #c084fc;
+    --bg-primary: #0a0f1c;
+    --bg-secondary: #131a2c;
+    --bg-tertiary: #1a2340;
+    --text-primary: #e8f5ff;
+    --text-secondary: #7a8699;
+  }
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  
+  .container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .hero {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .agent-badges {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+  
+  .badge-frontend { background: var(--frontend-color); color: var(--bg-primary); }
+  .badge-backend { background: var(--backend-color); color: var(--bg-primary); }
+  .badge-css { background: var(--css-color); color: var(--bg-primary); }
+  .badge-template { background: var(--template-color); color: var(--bg-primary); }
+  .badge-game { background: var(--game-color); color: var(--bg-primary); }
+  .badge-ssg { background: var(--ssg-color); color: var(--bg-primary); }
+  
+  .hero-title {
+    font-size: 3em;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--ai-color), var(--design-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .category-section {
+    margin-bottom: 40px;
+  }
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border-left: 4px solid;
+  }
+  
+  .category-frontend { border-color: var(--frontend-color); }
+  .category-backend { border-color: var(--backend-color); }
+  .category-css { border-color: var(--css-color); }
+  .category-template { border-color: var(--template-color); }
+  .category-game { border-color: var(--game-color); }
+  .category-ssg { border-color: var(--ssg-color); }
+  
+  .category-icon {
+    font-size: 2em;
+  }
+  
+  .category-title {
+    font-size: 1.5em;
+    font-weight: 700;
+  }
+  
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  
+  .agent-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .agent-card:hover {
+    border-color: var(--ai-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(22, 242, 170, 0.2);
+  }
+  
+  .agent-card.active {
+    border-color: var(--ai-color);
+    background: rgba(22, 242, 170, 0.05);
+  }
+  
+  .agent-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .agent-icon {
+    font-size: 1.5em;
+  }
+  
+  .agent-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: var(--ai-color);
+  }
+  
+  .agent-specialty {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  
+  .agent-capabilities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  
+  .capability-tag {
+    font-size: 0.75em;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: rgba(22, 242, 170, 0.1);
+    color: var(--ai-color);
+  }
+  
+  .agent-console {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: var(--bg-tertiary);
+    border-top: 2px solid var(--ai-color);
+    padding: 20px;
+    display: none;
+    overflow-y: auto;
+  }
+  
+  .agent-console.active {
+    display: block;
+  }
+  
+  .console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .console-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--ai-color);
+  }
+  
+  .console-close {
+    cursor: pointer;
+    padding: 5px 15px;
+    background: rgba(255, 107, 107, 0.2);
+    border-radius: 8px;
+  }
+  
+  .console-output {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    background: #000;
+    color: var(--ai-color);
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 150px;
+    white-space: pre-wrap;
+  }
+  
+  .quick-actions {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid var(--ai-color);
+    min-width: 250px;
+  }
+  
+  .action-button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: var(--ai-color);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .action-button:hover {
+    background: var(--frontend-color);
+    transform: scale(1.02);
+  }
+  
+  .stats-panel {
+    background: var(--bg-tertiary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+  
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+  }
+  
+  .stat-value {
+    color: var(--ai-color);
+    font-weight: 600;
+  }
+  
+  @media (max-width: 1024px) {
+    .quick-actions {
+      position: static;
+      margin-bottom: 20px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="agent-badges">
+      <div class="badge badge-frontend">Frontend (7)</div>
+      <div class="badge badge-backend">Backend (5)</div>
+      <div class="badge badge-css">CSS (3)</div>
+      <div class="badge badge-template">Templates (5)</div>
+      <div class="badge badge-game">Games/3D (4)</div>
+      <div class="badge badge-ssg">SSG (3)</div>
+    </div>
+    <h1 class="hero-title">Agent Hive - 50+ Specialists</h1>
+    <p style="font-size: 1.2em; color: var(--text-secondary); margin-bottom: 30px;">
+      Click any agent to spawn them into your development team
+    </p>
+  </section>
+
+  <!-- Quick Actions Panel -->
+  <div class="quick-actions">
+    <h3 style="margin-bottom: 15px; color: var(--ai-color);">Quick Actions</h3>
+    
+    <div class="stats-panel">
+      <div class="stat-row">
+        <span>Active Agents:</span>
+        <span class="stat-value" id="active-count">0</span>
+      </div>
+      <div class="stat-row">
+        <span>Total Available:</span>
+        <span class="stat-value" id="total-count">0</span>
+      </div>
+    </div>
+    
+    <button class="action-button" onclick="AgentDemo.spawnRecommended('Build a Svelte app')">
+      🎯 Spawn Svelte Team
+    </button>
+    <button class="action-button" onclick="AgentDemo.spawnRecommended('Create a game')">
+      🎮 Spawn Game Team
+    </button>
+    <button class="action-button" onclick="AgentDemo.spawnRecommended('Build a Django API')">
+      🚀 Spawn Backend Team
+    </button>
+    <button class="action-button" onclick="AgentDemo.clearAgents()">
+      🗑️ Clear All Agents
+    </button>
+  </div>
+
+  <!-- Frontend Frameworks -->
+  <section class="category-section">
+    <div class="category-header category-frontend">
+      <div class="category-icon">⚛️</div>
+      <div>
+        <div class="category-title">Frontend Frameworks</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">Component-based and reactive systems</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="frontend-grid"></div>
+  </section>
+
+  <!-- Backend Frameworks -->
+  <section class="category-section">
+    <div class="category-header category-backend">
+      <div class="category-icon">🔧</div>
+      <div>
+        <div class="category-title">Backend Frameworks</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">Server-side and API frameworks</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="backend-grid"></div>
+  </section>
+
+  <!-- CSS Frameworks -->
+  <section class="category-section">
+    <div class="category-header category-css">
+      <div class="category-icon">🎨</div>
+      <div>
+        <div class="category-title">CSS Frameworks</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">Styling systems and utilities</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="css-grid"></div>
+  </section>
+
+  <!-- Template Engines -->
+  <section class="category-section">
+    <div class="category-header category-template">
+      <div class="category-icon">📄</div>
+      <div>
+        <div class="category-title">Template Engines</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">HTML rendering and templating</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="template-grid"></div>
+  </section>
+
+  <!-- Game & 3D Engines -->
+  <section class="category-section">
+    <div class="category-header category-game">
+      <div class="category-icon">🎮</div>
+      <div>
+        <div class="category-title">Game & 3D Engines</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">Interactive experiences and graphics</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="game-grid"></div>
+  </section>
+
+  <!-- Static Site Generators -->
+  <section class="category-section">
+    <div class="category-header category-ssg">
+      <div class="category-icon">📚</div>
+      <div>
+        <div class="category-title">Static Site Generators</div>
+        <div style="color: var(--text-secondary); font-size: 0.9em;">Pre-built site generation</div>
+      </div>
+    </div>
+    
+    <div class="agent-grid" id="ssg-grid"></div>
+  </section>
+</div>
+
+<!-- Agent Console -->
+<div class="agent-console" id="agent-console">
+  <div class="console-header">
+    <div class="console-title" id="console-title">Agent Console</div>
+    <div class="console-close" onclick="AgentDemo.closeConsole()">Close ✖</div>
+  </div>
+  <div class="console-output" id="console-output">
+// Agent output will appear here
+  </div>
+</div>
+
+<script src="../core/kuhul-engine.js"></script>
+<script src="../core/agent-factory.js"></script>
+
+<script>
+// Agent Demo Controller
+const AgentDemo = {
+  activeAgents: new Set(),
+  
+  async init() {
+    // Wait for agent factory to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    if (!window.agentFactory) {
+      console.error('Agent Factory not loaded');
+      return;
+    }
+    
+    this.renderAllAgents();
+    this.updateStats();
+  },
+  
+  renderAllAgents() {
+    const categories = {
+      'frontend_frameworks': 'frontend-grid',
+      'backend_frameworks': 'backend-grid',
+      'css_frameworks': 'css-grid',
+      'template_engines': 'template-grid',
+      'game_3d_engines': 'game-grid',
+      'static_site_generators': 'ssg-grid'
+    };
+    
+    Object.entries(categories).forEach(([category, gridId]) => {
+      const agents = agentFactory.listAgents(category);
+      this.renderAgentGrid(Object.values(agents), gridId);
+    });
+  },
+  
+  renderAgentGrid(agents, gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    
+    grid.innerHTML = agents.map(agent => `
+      <div class="agent-card" data-agent-id="${agent.id}" onclick="AgentDemo.spawnAgent('${agent.id}')">
+        <div class="agent-header">
+          <div class="agent-icon">${agent.icon}</div>
+          <div class="agent-name">${agent.name}</div>
+        </div>
+        <div class="agent-specialty">${agent.specialty}</div>
+        <div class="agent-capabilities">
+          ${agent.capabilities.slice(0, 3).map(cap => 
+            `<div class="capability-tag">${cap.replace('_', ' ')}</div>`
+          ).join('')}
+        </div>
+      </div>
+    `).join('');
+  },
+  
+  async spawnAgent(agentId) {
+    try {
+      const agent = await agentFactory.spawn(agentId);
+      this.activeAgents.add(agent.id);
+      
+      // Mark card as active
+      const card = document.querySelector(`[data-agent-id="${agentId}"]`);
+      if (card) card.classList.add('active');
+      
+      // Show in console
+      this.showInConsole(agent.config.name, `
+🤖 ${agent.config.icon} ${agent.config.name} SPAWNED
+
+Specialty: ${agent.config.specialty}
+Capabilities: ${agent.config.capabilities.join(', ')}
+
+Ready to assist with:
+${agent.config.knowledge_base.core_concepts.map(c => `  • ${c}`).join('\n')}
+
+Frameworks: ${agent.config.knowledge_base.frameworks.join(', ')}
+
+Type your query or use Quick Actions to work with this agent.
+      `);
+      
+      this.updateStats();
+      
+    } catch (error) {
+      console.error('Failed to spawn agent:', error);
+      this.showInConsole('Error', `Failed to spawn agent: ${error.message}`);
+    }
+  },
+  
+  async spawnRecommended(task) {
+    const recommended = agentFactory.recommendAgents(task, 3);
+    
+    this.showInConsole('Team Recommendation', `
+🎯 Recommended Team for: "${task}"
+
+Spawning ${recommended.length} specialist agents...
+    `);
+    
+    for (const agent of recommended) {
+      await this.spawnAgent(agent.id);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    this.showInConsole('Team Ready', `
+✅ Team assembled with ${recommended.length} agents:
+${recommended.map((a, i) => `${i+1}. ${a.icon} ${a.name}`).join('\n')}
+
+Ready to collaborate on: "${task}"
+    `);
+  },
+  
+  clearAgents() {
+    this.activeAgents.clear();
+    document.querySelectorAll('.agent-card.active').forEach(card => {
+      card.classList.remove('active');
+    });
+    this.updateStats();
+    this.showInConsole('Reset', 'All agents cleared. Ready for new team.');
+  },
+  
+  showInConsole(title, message) {
+    const console = document.getElementById('agent-console');
+    const titleEl = document.getElementById('console-title');
+    const output = document.getElementById('console-output');
+    
+    console.classList.add('active');
+    titleEl.textContent = title;
+    output.textContent = message;
+  },
+  
+  closeConsole() {
+    document.getElementById('agent-console').classList.remove('active');
+  },
+  
+  updateStats() {
+    document.getElementById('active-count').textContent = this.activeAgents.size;
+    document.getElementById('total-count').textContent = agentFactory.getTotalAgentCount();
+  }
+};
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  AgentDemo.init();
+});
+</script>
+</body>
+</html>
