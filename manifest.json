@@ -1,0 +1,143 @@
+{
+  "name": "XJSON-BOT - Local AI Development Environment",
+  "short_name": "XJSON-BOT",
+  "description": "Complete browser-based AI training, chat, and deployment system powered by K'UHUL multi-hive architecture",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1c",
+  "theme_color": "#16f2aa",
+  "orientation": "any",
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "development",
+    "ai",
+    "education"
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/screenshots/chat-interface.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "MX2LM Chat Interface"
+    },
+    {
+      "src": "/assets/screenshots/training-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Training Dashboard with SVG Weights"
+    }
+  ],
+  "scope": "/",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "Chat Interface",
+      "short_name": "Chat",
+      "description": "Open MX2LM chat interface",
+      "url": "/ui/mx2lm-chat.html",
+      "icons": [
+        {
+          "src": "/assets/icons/chat-icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Documentation",
+      "short_name": "Docs",
+      "description": "Browse multi-hive stack documentation",
+      "url": "/docs/multi-hive-stack.html",
+      "icons": [
+        {
+          "src": "/assets/icons/docs-icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "kuhul_manifest": {
+    "version": "1.0",
+    "engine": "K'UHUL",
+    "technologies": ["K'uhul", "XJSON", "SCX", "KLH", "ASX"],
+    "capabilities": {
+      "svg_weights": true,
+      "qlora_compression": true,
+      "multi_hive": true,
+      "agent_spawning": true,
+      "colab_integration": true
+    },
+    "shards": {
+      "dashboard": {
+        "id": "dashboard",
+        "description": "Main cockpit and metrics",
+        "entry": "/ui/dashboard.html"
+      },
+      "chat": {
+        "id": "chat",
+        "description": "MX2LM chat interface",
+        "entry": "/ui/mx2lm-chat.html"
+      },
+      "training": {
+        "id": "training",
+        "description": "Training dashboard with SVG weights",
+        "entry": "/ui/training-dashboard.html"
+      },
+      "docs": {
+        "id": "docs",
+        "description": "Documentation and guides",
+        "entry": "/docs/multi-hive-stack.html"
+      }
+    },
+    "agents": {
+      "mx2lm": {
+        "role": "core_runtime",
+        "capabilities": ["chat", "reasoning", "code_generation"],
+        "status": "active"
+      },
+      "mx2qwen": {
+        "role": "external_model",
+        "capabilities": ["reasoning", "analysis"],
+        "status": "available"
+      },
+      "mx2php": {
+        "role": "interpreter",
+        "capabilities": ["php_execution", "web_scraping"],
+        "status": "available"
+      },
+      "mx2js": {
+        "role": "interpreter",
+        "capabilities": ["js_execution", "dom_manipulation"],
+        "status": "available"
+      },
+      "mx2py": {
+        "role": "interpreter",
+        "capabilities": ["python_execution", "data_analysis"],
+        "status": "available"
+      }
+    },
+    "compression": {
+      "scxq2": {
+        "enabled": true,
+        "compression_ratio": 0.87,
+        "dictionary_version": 3
+      }
+    }
+  }
+}

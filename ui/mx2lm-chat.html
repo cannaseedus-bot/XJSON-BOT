@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MX2LM CHAT - Local AI Interface</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-alt: #1e293b;
+      --panel: #1e293b;
+      --panel-soft: #334155;
+      --border: #475569;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --accent-strong: #60a5fa;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --muted-soft: #64748b;
+      --danger: #ef4444;
+      --success: #10b981;
+      --warning: #f59e0b;
+
+      --r-1: 6px;
+      --r-2: 8px;
+      --r-3: 12px;
+      --r-4: 16px;
+
+      --s-1: 4px;
+      --s-2: 8px;
+      --s-3: 12px;
+      --s-4: 16px;
+      --s-5: 20px;
+      --s-6: 24px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Atomic HTML Baseline */
+    [x] { all: unset; display: block; box-sizing: border-box; }
+    [xt] { all: unset; display: inline; box-sizing: border-box; }
+
+    /* Layout */
+    [row] { display: flex; flex-direction: row; }
+    [col] { display: flex; flex-direction: column; }
+    [center] { align-items: center; justify-content: center; }
+    [align-center] { align-items: center; }
+    [justify-center] { justify-content: center; }
+    [spread] { justify-content: space-between; }
+    [wrap] { flex-wrap: wrap; }
+    [flex-1] { flex: 1; }
+
+    [gap="1"] { gap: var(--s-1); }
+    [gap="2"] { gap: var(--s-2); }
+    [gap="3"] { gap: var(--s-3); }
+    [gap="4"] { gap: var(--s-4); }
+
+    [pad="1"] { padding: var(--s-1); }
+    [pad="2"] { padding: var(--s-2); }
+    [pad="3"] { padding: var(--s-3); }
+    [pad="4"] { padding: var(--s-4); }
+
+    [w-full] { width: 100%; }
+    [h-full] { height: 100%; }
+
+    /* Surfaces */
+    [panel] {
+      background: var(--panel);
+      border-radius: var(--r-2);
+      border: 1px solid var(--border);
+      padding: var(--s-3);
+    }
+
+    [panel-soft] {
+      background: var(--panel-soft);
+      border-radius: var(--r-2);
+      border: 1px solid var(--border);
+      padding: var(--s-3);
+    }
+
+    /* Typography */
+    [h1] { font-size: 24px; font-weight: 700; }
+    [h2] { font-size: 18px; font-weight: 600; }
+    [h3] { font-size: 14px; font-weight: 600; color: var(--muted); }
+    [label] { font-size: 12px; color: var(--muted-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Buttons */
+    [btn] {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: var(--r-1);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    [btn]:hover {
+      background: var(--panel-soft);
+      border-color: var(--accent);
+    }
+
+    [btn-accent] {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    [btn-accent]:hover {
+      background: var(--accent-strong);
+      border-color: var(--accent-strong);
+    }
+
+    /* Inputs */
+    [input] {
+      padding: 8px 12px;
+      border-radius: var(--r-1);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    [input]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* App Layout */
+    .app-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+      background: var(--bg);
+    }
+
+    .sidebar {
+      background: var(--bg-alt);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--s-4);
+    }
+
+    .input-area {
+      padding: var(--s-4);
+      border-top: 1px solid var(--border);
+      background: var(--bg-alt);
+    }
+
+    /* Chat Messages */
+    .message {
+      padding: var(--s-3);
+      margin-bottom: var(--s-3);
+      border-radius: var(--r-2);
+      max-width: 80%;
+    }
+
+    .message-user {
+      background: var(--accent-soft);
+      margin-left: auto;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .message-assistant {
+      background: var(--panel);
+      margin-right: auto;
+      border: 1px solid var(--border);
+    }
+
+    .message-system {
+      background: var(--warning);
+      color: black;
+      margin: 0 auto;
+      text-align: center;
+      font-size: 12px;
+    }
+
+    /* Chat History */
+    .chat-history-item {
+      padding: var(--s-3);
+      border-radius: var(--r-1);
+      margin-bottom: var(--s-2);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .chat-history-item:hover {
+      background: var(--panel-soft);
+    }
+
+    .chat-history-item.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    /* Settings */
+    .settings-section {
+      margin-bottom: var(--s-4);
+    }
+
+    .model-item {
+      padding: var(--s-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-1);
+      margin-bottom: var(--s-2);
+    }
+
+    /* Auth */
+    .auth-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      width: 400px;
+      padding: var(--s-6);
+    }
+
+    /* Loading */
+    .loading-dots {
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .loading-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Main App Container -->
+  <div id="app" class="app-container">
+    <!-- Sidebar will be rendered here -->
+    <div id="sidebar" class="sidebar"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div id="chat-area" class="chat-area"></div>
+      <div id="input-area" class="input-area"></div>
+    </div>
+  </div>
+
+  <!-- Auth Screen (initially hidden) -->
+  <div id="auth-screen" class="auth-container" style="display: none;">
+    <div x panel class="auth-card" col gap="4">
+      <div col gap="2" center>
+        <div h1>MX2LM Chat</div>
+        <div label>Local AI Interface</div>
+      </div>
+
+      <div col gap="3">
+        <button x btn btn-accent w-full id="btn-google-auth">
+          <xt>Continue with Google</xt>
+        </button>
+
+        <div row align-center gap="2">
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <div label>or</div>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        </div>
+
+        <div col gap="2">
+          <input x input type="text" id="local-username" placeholder="Username" />
+          <input x input type="password" id="local-password" placeholder="Password" />
+          <button x btn w-full id="btn-local-auth">
+            <xt>Local Login</xt>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="../core/kuhul-engine.js"></script>
+<script src="../scripts/mx2lm-chat-app.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XJSON-BOT - Local AI Development Environment</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0a0f1c 0%, #1a1f2e 100%);
+      color: #e8f5ff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      font-size: 4em;
+      font-weight: 800;
+      background: linear-gradient(135deg, #16f2aa, #00f5ff, #ff6b6b, #9c88ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+
+    .tagline {
+      font-size: 1.5em;
+      color: #7a8699;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1.1em;
+      color: #7a8699;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: rgba(22, 242, 170, 0.05);
+      border: 2px solid rgba(22, 242, 170, 0.2);
+      border-radius: 16px;
+      padding: 30px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      border-color: rgba(22, 242, 170, 0.6);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(22, 242, 170, 0.2);
+    }
+
+    .card-icon {
+      font-size: 3em;
+      margin-bottom: 15px;
+    }
+
+    .card-title {
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #16f2aa;
+    }
+
+    .card-desc {
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .badge-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 40px 0;
+    }
+
+    .badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-kuhul { background: #16f2aa; color: #0a0f1c; }
+    .badge-xjson { background: #00f5ff; color: #0a0f1c; }
+    .badge-scx { background: #ff6b6b; color: #0a0f1c; }
+    .badge-klh { background: #9c88ff; color: #0a0f1c; }
+
+    .footer {
+      text-align: center;
+      color: #7a8699;
+      margin-top: 60px;
+      padding-top: 30px;
+      border-top: 1px solid rgba(22, 242, 170, 0.2);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #16f2aa;
+      color: #0a0f1c;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+
+    .btn:hover {
+      background: #00f5ff;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(22, 242, 170, 0.3);
+    }
+
+    .quick-links {
+      text-align: center;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="logo">XJSON-BOT</div>
+      <div class="tagline">Local AI Development Environment</div>
+      <div class="subtitle">
+        Complete browser-based AI training, chat, and deployment system powered by K'UHUL multi-hive architecture
+      </div>
+    </div>
+
+    <div class="badge-group">
+      <span class="badge badge-kuhul">K'uhul Engine</span>
+      <span class="badge badge-xjson">XJSON OS</span>
+      <span class="badge badge-scx">SCX Compression</span>
+      <span class="badge badge-klh">KLH Router</span>
+    </div>
+
+    <div class="grid">
+      <div class="card" onclick="window.location.href='ui/mx2lm-chat.html'">
+        <div class="card-icon">💬</div>
+        <div class="card-title">MX2LM Chat</div>
+        <div class="card-desc">
+          Local AI chat interface with model management, conversation history, and multi-model support
+        </div>
+      </div>
+
+      <div class="card" onclick="window.location.href='docs/multi-hive-stack.html'">
+        <div class="card-icon">🏗️</div>
+        <div class="card-title">Multi-Hive Stack</div>
+        <div class="card-desc">
+          Complete documentation of the K'UHUL + XJSON + SCX + KLH architecture and how they work together
+        </div>
+      </div>
+
+      <div class="card" onclick="window.location.href='docs/atomic-os-codex.html'">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Atomic OS Codex</div>
+        <div class="card-desc">
+          Comprehensive guide to the Atomic OS runtime, symbolic memory, and unified execution workflow
+        </div>
+      </div>
+
+      <div class="card" onclick="alert('Coming Soon: Interactive training dashboard with real-time metrics')">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Training Dashboard</div>
+        <div class="card-desc">
+          Visual training interface with SVG weight visualization, QLoRA compression, and Colab integration
+        </div>
+      </div>
+
+      <div class="card" onclick="alert('Coming Soon: Browse and install ASX tape cartridges')">
+        <div class="card-icon">📦</div>
+        <div class="card-title">Tape Registry</div>
+        <div class="card-desc">
+          Browse, install, and manage ASX tape cartridges - ROM-style applications and models
+        </div>
+      </div>
+
+      <div class="card" onclick="alert('Coming Soon: Manage agents, shards, and hive configuration')">
+        <div class="card-icon">⚙️</div>
+        <div class="card-title">Hive Console</div>
+        <div class="card-desc">
+          Control panel for managing multi-hive shards, agents, and inter-shard communication
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-links">
+      <h3 style="margin-bottom: 20px; color: #16f2aa;">Quick Start</h3>
+      <a href="ui/mx2lm-chat.html" class="btn">Launch Chat Interface</a>
+      <a href="docs/multi-hive-stack.html" class="btn">Read Documentation</a>
+      <a href="https://github.com/your-username/xjson-bot" class="btn">View on GitHub</a>
+    </div>
+
+    <div class="footer">
+      <p>Built with K'UHUL Multi-Hive Stack</p>
+      <p style="margin-top: 10px; font-size: 0.9em;">
+        Turn free Colab into a $20K training rig 🚀
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Initialize K'UHUL system
+    console.log('%c XJSON-BOT ', 'background: #16f2aa; color: #0a0f1c; font-weight: bold; padding: 5px 10px;');
+    console.log('K\'UHUL Multi-Hive Stack Initialized');
+    console.log('- MX2LM Chat Interface: Ready');
+    console.log('- SVG Weight Geometry: Active');
+    console.log('- QLoRA Compression: Enabled');
+    console.log('- Multi-Hive Router: Online');
+
+    // Check if K'UHUL engine is loaded
+    if (typeof K !== 'undefined') {
+      console.log('✓ K\'UHUL Engine Loaded');
+    }
+
+    // Check service worker support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('✓ Service Worker Registered'))
+        .catch(err => console.log('Service Worker Registration Failed:', err));
+    }
+  </script>
+</body>
+</html>
