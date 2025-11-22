@@ -1,0 +1,71 @@
+{
+  "hive": {
+    "name": "PRIME-04-HIVE",
+    "version": "1.0.0",
+    "status": "active",
+    "description": "K'uhul Multi-Hive System - 5 Shard Configuration"
+  },
+  "shards": {
+    "dashboard": {
+      "id": "dashboard",
+      "port": 3101,
+      "tape": "prime_dashboard",
+      "description": "Main dashboard and system overview",
+      "status": "ok",
+      "routes": [
+        "/api/hive/health",
+        "/api/hive/status",
+        "/dashboard"
+      ]
+    },
+    "users": {
+      "id": "users",
+      "port": 3102,
+      "tape": "prime_users",
+      "description": "User management and authentication",
+      "status": "ok",
+      "routes": [
+        "/api/users",
+        "/api/auth"
+      ]
+    },
+    "logistics": {
+      "id": "logistics",
+      "port": 3103,
+      "tape": "prime_logistics",
+      "description": "Logistics and inventory management",
+      "status": "ok",
+      "routes": [
+        "/api/logistics",
+        "/api/inventory"
+      ]
+    },
+    "intel": {
+      "id": "intel",
+      "port": 3104,
+      "tape": "prime_intel",
+      "description": "Intelligence and analytics",
+      "status": "ok",
+      "routes": [
+        "/api/intel",
+        "/api/analytics"
+      ]
+    },
+    "settings": {
+      "id": "settings",
+      "port": 3105,
+      "tape": "prime_settings",
+      "description": "System settings and configuration",
+      "status": "ok",
+      "routes": [
+        "/api/settings",
+        "/api/config"
+      ]
+    }
+  },
+  "routing": {
+    "strategy": "tape-based",
+    "fallback": "dashboard",
+    "load_balancing": false
+  }
+}

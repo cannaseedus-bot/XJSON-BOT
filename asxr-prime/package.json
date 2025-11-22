@@ -1,0 +1,24 @@
+{
+  "name": "asxr-prime",
+  "version": "1.0.0",
+  "description": "K'uhul Multi-Hive OS with Tyson-Chomsky Engine",
+  "scripts": {
+    "start": "serve . -p 3000",
+    "test": "./stabilization-test.sh",
+    "test:verbose": "VERBOSE=true ./stabilization-test.sh"
+  },
+  "keywords": [
+    "asxr",
+    "kuhul",
+    "multi-hive",
+    "tyson-chomsky",
+    "micronaut",
+    "service-worker",
+    "pwa"
+  ],
+  "author": "XJSON-BOT",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

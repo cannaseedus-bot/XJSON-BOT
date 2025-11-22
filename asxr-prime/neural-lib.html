@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K'UHUL OS - SVG Neural Weight Library</title>
+    <style>
+        :root {
+            /* K'UHUL SVG Design System */
+            --kuhul-primary: #16f2aa;
+            --kuhul-secondary: #00e0ff;
+            --kuhul-accent: #9966ff;
+            --kuhul-warning: #ffaa00;
+            --kuhul-danger: #ff0066;
+            --kuhul-bg: #0a0a1a;
+            --kuhul-panel: #070b12;
+            --kuhul-text: #e9f5ff;
+            --kuhul-muted: #7b8a9a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--kuhul-bg);
+            color: var(--kuhul-text);
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(22, 242, 170, 0.3);
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--kuhul-primary);
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--kuhul-secondary);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .component-card {
+            background: var(--kuhul-panel);
+            border: 1px solid rgba(22, 242, 170, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover {
+            border-color: var(--kuhul-primary);
+            box-shadow: 0 0 20px rgba(22, 242, 170, 0.2);
+        }
+
+        .component-title {
+            color: var(--kuhul-primary);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .component-demo {
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .component-code {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.8rem;
+            overflow-x: auto;
+        }
+
+        .demo-area {
+            background: var(--kuhul-panel);
+            border: 1px solid rgba(22, 242, 170, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 40px;
+            min-height: 400px;
+        }
+
+        .demo-title {
+            color: var(--kuhul-accent);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(22, 242, 170, 0.1);
+            border: 1px solid var(--kuhul-primary);
+            color: var(--kuhul-text);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(22, 242, 170, 0.2);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Neural Network Specific Styles */
+        .weight-positive {
+            stroke: #ff4444;
+            fill: #ff4444;
+        }
+
+        .weight-negative {
+            stroke: #4444ff;
+            fill: #4444ff;
+        }
+
+        .weight-neutral {
+            stroke: #44ff44;
+            fill: #44ff44;
+        }
+
+        .neuron-active {
+            filter: url(#neuron-glow);
+        }
+
+        a {
+            color: var(--kuhul-secondary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>K'UHUL OS SVG NEURAL WEIGHT LIBRARY</h1>
+            <div class="subtitle">Vector Graphics + Neural Network Visualization</div>
+            <p style="margin-top: 15px;"><a href="/">← Back to ASXR PRIME Cockpit</a></p>
+        </header>
+
+        <!-- ENHANCED K'UHUL SVG COMPONENT LIBRARY -->
+        <svg id="kuhul-svg-library" style="display: none;">
+            <defs>
+                <!-- ===== CORE COMPONENTS ===== -->
+                
+                <!-- Agent Nodes -->
+                <g id="kuhul-agent-base" class="kuhul-agent">
+                    <circle r="8" fill="var(--agent-color)" stroke="var(--kuhul-primary)" stroke-width="2"/>
+                    <circle r="4" fill="white" opacity="0.3"/>
+                </g>
+
+                <g id="kuhul-agent-queen">
+                    <use href="#kuhul-agent-base" style="--agent-color: #ffaa00"/>
+                    <circle r="3" fill="gold" opacity="0.8">
+                        <animate attributeName="r" values="3;4;3" dur="1.5s" repeatCount="indefinite"/>
+                    </circle>
+                </g>
+
+                <g id="kuhul-agent-coder">
+                    <use href="#kuhul-agent-base" style="--agent-color: #0099ff"/>
+                    <text x="-3" y="3" font-size="6" fill="white" font-weight="bold">{ }</text>
+                </g>
+
+                <g id="kuhul-agent-analyst">
+                    <use href="#kuhul-agent-base" style="--agent-color: #9966ff"/>
+                    <path d="M-4,-2 L4,-2 L4,2 L-4,2 Z" fill="none" stroke="white" stroke-width="1"/>
+                    <line x1="-2" y1="-2" x2="2" y2="2" stroke="white" stroke-width="1"/>
+                </g>
+
+                <!-- ===== NEURAL NETWORK COMPONENTS ===== -->
+                
+                <!-- Neuron Components -->
+                <g id="kuhul-neuron-base">
+                    <circle r="6" fill="var(--neuron-color)" stroke="var(--kuhul-primary)" stroke-width="1.5"/>
+                </g>
+
+                <g id="kuhul-neuron-input">
+                    <use href="#kuhul-neuron-base" style="--neuron-color: #16f2aa"/>
+                    <circle r="3" fill="#0a0a1a"/>
+                </g>
+
+                <g id="kuhul-neuron-hidden">
+                    <use href="#kuhul-neuron-base" style="--neuron-color: #9966ff"/>
+                    <circle r="2" fill="#0a0a1a" opacity="0.7">
+                        <animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                </g>
+
+                <g id="kuhul-neuron-output">
+                    <use href="#kuhul-neuron-base" style="--neuron-color: #ffaa00"/>
+                    <circle r="4" fill="#0a0a1a" opacity="0.5">
+                        <animate attributeName="opacity" values="0.5;0.8;0.5" dur="1.5s" repeatCount="indefinite"/>
+                    </circle>
+                </g>
+
+                <!-- Weight Visualization Components -->
+                <g id="kuhul-weight-positive">
+                    <path d="M-5,0 L5,0" stroke="#ff4444" stroke-width="2" stroke-dasharray="3 1">
+                        <animate attributeName="stroke-dashoffset" from="0" to="8" dur="1s" repeatCount="indefinite"/>
+                    </path>
+                </g>
+
+                <g id="kuhul-weight-negative">
+                    <path d="M-5,0 L5,0" stroke="#4444ff" stroke-width="2" stroke-dasharray="2 2">
+                        <animate attributeName="stroke-dashoffset" from="0" to="4" dur="0.8s" repeatCount="indefinite"/>
+                    </path>
+                </g>
+
+                <g id="kuhul-weight-strong">
+                    <path d="M-6,0 L6,0" stroke="#ffaa00" stroke-width="3">
+                        <animate attributeName="stroke-width" values="3;4;3" dur="1.2s" repeatCount="indefinite"/>
+                    </path>
+                </g>
+
+                <!-- QLoRA Adapter Components -->
+                <g id="kuhul-qlora-adapter">
+                    <rect width="40" height="20" rx="4" fill="var(--kuhul-panel)" stroke="var(--kuhul-accent)" stroke-width="1.5"/>
+                    <text x="20" y="12" text-anchor="middle" fill="var(--kuhul-accent)" font-size="6" font-family="monospace">QLoRA</text>
+                    <rect x="5" y="5" width="30" height="2" fill="var(--kuhul-accent)" opacity="0.7">
+                        <animate attributeName="width" values="30;10;30" dur="2s" repeatCount="indefinite"/>
+                    </rect>
+                </g>
+
+                <g id="kuhul-lora-layer">
+                    <rect width="60" height="30" rx="6" fill="var(--kuhul-panel)" stroke="var(--kuhul-primary)" stroke-width="1"/>
+                    <path d="M10,15 L50,15" stroke="var(--kuhul-primary)" stroke-width="2" stroke-dasharray="4 2"/>
+                    <circle cx="15" cy="15" r="2" fill="var(--kuhul-primary)">
+                        <animate attributeName="fill" values="#16f2aa;#00e0ff;#16f2aa" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                    <circle cx="45" cy="15" r="2" fill="var(--kuhul-primary)">
+                        <animate attributeName="fill" values="#00e0ff;#16f2aa;#00e0ff" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                </g>
+
+                <!-- Weight Matrix -->
+                <g id="kuhul-weight-matrix">
+                    <rect width="80" height="60" rx="4" fill="var(--kuhul-panel)" stroke="var(--kuhul-secondary)" stroke-width="1"/>
+                    <g transform="translate(10,10)">
+                        <circle cx="10" cy="10" r="1" fill="#ff4444"/>
+                        <circle cx="30" cy="10" r="2" fill="#ff8844"/>
+                        <circle cx="50" cy="10" r="1.5" fill="#44ff44"/>
+                        <circle cx="10" cy="30" r="2.5" fill="#4444ff"/>
+                        <circle cx="30" cy="30" r="1" fill="#8844ff"/>
+                        <circle cx="50" cy="30" r="3" fill="#ff44ff"/>
+                    </g>
+                </g>
+
+                <!-- Gradients -->
+                <linearGradient id="weight-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ff4444"/>
+                    <stop offset="50%" stop-color="#44ff44"/>
+                    <stop offset="100%" stop-color="#4444ff"/>
+                </linearGradient>
+
+                <filter id="neuron-glow">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="glow"/>
+                    <feComposite in="SourceGraphic" in2="glow" operator="over"/>
+                </filter>
+
+            </defs>
+        </svg>
+
+        <!-- COMPONENT SHOWCASE -->
+        <div class="components-grid">
+            <div class="component-card">
+                <h3 class="component-title">Neural Network Nodes</h3>
+                <div class="component-demo">
+                    <svg width="200" height="80">
+                        <use href="#kuhul-neuron-input" x="30" y="40"/>
+                        <use href="#kuhul-neuron-hidden" x="70" y="40"/>
+                        <use href="#kuhul-neuron-output" x="110" y="40"/>
+                        <use href="#kuhul-weight-positive" x="45" y="40"/>
+                        <use href="#kuhul-weight-negative" x="85" y="40"/>
+                    </svg>
+                </div>
+                <div class="component-code">
+                    &lt;use href="#kuhul-neuron-input" x="30" y="40"/&gt;
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h3 class="component-title">QLoRA Adapters</h3>
+                <div class="component-demo">
+                    <svg width="200" height="80">
+                        <use href="#kuhul-qlora-adapter" x="50" y="30"/>
+                        <use href="#kuhul-lora-layer" x="120" y="25"/>
+                    </svg>
+                </div>
+                <div class="component-code">
+                    &lt;use href="#kuhul-qlora-adapter" x="50" y="30"/&gt;
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h3 class="component-title">Weight Visualization</h3>
+                <div class="component-demo">
+                    <svg width="200" height="80">
+                        <use href="#kuhul-weight-matrix" x="20" y="10"/>
+                    </svg>
+                </div>
+                <div class="component-code">
+                    &lt;use href="#kuhul-weight-matrix" x="20" y="10"/&gt;
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h3 class="component-title">Agent Nodes</h3>
+                <div class="component-demo">
+                    <svg width="200" height="80">
+                        <use href="#kuhul-agent-queen" x="40" y="40"/>
+                        <use href="#kuhul-agent-coder" x="80" y="40"/>
+                        <use href="#kuhul-agent-analyst" x="120" y="40"/>
+                    </svg>
+                </div>
+                <div class="component-code">
+                    &lt;use href="#kuhul-agent-queen" x="40" y="40"/&gt;
+                </div>
+            </div>
+        </div>
+
+        <!-- INTERACTIVE DEMO -->
+        <div class="demo-area">
+            <h2 class="demo-title">K'UHUL NEURAL NETWORK VISUALIZER</h2>
+            
+            <div class="controls">
+                <button class="control-btn" onclick="startNeuralNetwork()">CREATE NETWORK</button>
+                <button class="control-btn" onclick="addQLoRALayer()">ADD QLORA</button>
+                <button class="control-btn" onclick="animateWeights()">ANIMATE WEIGHTS</button>
+                <button class="control-btn" onclick="resetDemo()">RESET</button>
+            </div>
+
+            <svg id="kuhul-demo-runtime" width="100%" height="400" viewBox="0 0 800 400">
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        class KuhulNeuralRuntime {
+            constructor() {
+                this.canvas = document.getElementById('kuhul-demo-runtime');
+                this.neurons = new Map();
+                this.connections = new Map();
+            }
+
+            createNeuron(id, type, x, y) {
+                const neuron = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+                neuron.setAttribute('href', `#kuhul-neuron-${type}`);
+                neuron.setAttribute('x', x);
+                neuron.setAttribute('y', y);
+                neuron.setAttribute('data-neuron-id', id);
+                
+                this.canvas.appendChild(neuron);
+                this.neurons.set(id, neuron);
+                return neuron;
+            }
+
+            createWeightConnection(fromId, toId, weightType = 'positive') {
+                const fromNeuron = this.neurons.get(fromId);
+                const toNeuron = this.neurons.get(toId);
+                
+                if (!fromNeuron || !toNeuron) return;
+
+                const fromX = parseFloat(fromNeuron.getAttribute('x')) + 6;
+                const fromY = parseFloat(fromNeuron.getAttribute('y'));
+                const toX = parseFloat(toNeuron.getAttribute('x')) - 6;
+                const toY = parseFloat(toNeuron.getAttribute('y'));
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', fromX);
+                line.setAttribute('y1', fromY);
+                line.setAttribute('x2', toX);
+                line.setAttribute('y2', toY);
+                line.setAttribute('stroke', weightType === 'positive' ? '#ff4444' : '#4444ff');
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('opacity', '0.5');
+
+                this.canvas.insertBefore(line, this.canvas.firstChild);
+            }
+
+            clear() {
+                this.canvas.innerHTML = '';
+                this.neurons.clear();
+                this.connections.clear();
+            }
+        }
+
+        const runtime = new KuhulNeuralRuntime();
+
+        function startNeuralNetwork() {
+            runtime.clear();
+            
+            // Input layer
+            runtime.createNeuron('input1', 'input', 100, 100);
+            runtime.createNeuron('input2', 'input', 100, 200);
+            runtime.createNeuron('input3', 'input', 100, 300);
+            
+            // Hidden layer
+            runtime.createNeuron('hidden1', 'hidden', 300, 150);
+            runtime.createNeuron('hidden2', 'hidden', 300, 250);
+            
+            // Output layer
+            runtime.createNeuron('output1', 'output', 500, 200);
+            
+            // Connections
+            runtime.createWeightConnection('input1', 'hidden1', 'positive');
+            runtime.createWeightConnection('input2', 'hidden1', 'negative');
+            runtime.createWeightConnection('input3', 'hidden1', 'positive');
+            runtime.createWeightConnection('input1', 'hidden2', 'negative');
+            runtime.createWeightConnection('input2', 'hidden2', 'positive');
+            runtime.createWeightConnection('input3', 'hidden2', 'positive');
+            runtime.createWeightConnection('hidden1', 'output1', 'positive');
+            runtime.createWeightConnection('hidden2', 'output1', 'positive');
+        }
+
+        function addQLoRALayer() {
+            const adapter1 = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            adapter1.setAttribute('href', '#kuhul-qlora-adapter');
+            adapter1.setAttribute('x', '200');
+            adapter1.setAttribute('y', '50');
+            runtime.canvas.appendChild(adapter1);
+
+            const adapter2 = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            adapter2.setAttribute('href', '#kuhul-lora-layer');
+            adapter2.setAttribute('x', '300');
+            adapter2.setAttribute('y', '350');
+            runtime.canvas.appendChild(adapter2);
+        }
+
+        function animateWeights() {
+            const neuronIds = Array.from(runtime.neurons.keys());
+            setInterval(() => {
+                const randomNeuron = neuronIds[Math.floor(Math.random() * neuronIds.length)];
+                const neuron = runtime.neurons.get(randomNeuron);
+                if (neuron) {
+                    neuron.classList.add('neuron-active');
+                    setTimeout(() => neuron.classList.remove('neuron-active'), 1000);
+                }
+            }, 500);
+        }
+
+        function resetDemo() {
+            runtime.clear();
+        }
+
+        document.addEventListener('DOMContentLoaded', startNeuralNetwork);
+    </script>
+</body>
+</html>
