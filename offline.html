@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - K'UHUL</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0f1c 0%, #1a1f3c 100%);
+      color: #e0e5f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .offline-container {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .offline-icon {
+      font-size: 8rem;
+      margin-bottom: 30px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(0.95);
+      }
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #16f2aa;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    p {
+      font-size: 1.25rem;
+      color: #9ca3af;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .offline-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #16f2aa 0%, #0ea578 100%);
+      color: #0a0f1c;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(22, 242, 170, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e0e5f0;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .offline-features {
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .features-title {
+      font-size: 1.5rem;
+      color: #e0e5f0;
+      margin-bottom: 30px;
+      font-weight: 600;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: left;
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .feature-title {
+      font-weight: 600;
+      color: #e0e5f0;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem;
+      color: #9ca3af;
+      line-height: 1.4;
+    }
+
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .connection-status.online {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+
+    .connection-status.online .status-dot {
+      background: #22c55e;
+    }
+
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .offline-icon {
+        font-size: 5rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+
+      .offline-actions {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="connection-status" id="status">
+    <span class="status-dot"></span>
+    <span>Offline</span>
+  </div>
+
+  <div class="offline-container">
+    <div class="offline-icon">📡</div>
+
+    <h1>You're Offline</h1>
+
+    <p>
+      No internet connection detected. Don't worry - K'UHUL works offline!
+      You can still access cached content and use local features.
+    </p>
+
+    <div class="offline-actions">
+      <button class="btn btn-primary" onclick="location.reload()">
+        🔄 Retry Connection
+      </button>
+      <a href="/" class="btn btn-secondary">
+        🏠 Go Home
+      </a>
+    </div>
+
+    <div class="offline-features">
+      <h2 class="features-title">Available Offline</h2>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <div class="feature-title">Local Chat</div>
+          <div class="feature-desc">
+            Access your chat history and conversation data
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <div class="feature-title">Agent Hive</div>
+          <div class="feature-desc">
+            Browse 50+ specialist agents and their capabilities
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <div class="feature-title">Training Data</div>
+          <div class="feature-desc">
+            View cached training metrics and job history
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📚</div>
+          <div class="feature-title">Documentation</div>
+          <div class="feature-desc">
+            Access complete offline documentation
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Monitor connection status
+    function updateStatus() {
+      const statusEl = document.getElementById('status');
+      const isOnline = navigator.onLine;
+
+      if (isOnline) {
+        statusEl.className = 'connection-status online';
+        statusEl.querySelector('span:last-child').textContent = 'Back Online!';
+
+        // Auto-reload after 2 seconds
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        statusEl.className = 'connection-status';
+        statusEl.querySelector('span:last-child').textContent = 'Offline';
+      }
+    }
+
+    // Check status on load
+    updateStatus();
+
+    // Listen for connection changes
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+
+    // Check connection periodically
+    setInterval(updateStatus, 5000);
+  </script>
+</body>
+</html>

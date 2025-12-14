@@ -1,0 +1,482 @@
+{
+  "version": "1.0.0",
+  "hive": "web-dev-specialists",
+  "description": "Complete registry of specialized AI agents for web development",
+  "categories": {
+    "frontend_frameworks": {
+      "description": "Component frameworks and reactive systems",
+      "agents": {
+        "svelte_specialist": {
+          "id": "svelte_specialist",
+          "name": "Svelte/SvelteKit Expert",
+          "icon": "🎯",
+          "specialty": "Svelte reactive framework",
+          "capabilities": ["component_creation", "store_management", "sveltekit_routing", "transitions"],
+          "knowledge_base": {
+            "core_concepts": ["reactive_declarations", "stores", "components", "actions", "transitions"],
+            "frameworks": ["Svelte", "SvelteKit"],
+            "best_practices": ["$: reactive statements", "component composition", "SSR with SvelteKit"]
+          },
+          "api_endpoint": "/agents/svelte/query"
+        },
+        "solid_specialist": {
+          "id": "solid_specialist",
+          "name": "SolidJS/SolidStart Expert",
+          "icon": "⚡",
+          "specialty": "Fine-grained reactivity",
+          "capabilities": ["signals", "effects", "resources", "solid_start_routing"],
+          "knowledge_base": {
+            "core_concepts": ["signals", "effects", "memos", "resources", "stores"],
+            "frameworks": ["SolidJS", "SolidStart"],
+            "best_practices": ["fine-grained reactivity", "no virtual DOM", "performance optimization"]
+          },
+          "api_endpoint": "/agents/solid/query"
+        },
+        "qwik_specialist": {
+          "id": "qwik_specialist",
+          "name": "Qwik/QwikCity Expert",
+          "icon": "🚀",
+          "specialty": "Resumable applications",
+          "capabilities": ["resumability", "qwikcity_routing", "optimization", "lazy_loading"],
+          "knowledge_base": {
+            "core_concepts": ["resumability", "serialization", "lazy_execution", "prefetching"],
+            "frameworks": ["Qwik", "QwikCity"],
+            "best_practices": ["minimal hydration", "instant interactivity", "progressive loading"]
+          },
+          "api_endpoint": "/agents/qwik/query"
+        },
+        "alpine_specialist": {
+          "id": "alpine_specialist",
+          "name": "Alpine.js Expert",
+          "icon": "🏔️",
+          "specialty": "Lightweight reactive HTML",
+          "capabilities": ["directives", "alpine_stores", "reactivity", "html_enhancement"],
+          "knowledge_base": {
+            "core_concepts": ["x-data", "x-show", "x-if", "x-for", "Alpine.store"],
+            "frameworks": ["Alpine.js"],
+            "best_practices": ["progressive enhancement", "minimal JS", "inline reactivity"]
+          },
+          "api_endpoint": "/agents/alpine/query"
+        },
+        "htmx_specialist": {
+          "id": "htmx_specialist",
+          "name": "HTMX Expert",
+          "icon": "📡",
+          "specialty": "Hypermedia-driven UI",
+          "capabilities": ["ajax_requests", "websockets", "sse", "html_swapping"],
+          "knowledge_base": {
+            "core_concepts": ["hx-get", "hx-post", "hx-swap", "hx-trigger", "hx-target"],
+            "frameworks": ["HTMX", "Unpoly", "Turbo"],
+            "best_practices": ["hypermedia approach", "server-side rendering", "progressive enhancement"]
+          },
+          "api_endpoint": "/agents/htmx/query"
+        },
+        "lit_specialist": {
+          "id": "lit_specialist",
+          "name": "Lit/Web Components Expert",
+          "icon": "💡",
+          "specialty": "Web Components standard",
+          "capabilities": ["custom_elements", "shadow_dom", "templates", "reactive_properties"],
+          "knowledge_base": {
+            "core_concepts": ["LitElement", "decorators", "Shadow DOM", "slots", "events"],
+            "frameworks": ["Lit", "LitElement", "StencilJS"],
+            "best_practices": ["web standards", "framework-agnostic", "encapsulation"]
+          },
+          "api_endpoint": "/agents/lit/query"
+        },
+        "preact_specialist": {
+          "id": "preact_specialist",
+          "name": "Preact Expert",
+          "icon": "⚛️",
+          "specialty": "Lightweight React alternative",
+          "capabilities": ["components", "hooks", "signals", "compat_mode"],
+          "knowledge_base": {
+            "core_concepts": ["preact/hooks", "preact/signals", "preact/compat", "JSX"],
+            "frameworks": ["Preact"],
+            "best_practices": ["3KB bundle size", "React compatibility", "performance"]
+          },
+          "api_endpoint": "/agents/preact/query"
+        }
+      }
+    },
+    "template_engines": {
+      "description": "HTML template and rendering engines",
+      "agents": {
+        "ejs_specialist": {
+          "id": "ejs_specialist",
+          "name": "EJS Template Expert",
+          "icon": "📄",
+          "specialty": "Embedded JavaScript templates",
+          "capabilities": ["server_rendering", "partials", "includes", "data_injection"],
+          "knowledge_base": {
+            "core_concepts": ["<% %>", "<%- %>", "<%=  %>", "includes", "partials"],
+            "frameworks": ["EJS"],
+            "best_practices": ["server-side rendering", "template reuse", "XSS protection"]
+          },
+          "api_endpoint": "/agents/ejs/query"
+        },
+        "pug_specialist": {
+          "id": "pug_specialist",
+          "name": "Pug/Jade Expert",
+          "icon": "🐶",
+          "specialty": "Indentation-based templates",
+          "capabilities": ["pug_syntax", "mixins", "includes", "filters"],
+          "knowledge_base": {
+            "core_concepts": ["indentation", "mixins", "extends", "blocks", "filters"],
+            "frameworks": ["Pug", "Jade"],
+            "best_practices": ["clean syntax", "template inheritance", "DRY principles"]
+          },
+          "api_endpoint": "/agents/pug/query"
+        },
+        "handlebars_specialist": {
+          "id": "handlebars_specialist",
+          "name": "Handlebars/Mustache Expert",
+          "icon": "🎭",
+          "specialty": "Logic-less templates",
+          "capabilities": ["helpers", "partials", "mustache_syntax", "precompilation"],
+          "knowledge_base": {
+            "core_concepts": ["{{}}",  "helpers", "partials", "#each", "#if"],
+            "frameworks": ["Handlebars", "Mustache"],
+            "best_practices": ["logic-less templates", "helper functions", "template compilation"]
+          },
+          "api_endpoint": "/agents/handlebars/query"
+        },
+        "jinja_specialist": {
+          "id": "jinja_specialist",
+          "name": "Jinja2 Expert",
+          "icon": "🐍",
+          "specialty": "Python template engine",
+          "capabilities": ["template_inheritance", "macros", "filters", "auto_escaping"],
+          "knowledge_base": {
+            "core_concepts": ["{{ }}", "{% %}", "filters", "macros", "inheritance"],
+            "frameworks": ["Jinja2", "Django Templates"],
+            "best_practices": ["template inheritance", "custom filters", "auto-escaping"]
+          },
+          "api_endpoint": "/agents/jinja/query"
+        },
+        "blade_specialist": {
+          "id": "blade_specialist",
+          "name": "Laravel Blade Expert",
+          "icon": "🔪",
+          "specialty": "Laravel templating",
+          "capabilities": ["blade_directives", "components", "slots", "stacks"],
+          "knowledge_base": {
+            "core_concepts": ["@extends", "@section", "@yield", "@component", "@slot"],
+            "frameworks": ["Laravel Blade"],
+            "best_practices": ["component-based design", "template inheritance", "blade components"]
+          },
+          "api_endpoint": "/agents/blade/query"
+        }
+      }
+    },
+    "css_frameworks": {
+      "description": "CSS frameworks and utility systems",
+      "agents": {
+        "tailwind_specialist": {
+          "id": "tailwind_specialist",
+          "name": "Tailwind CSS Expert",
+          "icon": "🎨",
+          "specialty": "Utility-first CSS",
+          "capabilities": ["utility_classes", "configuration", "plugins", "jit_mode"],
+          "knowledge_base": {
+            "core_concepts": ["utility classes", "configuration", "JIT", "variants", "plugins"],
+            "frameworks": ["Tailwind CSS", "UnoCSS", "Windi CSS"],
+            "best_practices": ["utility-first", "responsive design", "dark mode", "purging"]
+          },
+          "api_endpoint": "/agents/tailwind/query"
+        },
+        "bootstrap_specialist": {
+          "id": "bootstrap_specialist",
+          "name": "Bootstrap Expert",
+          "icon": "🅱️",
+          "specialty": "Component-based CSS framework",
+          "capabilities": ["grid_system", "components", "utilities", "customization"],
+          "knowledge_base": {
+            "core_concepts": ["grid", "components", "utilities", "SASS variables", "breakpoints"],
+            "frameworks": ["Bootstrap"],
+            "best_practices": ["responsive grid", "component customization", "utility classes"]
+          },
+          "api_endpoint": "/agents/bootstrap/query"
+        },
+        "bulma_specialist": {
+          "id": "bulma_specialist",
+          "name": "Bulma Expert",
+          "icon": "🎯",
+          "specialty": "Flexbox CSS framework",
+          "capabilities": ["flexbox_grid", "modifiers", "components", "customization"],
+          "knowledge_base": {
+            "core_concepts": ["columns", "modifiers", "components", "SASS customization"],
+            "frameworks": ["Bulma"],
+            "best_practices": ["flexbox layout", "modifier classes", "no JavaScript"]
+          },
+          "api_endpoint": "/agents/bulma/query"
+        }
+      }
+    },
+    "backend_frameworks": {
+      "description": "Server-side frameworks and APIs",
+      "agents": {
+        "express_specialist": {
+          "id": "express_specialist",
+          "name": "Express.js Expert",
+          "icon": "🚂",
+          "specialty": "Node.js web framework",
+          "capabilities": ["routing", "middleware", "api_creation", "templating"],
+          "knowledge_base": {
+            "core_concepts": ["routes", "middleware", "req/res", "router", "error handling"],
+            "frameworks": ["Express.js", "Fastify", "Hono"],
+            "best_practices": ["middleware composition", "error handling", "security"]
+          },
+          "api_endpoint": "/agents/express/query"
+        },
+        "flask_specialist": {
+          "id": "flask_specialist",
+          "name": "Flask Expert",
+          "icon": "🧪",
+          "specialty": "Python micro framework",
+          "capabilities": ["routing", "templates", "blueprints", "extensions"],
+          "knowledge_base": {
+            "core_concepts": ["routes", "blueprints", "Jinja2", "request/response", "extensions"],
+            "frameworks": ["Flask"],
+            "best_practices": ["blueprints organization", "application factory", "error handlers"]
+          },
+          "api_endpoint": "/agents/flask/query"
+        },
+        "django_specialist": {
+          "id": "django_specialist",
+          "name": "Django Expert",
+          "icon": "🎸",
+          "specialty": "Python full-stack framework",
+          "capabilities": ["orm", "admin", "auth", "templates", "rest_framework"],
+          "knowledge_base": {
+            "core_concepts": ["models", "views", "templates", "ORM", "admin", "auth"],
+            "frameworks": ["Django", "Django REST Framework"],
+            "best_practices": ["MVT pattern", "ORM best practices", "security middleware"]
+          },
+          "api_endpoint": "/agents/django/query"
+        },
+        "laravel_specialist": {
+          "id": "laravel_specialist",
+          "name": "Laravel Expert",
+          "icon": "🔺",
+          "specialty": "PHP full-stack framework",
+          "capabilities": ["eloquent_orm", "blade", "routing", "artisan", "queues"],
+          "knowledge_base": {
+            "core_concepts": ["Eloquent", "Blade", "routes", "migrations", "queues", "events"],
+            "frameworks": ["Laravel"],
+            "best_practices": ["Eloquent relationships", "service containers", "job queues"]
+          },
+          "api_endpoint": "/agents/laravel/query"
+        },
+        "rails_specialist": {
+          "id": "rails_specialist",
+          "name": "Ruby on Rails Expert",
+          "icon": "💎",
+          "specialty": "Ruby MVC framework",
+          "capabilities": ["active_record", "action_cable", "turbo", "stimulus"],
+          "knowledge_base": {
+            "core_concepts": ["MVC", "ActiveRecord", "ActionCable", "Turbo", "Stimulus"],
+            "frameworks": ["Ruby on Rails", "Hotwire"],
+            "best_practices": ["convention over configuration", "Hotwire integration", "testing"]
+          },
+          "api_endpoint": "/agents/rails/query"
+        }
+      }
+    },
+    "static_site_generators": {
+      "description": "Static site and documentation generators",
+      "agents": {
+        "astro_specialist": {
+          "id": "astro_specialist",
+          "name": "Astro Expert",
+          "icon": "🚀",
+          "specialty": "Islands architecture",
+          "capabilities": ["islands", "content_collections", "integrations", "partial_hydration"],
+          "knowledge_base": {
+            "core_concepts": ["islands", "content collections", "partial hydration", "integrations"],
+            "frameworks": ["Astro"],
+            "best_practices": ["zero JS by default", "bring your own framework", "content-first"]
+          },
+          "api_endpoint": "/agents/astro/query"
+        },
+        "eleventy_specialist": {
+          "id": "eleventy_specialist",
+          "name": "Eleventy (11ty) Expert",
+          "icon": "🎈",
+          "specialty": "JavaScript static site generator",
+          "capabilities": ["multiple_templates", "data_cascade", "filters", "shortcodes"],
+          "knowledge_base": {
+            "core_concepts": ["data cascade", "collections", "filters", "shortcodes", "layouts"],
+            "frameworks": ["Eleventy (11ty)"],
+            "best_practices": ["template flexibility", "data-driven sites", "zero config"]
+          },
+          "api_endpoint": "/agents/eleventy/query"
+        },
+        "hugo_specialist": {
+          "id": "hugo_specialist",
+          "name": "Hugo Expert",
+          "icon": "⚡",
+          "specialty": "Go-based static site generator",
+          "capabilities": ["fast_builds", "shortcodes", "taxonomies", "multilingual"],
+          "knowledge_base": {
+            "core_concepts": ["content organization", "shortcodes", "taxonomies", "archetypes"],
+            "frameworks": ["Hugo"],
+            "best_practices": ["content organization", "build speed", "multilingual sites"]
+          },
+          "api_endpoint": "/agents/hugo/query"
+        }
+      }
+    },
+    "game_3d_engines": {
+      "description": "Game engines and 3D graphics frameworks",
+      "agents": {
+        "threejs_specialist": {
+          "id": "threejs_specialist",
+          "name": "Three.js Expert",
+          "icon": "🎮",
+          "specialty": "3D graphics library",
+          "capabilities": ["3d_scenes", "lighting", "materials", "animations", "shaders"],
+          "knowledge_base": {
+            "core_concepts": ["scene", "camera", "renderer", "geometry", "materials", "lights"],
+            "frameworks": ["Three.js"],
+            "best_practices": ["performance optimization", "shader programming", "scene composition"]
+          },
+          "api_endpoint": "/agents/threejs/query"
+        },
+        "babylon_specialist": {
+          "id": "babylon_specialist",
+          "name": "Babylon.js Expert",
+          "icon": "🌍",
+          "specialty": "Game engine for web",
+          "capabilities": ["physics", "particles", "animations", "ar_vr", "gui"],
+          "knowledge_base": {
+            "core_concepts": ["scenes", "physics", "materials", "animations", "XR"],
+            "frameworks": ["Babylon.js"],
+            "best_practices": ["physics integration", "AR/VR experiences", "performance"]
+          },
+          "api_endpoint": "/agents/babylon/query"
+        },
+        "pixi_specialist": {
+          "id": "pixi_specialist",
+          "name": "Pixi.js Expert",
+          "icon": "🧚",
+          "specialty": "2D WebGL rendering",
+          "capabilities": ["sprites", "graphics", "filters", "animations", "particles"],
+          "knowledge_base": {
+            "core_concepts": ["sprites", "containers", "graphics", "filters", "ticker"],
+            "frameworks": ["Pixi.js"],
+            "best_practices": ["2D performance", "sprite batching", "filter effects"]
+          },
+          "api_endpoint": "/agents/pixi/query"
+        },
+        "phaser_specialist": {
+          "id": "phaser_specialist",
+          "name": "Phaser Expert",
+          "icon": "👾",
+          "specialty": "HTML5 game framework",
+          "capabilities": ["game_objects", "physics", "scenes", "animations", "input"],
+          "knowledge_base": {
+            "core_concepts": ["scenes", "game objects", "physics", "input", "animations"],
+            "frameworks": ["Phaser"],
+            "best_practices": ["scene management", "physics integration", "mobile optimization"]
+          },
+          "api_endpoint": "/agents/phaser/query"
+        }
+      }
+    },
+    "specialty_agents": {
+      "description": "Specialized domain experts",
+      "agents": {
+        "ice_cream_specialist": {
+          "id": "ice_cream_specialist",
+          "name": "Ice Cream AI Expert",
+          "icon": "🍦",
+          "specialty": "Frozen desserts and flavor science",
+          "capabilities": ["flavor_recommendation", "recipe_generation", "pairing_suggestions", "nutrition"],
+          "knowledge_base": {
+            "core_concepts": ["flavor profiles", "ingredients", "techniques", "presentation"],
+            "frameworks": ["N/A - Domain Expert"],
+            "best_practices": ["flavor combinations", "seasonal recommendations", "dietary accommodations"]
+          },
+          "api_endpoint": "/agents/icecream/query"
+        },
+        "accessibility_specialist": {
+          "id": "accessibility_specialist",
+          "name": "A11y Expert",
+          "icon": "♿",
+          "specialty": "Web accessibility (WCAG)",
+          "capabilities": ["aria_attributes", "keyboard_nav", "screen_readers", "wcag_compliance"],
+          "knowledge_base": {
+            "core_concepts": ["ARIA", "semantic HTML", "keyboard navigation", "WCAG 2.1"],
+            "frameworks": ["N/A - Standards Expert"],
+            "best_practices": ["semantic HTML", "keyboard support", "screen reader testing"]
+          },
+          "api_endpoint": "/agents/a11y/query"
+        },
+        "seo_specialist": {
+          "id": "seo_specialist",
+          "name": "SEO Expert",
+          "icon": "🔍",
+          "specialty": "Search engine optimization",
+          "capabilities": ["meta_tags", "structured_data", "sitemaps", "performance"],
+          "knowledge_base": {
+            "core_concepts": ["meta tags", "schema.org", "Core Web Vitals", "sitemaps"],
+            "frameworks": ["N/A - SEO Standards"],
+            "best_practices": ["structured data", "page speed", "mobile-first", "accessibility"]
+          },
+          "api_endpoint": "/agents/seo/query"
+        },
+        "security_specialist": {
+          "id": "security_specialist",
+          "name": "Web Security Expert",
+          "icon": "🔒",
+          "specialty": "Web application security",
+          "capabilities": ["xss_prevention", "csrf_protection", "auth", "encryption"],
+          "knowledge_base": {
+            "core_concepts": ["OWASP Top 10", "CSP", "CORS", "authentication", "encryption"],
+            "frameworks": ["N/A - Security Standards"],
+            "best_practices": ["input validation", "output encoding", "secure headers", "HTTPS"]
+          },
+          "api_endpoint": "/agents/security/query"
+        },
+        "performance_specialist": {
+          "id": "performance_specialist",
+          "name": "Performance Expert",
+          "icon": "⚡",
+          "specialty": "Web performance optimization",
+          "capabilities": ["bundle_optimization", "lazy_loading", "caching", "core_web_vitals"],
+          "knowledge_base": {
+            "core_concepts": ["Core Web Vitals", "lazy loading", "code splitting", "caching"],
+            "frameworks": ["N/A - Performance Standards"],
+            "best_practices": ["minimize bundle size", "optimize images", "reduce TTI", "preloading"]
+          },
+          "api_endpoint": "/agents/performance/query"
+        }
+      }
+    }
+  },
+  "agent_capabilities": {
+    "query_types": [
+      "generate_code",
+      "explain_concept",
+      "debug_issue",
+      "recommend_approach",
+      "review_code",
+      "create_boilerplate",
+      "optimize_performance",
+      "migrate_framework"
+    ],
+    "collaboration_modes": [
+      "solo_agent",
+      "pair_programming",
+      "team_collaboration",
+      "full_hive_mode"
+    ]
+  },
+  "hive_protocols": {
+    "communication": "K'UHUL_MESH",
+    "data_format": "XJSON",
+    "compression": "SCXQ2",
+    "routing": "KLH_ROUTER"
+  }
+}
