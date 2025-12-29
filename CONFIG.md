@@ -623,6 +623,359 @@ GET /api/chat.php?action=status
 
 ---
 
+## MX2LM PHP Library (mx2lm.app)
+
+> **Note:** This PHP library is specific to the mx2lm.app cPanel deployment. If you don't have a PHP server, see the **Google Apps Script** alternative below.
+
+### Library Location
+```
+https://mx2lm.app/lib/
+├── asx_execute.php   # ASX code execution engine
+├── asx_ram.php       # ASX memory/RAM management
+├── asx_verify.php    # ASX verification layer
+├── mx2db.php         # MX2 database abstraction
+├── mx2lm.php         # MX2LM core runtime
+└── util.php          # Utilities and helpers
+```
+
+### Using the Library
+
+```php
+<?php
+// api/chat.php or api/stream.php
+require_once __DIR__ . '/../lib/mx2db.php';
+require_once __DIR__ . '/../lib/mx2lm.php';
+require_once __DIR__ . '/../lib/util.php';
+
+// Initialize MX2 database layer
+$db = new MX2DB($config);
+
+// Use existing methods instead of raw PDO
+$messages = $db->getMessages($chatId);
+$db->saveMessage($chatId, $role, $content, $model);
+
+// ASX execution
+require_once __DIR__ . '/../lib/asx_execute.php';
+$result = ASX::execute($code, $context);
+```
+
+### Stack Integration
+
+```
+Browser (XJSON-BOT)
+    │
+    ├─ KQL (IndexedDB) ──── Local persistence
+    │
+    └─ PHP API ─────────── Server persistence
+         │
+         ├─ mx2lm.php      Core runtime
+         ├─ mx2db.php      Database layer
+         ├─ asx_*.php      ASX execution
+         └─ MySQL          Data storage
+```
+
+---
+
+## Google Apps Script Alternative (No Server Required)
+
+> **For users without PHP/cPanel:** Google Apps Script (GAS) provides free serverless backend functionality with Google Sheets as database.
+
+### Why GAS?
+
+- **Free** - No hosting costs
+- **No server needed** - Runs on Google's infrastructure
+- **Google Sheets as DB** - Easy to view/edit data
+- **HTTPS built-in** - Secure by default
+- **Easy deployment** - Deploy as web app in clicks
+
+### Setting Up GAS Backend
+
+1. **Create a new Google Sheet** for your data
+2. **Open Extensions > Apps Script**
+3. **Paste the KQL-GAS code** (below)
+4. **Deploy as Web App**
+5. **Copy the URL** to your config.json
+
+### KQL-GAS Implementation
+
+```javascript
+// Google Apps Script - KQL Backend Alternative
+// Deploy as: Web App (Anyone can access)
+
+const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID';
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+
+  switch (action) {
+    case 'saveChat':
+      return saveChat(data);
+    case 'getChats':
+      return getChats(data.userId);
+    case 'saveMessage':
+      return saveMessage(data);
+    case 'getMessages':
+      return getMessages(data.chatId);
+    case 'saveSetting':
+      return saveSetting(data.key, data.value);
+    case 'getSetting':
+      return getSetting(data.key);
+    default:
+      return jsonResponse({ error: 'Unknown action' });
+  }
+}
+
+function doGet(e) {
+  const action = e.parameter.action;
+
+  switch (action) {
+    case 'status':
+      return jsonResponse({ status: 'ok', backend: 'gas' });
+    case 'chats':
+      return getChats(e.parameter.userId);
+    case 'messages':
+      return getMessages(e.parameter.chatId);
+    default:
+      return jsonResponse({ error: 'Use POST for mutations' });
+  }
+}
+
+// ============ CHAT OPERATIONS ============
+
+function saveChat(data) {
+  const sheet = getSheet('chats');
+  const row = [
+    data.id,
+    data.userId || 'anonymous',
+    data.title || 'New Chat',
+    new Date().getTime(),
+    new Date().getTime()
+  ];
+
+  // Check if exists (update) or new (append)
+  const existing = findRow(sheet, 0, data.id);
+  if (existing) {
+    sheet.getRange(existing, 1, 1, 5).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+
+  return jsonResponse({ success: true, chatId: data.id });
+}
+
+function getChats(userId) {
+  const sheet = getSheet('chats');
+  const data = sheet.getDataRange().getValues();
+
+  const chats = data.slice(1) // Skip header
+    .filter(row => !userId || row[1] === userId)
+    .map(row => ({
+      id: row[0],
+      userId: row[1],
+      title: row[2],
+      created: row[3],
+      updated: row[4]
+    }))
+    .sort((a, b) => b.updated - a.updated);
+
+  return jsonResponse({ chats });
+}
+
+// ============ MESSAGE OPERATIONS ============
+
+function saveMessage(data) {
+  const sheet = getSheet('messages');
+  const row = [
+    data.id || 'msg_' + new Date().getTime(),
+    data.chatId,
+    data.role,
+    data.content,
+    data.model || '',
+    new Date().getTime()
+  ];
+
+  sheet.appendRow(row);
+  return jsonResponse({ success: true, messageId: row[0] });
+}
+
+function getMessages(chatId) {
+  const sheet = getSheet('messages');
+  const data = sheet.getDataRange().getValues();
+
+  const messages = data.slice(1)
+    .filter(row => row[1] === chatId)
+    .map(row => ({
+      id: row[0],
+      chatId: row[1],
+      role: row[2],
+      content: row[3],
+      model: row[4],
+      timestamp: row[5]
+    }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+
+  return jsonResponse({ messages });
+}
+
+// ============ SETTINGS ============
+
+function saveSetting(key, value) {
+  const sheet = getSheet('settings');
+  const existing = findRow(sheet, 0, key);
+
+  if (existing) {
+    sheet.getRange(existing, 2).setValue(JSON.stringify(value));
+    sheet.getRange(existing, 3).setValue(new Date().getTime());
+  } else {
+    sheet.appendRow([key, JSON.stringify(value), new Date().getTime()]);
+  }
+
+  return jsonResponse({ success: true });
+}
+
+function getSetting(key) {
+  const sheet = getSheet('settings');
+  const rowNum = findRow(sheet, 0, key);
+
+  if (rowNum) {
+    const value = sheet.getRange(rowNum, 2).getValue();
+    return jsonResponse({ key, value: JSON.parse(value) });
+  }
+
+  return jsonResponse({ key, value: null });
+}
+
+// ============ HELPERS ============
+
+function getSheet(name) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(name);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    // Add headers
+    const headers = {
+      chats: ['id', 'userId', 'title', 'created', 'updated'],
+      messages: ['id', 'chatId', 'role', 'content', 'model', 'timestamp'],
+      settings: ['key', 'value', 'updated'],
+      events: ['id', 'type', 'data', 'source', 'timestamp']
+    };
+    if (headers[name]) {
+      sheet.appendRow(headers[name]);
+    }
+  }
+
+  return sheet;
+}
+
+function findRow(sheet, col, value) {
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][col] === value) return i + 1;
+  }
+  return null;
+}
+
+function jsonResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+### Frontend Config for GAS
+
+```json
+{
+  "kql": {
+    "backend": "gas",
+    "gasEndpoint": "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+  }
+}
+```
+
+### KQL-GAS Adapter (JavaScript)
+
+Add this to use GAS as your KQL backend:
+
+```javascript
+// core/kql-gas.js - Google Apps Script Backend Adapter
+
+const KQL_GAS = {
+  endpoint: null,
+
+  init(endpoint) {
+    this.endpoint = endpoint;
+    console.log('KQL-GAS: Initialized with', endpoint);
+  },
+
+  async request(action, data = {}) {
+    const response = await fetch(this.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...data })
+    });
+    return response.json();
+  },
+
+  // Mirror KQL interface
+  async saveChat(chat) {
+    return this.request('saveChat', chat);
+  },
+
+  async getChats(userId) {
+    const result = await this.request('getChats', { userId });
+    return result.chats || [];
+  },
+
+  async saveMessage(message) {
+    return this.request('saveMessage', message);
+  },
+
+  async getMessages(chatId) {
+    const result = await this.request('getMessages', { chatId });
+    return result.messages || [];
+  },
+
+  async setSetting(key, value) {
+    return this.request('saveSetting', { key, value });
+  },
+
+  async getSetting(key) {
+    const result = await this.request('getSetting', { key });
+    return result.value;
+  }
+};
+
+// Extend KQL to support GAS backend
+if (typeof KQL !== 'undefined') {
+  KQL.setBackend = async function(mode, config = {}) {
+    if (mode === 'gas' && config.gasEndpoint) {
+      KQL_GAS.init(config.gasEndpoint);
+      this.backendMode = 'gas';
+      this.gas = KQL_GAS;
+      console.log('KQL: Using Google Apps Script backend');
+    }
+    // ... existing backend modes
+  };
+}
+```
+
+### Backend Comparison
+
+| Feature | PHP/cPanel | Google Apps Script |
+|---------|------------|-------------------|
+| Cost | Hosting fees | Free |
+| Setup | Server config | Deploy as web app |
+| Database | MySQL | Google Sheets |
+| Streaming | SSE support | No native SSE |
+| Speed | Fast | ~1-2s latency |
+| Limits | Server limits | 6min/execution |
+| Best for | Production | Prototyping, small apps |
+
+---
+
 ## Java gRPC Backend (cline-jars)
 
 For high-performance streaming, XJSON-BOT can connect to a Java gRPC backend.
