@@ -369,6 +369,52 @@
       font-family: 'Menlo', 'Monaco', monospace;
       font-size: 12px;
     }
+
+    /* Voice Controls */
+    .voice-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .voice-btn.listening {
+      background: var(--danger);
+      border-color: var(--danger);
+      animation: pulse-voice 1.5s infinite;
+    }
+
+    .voice-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    @keyframes pulse-voice {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+
+    /* Agent Team Indicator */
+    .agent-team-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .agent-team-badge .agent-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
   </style>
 </head>
 
@@ -417,6 +463,8 @@
 
 <script src="../core/kuhul-engine.js"></script>
 <script src="../core/llm-providers.js"></script>
+<script src="../core/agent-fusion.js"></script>
+<script src="../core/voice-interface.js"></script>
 <script src="../scripts/mx2lm-chat-app.js"></script>
 </body>
 </html>

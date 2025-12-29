@@ -195,9 +195,18 @@ const ASX = {
     // Chat Input Component
     this.registerComponent("ChatInput", (props) => `
       <div col gap="2">
-        <div row gap="2">
+        <div row gap="2" align-center>
           <input x input flex-1 id="chat-input" placeholder="Type your message..."
                  ${props.disabled ? 'disabled' : ''} />
+          <button x btn class="voice-btn" id="btn-voice" title="Voice input"
+                  onclick="App.toggleVoice()" ${props.disabled ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
           <button x btn btn-accent id="btn-send" ${props.disabled ? 'disabled' : ''}>
             <xt>Send</xt>
           </button>
@@ -205,12 +214,24 @@ const ASX = {
         <div row gap="2" align-center>
           <select x input style="flex: 1;" id="model-select">
             ${ModelManager.getAll().map(model => `
-              <option value="${model.id}">${model.name}</option>
+              <option value="${model.id}">${model.name} ${model.provider ? '(' + model.provider + ')' : ''}</option>
             `).join('')}
           </select>
-          <button x btn onclick="App.showView('settings')">
-            <xt>Add Model</xt>
+          <button x btn onclick="App.toggleAgentTeam()" id="btn-agent-team" title="Multi-agent mode">
+            <xt>👥 Team</xt>
           </button>
+          <button x btn onclick="App.showView('settings')">
+            <xt>⚙️</xt>
+          </button>
+        </div>
+        <div id="voice-status" style="display: none; font-size: 12px; color: var(--accent);">
+          🎤 Listening...
+        </div>
+        <div id="agent-team-status" style="display: none;">
+          <div class="agent-team-badge">
+            <span class="agent-dot"></span>
+            Multi-agent mode active
+          </div>
         </div>
       </div>
     `);
@@ -384,11 +405,79 @@ const ASX = {
    ============================================================ */
 const App = {
   currentView: 'chat',
+  voiceEnabled: false,
+  agentTeamEnabled: false,
 
   init() {
     ASX.initComponents();
     this.checkAuth();
     this.setupEventListeners();
+    this.initVoice();
+  },
+
+  // Initialize voice interface
+  initVoice() {
+    if (typeof Voice !== 'undefined' && Voice.isSupported()) {
+      Voice.init();
+
+      // Set up voice input handler
+      VoiceInput.onResult = (result) => {
+        if (result.isFinal) {
+          const input = document.getElementById('chat-input');
+          if (input) {
+            input.value = result.transcript;
+          }
+          // Auto-send if confidence is high
+          if (result.confidence > 0.8) {
+            this.sendMessage();
+          }
+        }
+      };
+
+      VoiceInput.onStart = () => {
+        const btn = document.getElementById('btn-voice');
+        const status = document.getElementById('voice-status');
+        if (btn) btn.classList.add('listening');
+        if (status) status.style.display = 'block';
+      };
+
+      VoiceInput.onEnd = () => {
+        const btn = document.getElementById('btn-voice');
+        const status = document.getElementById('voice-status');
+        if (btn) btn.classList.remove('listening');
+        if (status) status.style.display = 'none';
+      };
+
+      console.log('Voice interface initialized');
+    }
+  },
+
+  // Toggle voice input
+  toggleVoice() {
+    if (typeof Voice === 'undefined') {
+      alert('Voice input is not supported in this browser');
+      return;
+    }
+
+    this.voiceEnabled = Voice.toggle();
+    return this.voiceEnabled;
+  },
+
+  // Toggle agent team mode
+  toggleAgentTeam() {
+    this.agentTeamEnabled = !this.agentTeamEnabled;
+
+    const status = document.getElementById('agent-team-status');
+    const btn = document.getElementById('btn-agent-team');
+
+    if (status) {
+      status.style.display = this.agentTeamEnabled ? 'block' : 'none';
+    }
+    if (btn) {
+      btn.style.background = this.agentTeamEnabled ? 'var(--accent)' : '';
+    }
+
+    return this.agentTeamEnabled;
   },
 
   checkAuth() {
@@ -485,9 +574,33 @@ const App = {
     input.value = '';
     this.render();
 
-    // Generate AI response using K'UHUL
     try {
-      const response = await AI.generateResponse(message, modelId);
+      let response;
+
+      // Check if agent team mode is enabled
+      if (this.agentTeamEnabled && typeof AgentFusion !== 'undefined') {
+        // Use multi-agent fusion
+        const result = await AgentFusion.quickTeam(
+          ['assistant', 'analyst', 'coder'],
+          message,
+          { strategy: 'weighted' }
+        );
+        response = result.content;
+
+        // Optionally speak the response
+        if (this.voiceEnabled && typeof VoiceOutput !== 'undefined') {
+          VoiceOutput.speak(response.substring(0, 500)); // Limit speech length
+        }
+      } else {
+        // Single agent response
+        response = await AI.generateResponse(message, modelId);
+
+        // Optionally speak the response
+        if (this.voiceEnabled && typeof VoiceOutput !== 'undefined') {
+          VoiceOutput.speak(response.substring(0, 500));
+        }
+      }
+
       ChatHistory.addMessage('assistant', response, modelId);
     } catch (error) {
       ChatHistory.addMessage('system', `Error: ${error.message}`);
