@@ -81,7 +81,10 @@ const SCXQ2 = {
       props: {
         user: User.current,
         models: ModelManager.getAll(),
-        huggingfaceToken: Settings.get('huggingfaceToken')
+        huggingfaceToken: Settings.get('huggingfaceToken'),
+        openaiApiKey: Settings.get('openaiApiKey'),
+        anthropicApiKey: Settings.get('anthropicApiKey'),
+        ollamaUrl: Settings.get('ollamaUrl')
       }
     }];
   },
@@ -221,6 +224,79 @@ const ASX = {
         </div>
 
         <div class="settings-section">
+          <div h2>AI Providers</div>
+          <div label style="margin-bottom: var(--s-2);">Configure your AI providers. At least one is required for real AI responses.</div>
+
+          <!-- OpenAI -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>OpenAI</div>
+              <span class="provider-status" id="openai-status">Not configured</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="openai-key" type="password"
+                     placeholder="sk-..." value="${props.openaiApiKey ? '••••••••' : ''}" />
+              <div row gap="2">
+                <select x input id="openai-model" style="flex: 1;">
+                  <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
+                  <option value="gpt-4o">GPT-4o (Best)</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('openai')">Save</button>
+                <button x btn onclick="Settings.testProvider('openai')">Test</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Anthropic -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>Anthropic</div>
+              <span class="provider-status" id="anthropic-status">Not configured</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="anthropic-key" type="password"
+                     placeholder="sk-ant-..." value="${props.anthropicApiKey ? '••••••••' : ''}" />
+              <div row gap="2">
+                <select x input id="anthropic-model" style="flex: 1;">
+                  <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                  <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast)</option>
+                  <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('anthropic')">Save</button>
+                <button x btn onclick="Settings.testProvider('anthropic')">Test</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ollama (Local) -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>Ollama (Local)</div>
+              <span class="provider-status" id="ollama-status">Checking...</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="ollama-url"
+                     placeholder="http://localhost:11434" value="${props.ollamaUrl || 'http://localhost:11434'}" />
+              <div row gap="2">
+                <select x input id="ollama-model" style="flex: 1;">
+                  <option value="llama3.2">Llama 3.2</option>
+                  <option value="llama3.1">Llama 3.1</option>
+                  <option value="mistral">Mistral</option>
+                  <option value="codellama">CodeLlama</option>
+                  <option value="phi3">Phi-3</option>
+                  <option value="gemma2">Gemma 2</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('ollama')">Save</button>
+                <button x btn onclick="Settings.testProvider('ollama')">Test</button>
+              </div>
+              <div label>Run locally with: <code>ollama serve</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <div h2>HuggingFace Integration</div>
           <div col gap="2">
             <input x input w-full id="hf-token" placeholder="HuggingFace Token"
@@ -230,33 +306,34 @@ const ASX = {
         </div>
 
         <div class="settings-section">
-          <div h2>Local Models</div>
+          <div h2>Configured Models</div>
           <div col gap="2">
             ${(props.models || []).map(model => `
               <div class="model-item">
                 <div row spread>
                   <div h3>${model.name}</div>
-                  <button x btn onclick="ModelManager.remove('${model.id}')">Remove</button>
+                  <div row gap="2">
+                    <span class="badge">${model.provider || 'local'}</span>
+                    <button x btn onclick="ModelManager.remove('${model.id}')">Remove</button>
+                  </div>
                 </div>
-                <div label>ID: ${model.id} | URL: ${model.url}</div>
+                <div label>${model.llmModel || model.url || 'Default model'}</div>
               </div>
             `).join('')}
           </div>
 
           <div col gap="2" style="margin-top: var(--s-3);">
-            <input x input id="model-name" placeholder="Model Name" />
-            <input x input id="model-url" placeholder="Model URL (HuggingFace or local)" />
-            <button x btn onclick="ModelManager.add()">Add Model</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div h2>Local REST API</div>
-          <div col gap="2">
+            <div h3>Add Custom Model</div>
+            <input x input id="model-name" placeholder="Display Name" />
             <div row gap="2">
-              <input x input flex-1 id="api-url" placeholder="http://localhost:11434" value="http://localhost:11434" />
-              <button x btn id="btn-test-api">Test Connection</button>
+              <select x input id="model-provider" style="flex: 1;">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+              <input x input id="model-id" placeholder="Model ID (e.g., gpt-4o)" style="flex: 2;" />
             </div>
+            <button x btn onclick="ModelManager.addWithProvider()">Add Model</button>
           </div>
         </div>
       </div>
@@ -604,40 +681,182 @@ const ChatHistory = {
 };
 
 /* ============================================================
-   AI SERVICE INTEGRATION
+   AI SERVICE INTEGRATION - Multi-Provider LLM Support
    ============================================================ */
 const AI = {
   isGenerating: false,
+  streamingContent: '',
+  initialized: false,
 
-  async generateResponse(message, modelId = null) {
+  // Initialize LLM providers from settings
+  async init() {
+    if (this.initialized) return;
+
+    try {
+      // Auto-configure from saved settings
+      if (typeof LLM !== 'undefined') {
+        await LLM.autoConfig();
+        this.initialized = true;
+        console.log('AI: Providers initialized:', LLM.getAvailableProviders());
+      }
+    } catch (error) {
+      console.warn('AI: Provider initialization warning:', error.message);
+    }
+  },
+
+  // Get current conversation context
+  getConversationContext() {
+    const chat = ChatHistory.getActive();
+    if (!chat || !chat.messages) return [];
+
+    // Convert to LLM format, limit to last 10 messages for context
+    return chat.messages.slice(-10).map(msg => ({
+      role: msg.role === 'system' ? 'system' : msg.role,
+      content: msg.content
+    }));
+  },
+
+  // Main response generation
+  async generateResponse(message, modelId = null, options = {}) {
     this.isGenerating = true;
+    this.streamingContent = '';
     App.render();
 
     try {
       const model = ModelManager.get(modelId) || ModelManager.getAll()[0];
 
-      if (!model) {
-        throw new Error('No models available');
+      // Check if LLM is available
+      if (typeof LLM === 'undefined' || LLM.getAvailableProviders().length === 0) {
+        // Fallback to simulated response if no providers configured
+        return await this.simulatedResponse(message);
       }
 
-      // Use K'UHUL agent spawning for AI response
-      const agent = await Ω.spawn('chat', {topic: 'conversation'});
+      // Determine provider from model
+      const providerType = model?.provider || LLM.activeProvider || 'ollama';
 
-      // Simulate AI response
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-      const responses = [
-        "I understand your question. Based on my knowledge, this is a complex subject that requires careful consideration of multiple factors.",
-        "That's an interesting point! From my perspective, there are several approaches we could take.",
-        "I appreciate you sharing this with me. Let me provide some insights that might help clarify the situation.",
-        "Based on the information you've provided, I can offer the following analysis and recommendations.",
-        "This is a common question. The solution typically involves considering these key aspects..."
+      // Build messages with context
+      const context = this.getConversationContext();
+      const messages = [
+        ...context,
+        { role: 'user', content: message }
       ];
 
-      return responses[Math.floor(Math.random() * responses.length)];
+      // Use streaming if enabled
+      if (options.stream !== false) {
+        return await this.streamResponse(messages, {
+          provider: providerType,
+          model: model?.llmModel || model?.name,
+          conversationId: ChatHistory.getActive()?.id
+        });
+      } else {
+        const response = await LLM.chat(messages, {
+          provider: providerType,
+          model: model?.llmModel || model?.name,
+          conversationId: ChatHistory.getActive()?.id
+        });
+        return response.content;
+      }
 
+    } catch (error) {
+      console.error('AI: Generation error:', error);
+
+      // Provide helpful error message
+      if (error.status === 401) {
+        throw new Error('Invalid API key. Please check your settings.');
+      } else if (error.message?.includes('fetch')) {
+        throw new Error('Cannot connect to AI service. Check your connection or API endpoint.');
+      } else {
+        throw new Error(error.message || 'Failed to generate response');
+      }
     } finally {
       this.isGenerating = false;
+    }
+  },
+
+  // Streaming response with live updates
+  async streamResponse(messages, options) {
+    return new Promise((resolve, reject) => {
+      LLM.chatStream(messages, options, (chunk, fullContent) => {
+        this.streamingContent = fullContent;
+        // Update UI with streaming content
+        this.updateStreamingUI(fullContent);
+      })
+      .then(response => resolve(response.content))
+      .catch(reject);
+    });
+  },
+
+  // Update UI during streaming
+  updateStreamingUI(content) {
+    const chatArea = document.getElementById('chat-area');
+    if (!chatArea) return;
+
+    // Find or create streaming message element
+    let streamingEl = chatArea.querySelector('.message-streaming');
+    if (!streamingEl) {
+      streamingEl = document.createElement('div');
+      streamingEl.className = 'message message-assistant message-streaming';
+      streamingEl.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">
+          <span class="streaming-indicator"></span> Assistant
+        </div>
+        <div class="streaming-content"></div>
+      `;
+      chatArea.appendChild(streamingEl);
+    }
+
+    const contentEl = streamingEl.querySelector('.streaming-content');
+    if (contentEl) {
+      contentEl.textContent = content;
+    }
+
+    // Auto-scroll
+    chatArea.scrollTop = chatArea.scrollHeight;
+  },
+
+  // Fallback simulated response when no providers available
+  async simulatedResponse(message) {
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+
+    const responses = [
+      "I understand your question. To connect to a real AI, please configure your API keys in Settings.",
+      "This is a simulated response. Add your OpenAI, Anthropic, or start Ollama locally for real AI conversations.",
+      "To enable AI responses, go to Settings and add your API key, or run Ollama locally on port 11434.",
+      "Configure an AI provider in Settings to get real responses. Supports OpenAI, Anthropic, and local Ollama.",
+      "No AI provider configured. Visit Settings to add your API key or connect to a local model."
+    ];
+
+    return responses[Math.floor(Math.random() * responses.length)];
+  },
+
+  // Test provider connection
+  async testProvider(providerType) {
+    if (typeof LLM === 'undefined') {
+      return { success: false, error: 'LLM module not loaded' };
+    }
+
+    const provider = LLM.getProvider(providerType);
+    if (!provider) {
+      return { success: false, error: 'Provider not initialized' };
+    }
+
+    return await provider.testConnection();
+  },
+
+  // Configure a specific provider
+  configureProvider(providerType, config) {
+    if (typeof LLM === 'undefined') {
+      console.error('LLM module not loaded');
+      return false;
+    }
+
+    try {
+      LLM.init(providerType, config);
+      this.initialized = true;
+      return true;
+    } catch (error) {
+      console.error('Failed to configure provider:', error);
+      return false;
     }
   }
 };
@@ -682,6 +901,44 @@ const ModelManager = {
 
     document.getElementById('model-name').value = '';
     document.getElementById('model-url').value = '';
+  },
+
+  // Add model with provider support
+  addWithProvider() {
+    const name = document.getElementById('model-name')?.value;
+    const provider = document.getElementById('model-provider')?.value;
+    const llmModel = document.getElementById('model-id')?.value;
+
+    if (!name) {
+      alert('Please provide a display name');
+      return;
+    }
+
+    const model = {
+      id: 'model_' + Date.now(),
+      name,
+      provider,
+      llmModel: llmModel || this.getDefaultModel(provider),
+      added: new Date().toISOString()
+    };
+
+    this.models.push(model);
+    this.saveToStorage();
+    App.render();
+
+    // Clear inputs
+    document.getElementById('model-name').value = '';
+    document.getElementById('model-id').value = '';
+  },
+
+  // Get default model for provider
+  getDefaultModel(provider) {
+    const defaults = {
+      openai: 'gpt-4o-mini',
+      anthropic: 'claude-3-5-sonnet-20241022',
+      ollama: 'llama3.2'
+    };
+    return defaults[provider] || 'default';
   },
 
   remove(id) {
@@ -740,11 +997,140 @@ const Settings = {
     }
   },
 
+  getAll() {
+    try {
+      return JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    } catch {
+      return {};
+    }
+  },
+
   saveHuggingFaceToken() {
     const token = document.getElementById('hf-token')?.value;
     if (token) {
       this.set('huggingfaceToken', token);
       alert('Token saved successfully!');
+    }
+  },
+
+  // Save provider configuration
+  async saveProvider(provider) {
+    let success = false;
+
+    switch (provider) {
+      case 'openai': {
+        const keyInput = document.getElementById('openai-key');
+        const key = keyInput?.value;
+        // Only save if it's a new key (not masked)
+        if (key && !key.includes('••')) {
+          this.set('openaiApiKey', key);
+          const model = document.getElementById('openai-model')?.value;
+          this.set('openaiModel', model);
+
+          // Initialize provider
+          if (typeof LLM !== 'undefined') {
+            LLM.init('openai', { apiKey: key, model });
+            success = true;
+          }
+        } else if (this.get('openaiApiKey')) {
+          success = true; // Already configured
+        }
+        break;
+      }
+
+      case 'anthropic': {
+        const keyInput = document.getElementById('anthropic-key');
+        const key = keyInput?.value;
+        if (key && !key.includes('••')) {
+          this.set('anthropicApiKey', key);
+          const model = document.getElementById('anthropic-model')?.value;
+          this.set('anthropicModel', model);
+
+          if (typeof LLM !== 'undefined') {
+            LLM.init('anthropic', { apiKey: key, model });
+            success = true;
+          }
+        } else if (this.get('anthropicApiKey')) {
+          success = true;
+        }
+        break;
+      }
+
+      case 'ollama': {
+        const url = document.getElementById('ollama-url')?.value || 'http://localhost:11434';
+        this.set('ollamaUrl', url);
+        const model = document.getElementById('ollama-model')?.value;
+        this.set('ollamaModel', model);
+
+        if (typeof LLM !== 'undefined') {
+          LLM.init('ollama', { baseUrl: url, model });
+          success = true;
+        }
+        break;
+      }
+    }
+
+    if (success) {
+      this.updateProviderStatus(provider, 'Configured', 'success');
+      alert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} provider saved!`);
+    } else {
+      alert('Please enter a valid API key');
+    }
+
+    return success;
+  },
+
+  // Test provider connection
+  async testProvider(provider) {
+    this.updateProviderStatus(provider, 'Testing...', 'testing');
+
+    // First save the provider if needed
+    await this.saveProvider(provider);
+
+    const result = await AI.testProvider(provider);
+
+    if (result.success) {
+      this.updateProviderStatus(provider, 'Connected', 'success');
+      alert(`${provider} connection successful!`);
+    } else {
+      this.updateProviderStatus(provider, 'Failed', 'error');
+      alert(`${provider} connection failed: ${result.error}`);
+    }
+
+    return result;
+  },
+
+  // Update provider status in UI
+  updateProviderStatus(provider, status, state) {
+    const statusEl = document.getElementById(`${provider}-status`);
+    if (statusEl) {
+      statusEl.textContent = status;
+      statusEl.className = `provider-status provider-${state}`;
+    }
+  },
+
+  // Check all provider statuses on load
+  async checkProviderStatuses() {
+    // Check OpenAI
+    if (this.get('openaiApiKey')) {
+      this.updateProviderStatus('openai', 'Configured', 'success');
+    }
+
+    // Check Anthropic
+    if (this.get('anthropicApiKey')) {
+      this.updateProviderStatus('anthropic', 'Configured', 'success');
+    }
+
+    // Check Ollama (always try to connect)
+    try {
+      const response = await fetch(`${this.get('ollamaUrl') || 'http://localhost:11434'}/api/tags`);
+      if (response.ok) {
+        this.updateProviderStatus('ollama', 'Running', 'success');
+      } else {
+        this.updateProviderStatus('ollama', 'Not running', 'warning');
+      }
+    } catch {
+      this.updateProviderStatus('ollama', 'Not running', 'warning');
     }
   }
 };
@@ -752,7 +1138,7 @@ const Settings = {
 /* ============================================================
    INITIALIZATION
    ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Check for existing user session
   try {
     const savedUser = localStorage.getItem('mx2lm_current_user');
@@ -768,6 +1154,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize models
   ModelManager.loadFromStorage();
+
+  // Initialize AI providers
+  await AI.init();
 
   // Setup auth event listeners
   document.getElementById('btn-google-auth')?.addEventListener('click', () => {
@@ -787,6 +1176,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the application
   App.init();
+
+  // Check provider statuses after a brief delay
+  setTimeout(() => Settings.checkProviderStatuses(), 500);
 });
 
 console.log('MX2LM CHAT APPLICATION - READY');
+console.log('Multi-Provider LLM Support: OpenAI, Anthropic, Ollama');
