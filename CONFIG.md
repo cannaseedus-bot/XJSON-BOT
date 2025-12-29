@@ -625,7 +625,24 @@ GET /api/chat.php?action=status
 
 ## MX2LM PHP Library (mx2lm.app)
 
-> **Note:** This PHP library is specific to the mx2lm.app cPanel deployment. If you don't have a PHP server, see the **Google Apps Script** alternative below.
+> **Shared Server:** These PHP library files are hosted on mx2lm.app (shared server) and **available for community use** until further notice. The stack may evolve, so consider adding **GAS for a bigger personal mesh** with guaranteed personal control.
+
+### Access Policy
+
+The mx2lm.app PHP endpoints are **shared for now** - you can use them directly:
+- `https://mx2lm.app/api/stream.php` - SSE streaming
+- `https://mx2lm.app/api/chat.php` - REST chat API
+- `https://mx2lm.app/lib/*` - Library files
+
+**But for long-term stability:** Set up your own GAS backend as a personal fallback.
+
+### Recommendation: Hybrid Approach
+
+For maximum flexibility, combine shared PHP with personal GAS:
+- **PHP** (mx2lm.app shared) - High-performance, MySQL-backed, community access
+- **GAS** (your own) - Personal mesh node, guaranteed control, CDN-like backup
+
+This gives users **cPanel-like control with FTP access equivalent** through Google Drive.
 
 ### Library Location
 ```
@@ -680,13 +697,62 @@ Browser (XJSON-BOT)
 
 > **For users without PHP/cPanel:** Google Apps Script (GAS) provides free serverless backend functionality with Google Sheets as database.
 
-### Why GAS?
+### Why GAS? - Personal Mesh Control
 
-- **Free** - No hosting costs
+GAS gives you **personal control** over your data backend - like having your own CDN for non-production sites:
+
+- **Free** - No hosting costs, unlimited potential
 - **No server needed** - Runs on Google's infrastructure
-- **Google Sheets as DB** - Easy to view/edit data
+- **Google Sheets as DB** - Easy to view/edit data directly
 - **HTTPS built-in** - Secure by default
 - **Easy deployment** - Deploy as web app in clicks
+- **Personal Mesh** - Each user controls their own backend node
+- **cPanel-like Access** - Full control without FTP/SSH complexity
+
+### Mesh Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    XJSON-BOT MESH                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│   User A (GAS)        User B (GAS)        User C (GAS) │
+│   ┌──────────┐        ┌──────────┐        ┌──────────┐ │
+│   │ Sheet DB │        │ Sheet DB │        │ Sheet DB │ │
+│   │ Personal │        │ Personal │        │ Personal │ │
+│   └────┬─────┘        └────┬─────┘        └────┬─────┘ │
+│        │                   │                   │        │
+│        └───────────────────┼───────────────────┘        │
+│                            │                            │
+│                    ┌───────┴───────┐                   │
+│                    │  MX2LM.APP    │                   │
+│                    │  (Production) │                   │
+│                    │  PHP + MySQL  │                   │
+│                    └───────────────┘                   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Upcoming: Metering API
+
+> **Coming Soon:** API-based metering system for usage tracking and resource allocation.
+
+```javascript
+// Future metering integration
+const meter = {
+  endpoint: 'https://mx2lm.app/api/meter',
+  track: async (userId, usage) => {
+    // Track GAS backend usage
+    // Enables: quotas, analytics, mesh coordination
+  }
+};
+```
+
+This will provide:
+- **Usage tracking** across your personal GAS backend
+- **Mesh coordination** between personal and production backends
+- **cPanel-like dashboard** for resource monitoring
+- **FTP-equivalent access** through Google Drive integration
 
 ### Setting Up GAS Backend
 
