@@ -705,16 +705,14 @@ const User = {
 };
 
 /* ============================================================
-   CHAT HISTORY MANAGEMENT
+   CHAT HISTORY MANAGEMENT - KQL Integrated
    ============================================================ */
 const ChatHistory = {
   chats: [],
   activeChatId: null,
+  loaded: false,
 
   getAll() {
-    if (this.chats.length === 0) {
-      this.loadFromStorage();
-    }
     return this.chats;
   },
 
@@ -735,6 +733,7 @@ const ChatHistory = {
       id: 'chat_' + Date.now(),
       title: 'New Chat',
       messages: [],
+      userId: User.current?.id || 'local',
       created: new Date().toISOString(),
       updated: new Date().toISOString()
     };
@@ -742,14 +741,20 @@ const ChatHistory = {
     this.chats.unshift(chat);
     this.activeChatId = chat.id;
     this.saveToStorage();
+
+    // Log event
+    Storage.logEvent('chat_created', { chatId: chat.id });
+
     return chat;
   },
 
-  addMessage(role, content, model = null) {
+  async addMessage(role, content, model = null) {
     const chat = this.getActive();
     if (!chat) return;
 
     const message = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      chatId: chat.id,
       role,
       content,
       model,
@@ -764,32 +769,86 @@ const ChatHistory = {
       chat.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
     }
 
-    this.saveToStorage();
+    // Save to storage
+    await this.saveToStorage();
+
+    // Save message separately for KQL
+    if (Storage.useKQL) {
+      await Storage.saveMessage(message);
+    }
+
+    // Store RLHF data for learning
+    if (role === 'assistant' && Storage.useKQL) {
+      await Storage.storeRLHF('response', {
+        prompt: chat.messages[chat.messages.length - 2]?.content,
+        response: content,
+        model
+      }, 0); // Rating 0 = unrated, can be updated later
+    }
   },
 
-  loadFromStorage() {
+  async loadFromStorage() {
+    if (this.loaded) return;
+
     try {
-      const saved = localStorage.getItem('mx2lm_chat_history');
-      if (saved) {
-        const data = JSON.parse(saved);
-        this.chats = data.chats || [];
-        this.activeChatId = data.activeChatId;
+      if (Storage.useKQL) {
+        // Load from KQL
+        const chats = await Storage.getChats(User.current?.id);
+        if (chats && chats.length > 0) {
+          this.chats = chats;
+          // Load messages for each chat
+          for (const chat of this.chats) {
+            if (!chat.messages || chat.messages.length === 0) {
+              chat.messages = await Storage.getMessages(chat.id);
+            }
+          }
+        }
+        this.activeChatId = await Storage.getSetting('active_chat_id');
+      } else {
+        // localStorage fallback
+        const saved = localStorage.getItem('mx2lm_chat_history');
+        if (saved) {
+          const data = JSON.parse(saved);
+          this.chats = data.chats || [];
+          this.activeChatId = data.activeChatId;
+        }
       }
 
       if (this.chats.length === 0) {
         this.createNew();
       }
-    } catch {
+
+      this.loaded = true;
+    } catch (error) {
+      console.warn('ChatHistory: Load error:', error);
       this.createNew();
+      this.loaded = true;
     }
   },
 
-  saveToStorage() {
-    const data = {
-      chats: this.chats,
-      activeChatId: this.activeChatId
-    };
-    localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+  async saveToStorage() {
+    try {
+      if (Storage.useKQL) {
+        // Save active chat to KQL
+        const activeChat = this.getActive();
+        if (activeChat) {
+          await Storage.saveChat(activeChat);
+        }
+        await Storage.setSetting('active_chat_id', this.activeChatId);
+      } else {
+        // localStorage fallback
+        const data = {
+          chats: this.chats,
+          activeChatId: this.activeChatId
+        };
+        localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+      }
+    } catch (error) {
+      console.warn('ChatHistory: Save error:', error);
+      // Always fallback to localStorage
+      const data = { chats: this.chats, activeChatId: this.activeChatId };
+      localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+    }
   }
 };
 
@@ -975,15 +1034,13 @@ const AI = {
 };
 
 /* ============================================================
-   MODEL MANAGEMENT
+   MODEL MANAGEMENT - KQL Integrated
    ============================================================ */
 const ModelManager = {
   models: [],
+  loaded: false,
 
   getAll() {
-    if (this.models.length === 0) {
-      this.loadFromStorage();
-    }
     return this.models;
   },
 
@@ -991,7 +1048,7 @@ const ModelManager = {
     return this.models.find(model => model.id === id);
   },
 
-  add() {
+  async add() {
     const name = document.getElementById('model-name')?.value;
     const url = document.getElementById('model-url')?.value;
 
@@ -1009,15 +1066,18 @@ const ModelManager = {
     };
 
     this.models.push(model);
-    this.saveToStorage();
+    await this.saveToStorage();
     App.render();
 
     document.getElementById('model-name').value = '';
     document.getElementById('model-url').value = '';
+
+    // Log event
+    Storage.logEvent('model_added', { modelId: model.id, name: model.name });
   },
 
   // Add model with provider support
-  addWithProvider() {
+  async addWithProvider() {
     const name = document.getElementById('model-name')?.value;
     const provider = document.getElementById('model-provider')?.value;
     const llmModel = document.getElementById('model-id')?.value;
@@ -1036,12 +1096,15 @@ const ModelManager = {
     };
 
     this.models.push(model);
-    this.saveToStorage();
+    await this.saveToStorage();
     App.render();
 
     // Clear inputs
     document.getElementById('model-name').value = '';
     document.getElementById('model-id').value = '';
+
+    // Log event
+    Storage.logEvent('model_added', { modelId: model.id, provider, llmModel: model.llmModel });
   },
 
   // Get default model for provider
@@ -1054,17 +1117,29 @@ const ModelManager = {
     return defaults[provider] || 'default';
   },
 
-  remove(id) {
+  async remove(id) {
     this.models = this.models.filter(model => model.id !== id);
-    this.saveToStorage();
+    await this.saveToStorage();
     App.render();
+
+    // Log event
+    Storage.logEvent('model_removed', { modelId: id });
   },
 
-  loadFromStorage() {
+  async loadFromStorage() {
+    if (this.loaded) return;
+
     try {
-      const saved = localStorage.getItem('mx2lm_models');
-      if (saved) {
-        this.models = JSON.parse(saved);
+      if (Storage.useKQL) {
+        const models = await Storage.getModels();
+        if (models && models.length > 0) {
+          this.models = models;
+        }
+      } else {
+        const saved = localStorage.getItem('mx2lm_models');
+        if (saved) {
+          this.models = JSON.parse(saved);
+        }
       }
 
       if (this.models.length === 0) {
@@ -1072,17 +1147,40 @@ const ModelManager = {
           id: 'default_model',
           name: 'Local AI',
           url: 'http://localhost:11434',
+          provider: 'ollama',
+          llmModel: 'llama3.2',
           type: 'local',
           added: new Date().toISOString()
         });
       }
-    } catch {
-      this.models = [];
+
+      this.loaded = true;
+    } catch (error) {
+      console.warn('ModelManager: Load error:', error);
+      this.models = [{
+        id: 'default_model',
+        name: 'Local AI',
+        provider: 'ollama',
+        llmModel: 'llama3.2',
+        added: new Date().toISOString()
+      }];
+      this.loaded = true;
     }
   },
 
-  saveToStorage() {
-    localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+  async saveToStorage() {
+    try {
+      if (Storage.useKQL) {
+        for (const model of this.models) {
+          await Storage.saveModel(model);
+        }
+      } else {
+        localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+      }
+    } catch (error) {
+      console.warn('ModelManager: Save error:', error);
+      localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+    }
   }
 };
 
@@ -1249,24 +1347,241 @@ const Settings = {
 };
 
 /* ============================================================
+   KQL STORAGE LAYER - Backend Integration
+   ============================================================ */
+const Storage = {
+  useKQL: false,
+  initialized: false,
+
+  // Initialize KQL backend
+  async init() {
+    if (this.initialized) return;
+
+    try {
+      if (typeof KQL !== 'undefined') {
+        await KQL.init();
+        this.useKQL = true;
+        console.log('Storage: KQL backend initialized');
+
+        // Migrate localStorage to KQL if needed
+        await this.migrateFromLocalStorage();
+      }
+    } catch (error) {
+      console.warn('Storage: KQL init failed, using localStorage fallback:', error);
+      this.useKQL = false;
+    }
+
+    this.initialized = true;
+  },
+
+  // Migrate existing localStorage data to KQL
+  async migrateFromLocalStorage() {
+    if (!this.useKQL) return;
+
+    try {
+      // Check if migration already done
+      const migrated = await KQL.getSetting('localStorage_migrated');
+      if (migrated) return;
+
+      console.log('Storage: Migrating localStorage to KQL...');
+
+      // Migrate user
+      const savedUser = localStorage.getItem('mx2lm_current_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        await KQL.insert('settings', { key: 'current_user', value: user, updated: Date.now() });
+      }
+
+      // Migrate chat history
+      const chatData = localStorage.getItem('mx2lm_chat_history');
+      if (chatData) {
+        const data = JSON.parse(chatData);
+        for (const chat of (data.chats || [])) {
+          await KQL.saveChat(chat);
+          for (const msg of (chat.messages || [])) {
+            await KQL.saveMessage({ ...msg, chatId: chat.id });
+          }
+        }
+        if (data.activeChatId) {
+          await KQL.setSetting('active_chat_id', data.activeChatId);
+        }
+      }
+
+      // Migrate models
+      const modelsData = localStorage.getItem('mx2lm_models');
+      if (modelsData) {
+        const models = JSON.parse(modelsData);
+        for (const model of models) {
+          await KQL.saveModel(model);
+        }
+      }
+
+      // Migrate settings
+      const settings = localStorage.getItem('mx2lm_settings');
+      if (settings) {
+        const settingsObj = JSON.parse(settings);
+        for (const [key, value] of Object.entries(settingsObj)) {
+          await KQL.setSetting(key, value);
+        }
+      }
+
+      // Mark migration complete
+      await KQL.setSetting('localStorage_migrated', true);
+      console.log('Storage: Migration complete');
+
+      // Log event
+      await KQL.logEvent('migration', { from: 'localStorage', to: 'KQL' }, 'system');
+    } catch (error) {
+      console.warn('Storage: Migration warning:', error);
+    }
+  },
+
+  // Generic get
+  async get(store, key) {
+    if (this.useKQL) {
+      return KQL.get(store, key);
+    }
+    // localStorage fallback
+    const data = localStorage.getItem(`mx2lm_${store}`);
+    return data ? JSON.parse(data) : null;
+  },
+
+  // Generic set
+  async set(store, key, value) {
+    if (this.useKQL) {
+      return KQL.insert(store, { key, value, updated: Date.now() });
+    }
+    // localStorage fallback
+    localStorage.setItem(`mx2lm_${store}`, JSON.stringify(value));
+  },
+
+  // Settings helpers
+  async getSetting(key) {
+    if (this.useKQL) {
+      return KQL.getSetting(key);
+    }
+    const settings = JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    return settings[key];
+  },
+
+  async setSetting(key, value) {
+    if (this.useKQL) {
+      return KQL.setSetting(key, value);
+    }
+    const settings = JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    settings[key] = value;
+    localStorage.setItem('mx2lm_settings', JSON.stringify(settings));
+  },
+
+  // Chat helpers
+  async getChats(userId) {
+    if (this.useKQL) {
+      return KQL.getChats(userId);
+    }
+    const data = JSON.parse(localStorage.getItem('mx2lm_chat_history') || '{}');
+    return data.chats || [];
+  },
+
+  async saveChat(chat) {
+    if (this.useKQL) {
+      return KQL.saveChat(chat);
+    }
+    // localStorage handled by ChatHistory.saveToStorage()
+  },
+
+  async getMessages(chatId) {
+    if (this.useKQL) {
+      return KQL.getMessages(chatId);
+    }
+    // For localStorage, messages are embedded in chat
+    return [];
+  },
+
+  async saveMessage(message) {
+    if (this.useKQL) {
+      return KQL.saveMessage(message);
+    }
+    // localStorage handled by ChatHistory.saveToStorage()
+  },
+
+  // Model helpers
+  async getModels() {
+    if (this.useKQL) {
+      return KQL.getModels();
+    }
+    return JSON.parse(localStorage.getItem('mx2lm_models') || '[]');
+  },
+
+  async saveModel(model) {
+    if (this.useKQL) {
+      return KQL.saveModel(model);
+    }
+    // localStorage handled by ModelManager.saveToStorage()
+  },
+
+  // Log event
+  async logEvent(type, data, source = 'user') {
+    if (this.useKQL) {
+      return KQL.logEvent(type, data, source);
+    }
+    // localStorage fallback - just console log
+    console.log(`[Event] ${type}:`, data);
+  },
+
+  // Memory operations (KQL-only features)
+  async remember(key, value, category = 'general', confidence = 1.0) {
+    if (this.useKQL) {
+      return KQL.remember(key, value, category, confidence);
+    }
+    // No localStorage fallback for memory
+    console.log('Memory: KQL required for memory operations');
+  },
+
+  async recall(key) {
+    if (this.useKQL) {
+      return KQL.recall(key);
+    }
+    return null;
+  },
+
+  // RLHF (KQL-only)
+  async storeRLHF(type, data, rating) {
+    if (this.useKQL) {
+      return KQL.storeRLHF(type, data, rating);
+    }
+    console.log('RLHF: KQL required for RLHF operations');
+  }
+};
+
+/* ============================================================
    INITIALIZATION
    ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize KQL storage backend first
+  await Storage.init();
+
   // Check for existing user session
   try {
-    const savedUser = localStorage.getItem('mx2lm_current_user');
-    if (savedUser) {
-      User.current = JSON.parse(savedUser);
+    if (Storage.useKQL) {
+      const savedUser = await Storage.getSetting('current_user');
+      if (savedUser) {
+        User.current = savedUser;
+      }
+    } else {
+      const savedUser = localStorage.getItem('mx2lm_current_user');
+      if (savedUser) {
+        User.current = JSON.parse(savedUser);
+      }
     }
   } catch (e) {
     console.log('No existing user session');
   }
 
   // Initialize chat history
-  ChatHistory.loadFromStorage();
+  await ChatHistory.loadFromStorage();
 
   // Initialize models
-  ModelManager.loadFromStorage();
+  await ModelManager.loadFromStorage();
 
   // Initialize AI providers
   await AI.init();
@@ -1292,7 +1607,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Check provider statuses after a brief delay
   setTimeout(() => Settings.checkProviderStatuses(), 500);
+
+  // Log app start event
+  await Storage.logEvent('app_start', { version: '2.0', backend: Storage.useKQL ? 'KQL' : 'localStorage' });
 });
 
 console.log('MX2LM CHAT APPLICATION - READY');
 console.log('Multi-Provider LLM Support: OpenAI, Anthropic, Ollama');
+console.log('Backend: KQL v1.0 (IndexedDB + optional MySQL)');
