@@ -492,3 +492,203 @@ const AppConfig = {
 ## Contact
 
 For configuration help, see the main README.md or open an issue.
+
+---
+
+## PHP API Endpoints
+
+XJSON-BOT includes PHP API endpoints for server-side AI processing and KQL persistence.
+
+### Endpoint Structure
+
+```
+public_html/
+├── api/
+│   ├── chat.php      # REST API for chat (non-streaming)
+│   ├── stream.php    # SSE streaming endpoint
+│   └── kql/
+│       └── index.php # KQL database operations
+│
+└── cline-jars/       # Java gRPC streaming backend (optional)
+    ├── Main.java
+    ├── stream.php
+    └── *.jar
+```
+
+### stream.php - Server-Sent Events
+
+Streaming endpoint for real-time AI responses.
+
+**Request:**
+```javascript
+const eventSource = new EventSource('/api/stream.php?' + new URLSearchParams({
+  message: 'Hello AI',
+  model: 'llama3',
+  provider: 'ollama',
+  chatId: 'chat_123',
+  userId: 'user_456'
+}));
+
+eventSource.addEventListener('connect', (e) => {
+  console.log('Connected:', JSON.parse(e.data));
+});
+
+eventSource.addEventListener('message', (e) => {
+  const chunk = JSON.parse(e.data);
+  if (chunk.type === 'chunk') {
+    appendToChat(chunk.content);
+  }
+});
+
+eventSource.addEventListener('complete', (e) => {
+  console.log('Done:', JSON.parse(e.data));
+  eventSource.close();
+});
+```
+
+**Events:**
+| Event | Data | Description |
+|-------|------|-------------|
+| `connect` | `{status, model, timestamp}` | Connection established |
+| `message` | `{type: 'thinking', content, progress}` | Processing status |
+| `message` | `{type: 'chunk', content, chunk_index}` | Response chunk |
+| `complete` | `{tokens_estimated, processing_time}` | Generation complete |
+| `end` | `{status: 'stream_complete'}` | Stream closed |
+
+### chat.php - REST API
+
+Non-streaming chat endpoint with full KQL integration.
+
+**Send Message:**
+```bash
+POST /api/chat.php
+Content-Type: application/json
+
+{
+  "message": "Hello AI",
+  "model": "llama3",
+  "provider": "ollama",
+  "chatId": "chat_123",
+  "userId": "user_456"
+}
+
+# Response:
+{
+  "response": "Hello! How can I help you?",
+  "model": "llama3",
+  "provider": "ollama",
+  "tokens_estimated": 42,
+  "processing_time": 1234
+}
+```
+
+**Get Chat History:**
+```bash
+GET /api/chat.php?action=history&chatId=chat_123
+
+# Response:
+{
+  "messages": [
+    {"id": "msg_1", "role": "user", "content": "Hello", "timestamp": 1234567890},
+    {"id": "msg_2", "role": "assistant", "content": "Hi!", "timestamp": 1234567891}
+  ]
+}
+```
+
+**Get User Chats:**
+```bash
+GET /api/chat.php?action=chats&userId=user_456
+
+# Response:
+{
+  "chats": [
+    {"id": "chat_123", "title": "New Chat", "updated": 1234567890}
+  ]
+}
+```
+
+**Check Status:**
+```bash
+GET /api/chat.php?action=status
+
+# Response:
+{
+  "status": "ok",
+  "version": "2.0.0",
+  "kql": "connected",
+  "providers": ["openai", "anthropic", "ollama", "local"],
+  "ollama": "running"
+}
+```
+
+---
+
+## Java gRPC Backend (cline-jars)
+
+For high-performance streaming, XJSON-BOT can connect to a Java gRPC backend.
+
+### Location
+```
+https://mx2lm.app/cline-jars/
+```
+
+### Architecture
+```
+Browser ──SSE──> stream.php ──gRPC──> Java/Netty
+                     │
+                     └──> KQL/MySQL (persistence)
+```
+
+### Configuration
+
+Add Java backend to server config:
+
+```php
+// SECURE_FOLDER/kql-api-config.php
+return [
+    // ... other config ...
+
+    'java' => [
+        'enabled' => true,
+        'endpoint' => 'http://localhost:8080',
+        'grpc_port' => 9090
+    ]
+];
+```
+
+### Frontend Config
+
+```json
+{
+  "streaming": {
+    "backend": "java-grpc",
+    "endpoint": "https://mx2lm.app/cline-jars/stream.php",
+    "protocol": "sse",
+    "fallback": "php"
+  }
+}
+```
+
+### Java Dependencies (cline-jars)
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| grpc-netty | 1.64.0 | gRPC transport |
+| netty-* | 4.1.108 | Async I/O |
+| protobuf-java | 3.25.1 | Message serialization |
+| gson | 2.10.1 | JSON handling |
+| guava | 32.1.3 | Utilities |
+
+### Starting Java Backend
+
+```bash
+cd cline-jars
+java -cp ".:lib/*" Main
+```
+
+Or use the start script:
+```bash
+cat start-chat-api.txt
+# java -cp ".:lib/*" Main --port 8080 --grpc 9090
+```
+
