@@ -1,0 +1,20 @@
+# Block access to sensitive config files
+# Works on Apache/LiteSpeed servers
+
+# Deny access to all dot-files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Deny access to config files with sensitive data
+<FilesMatch "(config\.local\.json|\.config\.json|secrets\.json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Allow only config.json and config.example.json
+<FilesMatch "^config\.(json|example\.json)$">
+    Order deny,allow
+    Allow from all
+</FilesMatch>
