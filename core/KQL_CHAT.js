@@ -12,6 +12,7 @@
   const DB_NAME = 'asx_kql_chat';
   const DB_VERSION = 1;
   const REGISTRY_PATH = '../schemas/kql.model-registry.v1.json';
+  const MX2LM_API_BASE = 'https://mx2lm.app/api.php';
   let db = null;
   let modelRegistry = null;
 
@@ -218,16 +219,22 @@
       console.warn('[KQL] Registry load failed, using defaults:', e.message);
     }
 
-    // Fallback registry
+    // Fallback registry - MX2LM 11 production models
     modelRegistry = {
       models: [
-        { "@id": "asx://model/mx2lm.v1", name: "MX2LM", endpoint: "/api/inference/mx2lm", provider: "local", icon: "🧠", status: "active" },
-        { "@id": "asx://model/qwen.v1", name: "Qwen 2.5", endpoint: "/api/inference/qwen", provider: "huggingface", icon: "🌟", status: "active" },
-        { "@id": "asx://model/deepseek-r1.v1", name: "DeepSeek R1", endpoint: "/api/inference/deepseek", provider: "deepseek", icon: "🔮", status: "active" },
-        { "@id": "asx://model/ollama-local.v1", name: "Local (Ollama)", endpoint: "http://localhost:11434/api/generate", provider: "ollama", icon: "🦙", status: "active" },
-        { "@id": "asx://model/openai-gpt4.v1", name: "GPT-4o", endpoint: "https://api.openai.com/v1/chat/completions", provider: "openai", icon: "🤖", status: "active" }
+        { "@id": "asx://model/janus-pro.v1", id: "janus-pro", name: "Janus Pro", provider: "mx2lm", icon: "🧠", quantum_enhanced: true, status: "active" },
+        { "@id": "asx://model/janus-flow.v1", id: "janus-flow", name: "Janus Flow", provider: "mx2lm", icon: "⚡", quantum_enhanced: false, status: "active" },
+        { "@id": "asx://model/deepseek-r1.v1", id: "deepseek-r1", name: "DeepSeek R1", provider: "deepseek", icon: "🔮", quantum_enhanced: true, status: "active" },
+        { "@id": "asx://model/deepseek-coder.v1", id: "deepseek-coder", name: "DeepSeek Coder", provider: "deepseek", icon: "💻", quantum_enhanced: true, status: "active" },
+        { "@id": "asx://model/llama3.v1", id: "llama3", name: "Llama 3", provider: "meta", icon: "🦙", quantum_enhanced: false, status: "active" },
+        { "@id": "asx://model/mistral.v1", id: "mistral", name: "Mistral", provider: "mistral", icon: "🌪️", quantum_enhanced: false, status: "active" },
+        { "@id": "asx://model/codellama.v1", id: "codellama", name: "CodeLlama", provider: "meta", icon: "🦙", quantum_enhanced: false, status: "active" },
+        { "@id": "asx://model/qwen-coder.v1", id: "qwen-coder", name: "Qwen Coder", provider: "qwen", icon: "🌟", quantum_enhanced: false, status: "active" },
+        { "@id": "asx://model/cline-agent.v1", id: "cline-agent", name: "Cline Agent", provider: "mx2lm", icon: "🤖", quantum_enhanced: true, status: "active" },
+        { "@id": "asx://model/mx2-inference.v1", id: "mx2-inference", name: "MX2 Inference", provider: "mx2lm", icon: "⚙️", quantum_enhanced: true, status: "active" },
+        { "@id": "asx://model/kuhul-quantum.v1", id: "kuhul-quantum", name: "K'UHUL Quantum", provider: "mx2lm", icon: "⚛️", quantum_enhanced: true, status: "active" }
       ],
-      default_model: "asx://model/mx2lm.v1"
+      default_model: "janus-pro"
     };
     return modelRegistry;
   }
@@ -248,87 +255,72 @@
 
     // Find model in registry
     const modelDef = getModelById(model);
-    const endpoint = modelDef?.endpoint || '/api/inference/mx2lm';
-
-    const provider = modelDef?.provider || 'local';
+    const modelId = modelDef?.id || model;
     const modelName = modelDef?.name || model;
+    const provider = modelDef?.provider || 'mx2lm';
+    const isQuantum = modelDef?.quantum_enhanced || false;
+
+    // Build MX2LM API URL
+    const apiUrl = `${MX2LM_API_BASE}?route=chat&model=${encodeURIComponent(modelId)}`;
 
     try {
-      // Provider-specific routing
-      switch (provider) {
-        case 'ollama':
-          const ollamaRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: 'llama2', prompt, stream: false })
-          }).catch(() => null);
-
-          if (ollamaRes?.ok) {
-            const data = await ollamaRes.json();
-            return { content: data.response, tokens: data.eval_count || 0, provider };
+      // POST to MX2LM unified API
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Model': modelId,
+          'X-Quantum': isQuantum ? 'true' : 'false'
+        },
+        body: JSON.stringify({
+          message: prompt,
+          model: modelId,
+          options: {
+            temperature: modelDef?.parameters?.temperature || 0.7,
+            max_tokens: modelDef?.parameters?.max_tokens || 2000,
+            stream: false
           }
-          break;
+        })
+      }).catch(() => null);
 
-        case 'openai':
-          // Would use OPENAI_API_KEY from env
-          const openaiRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${window.OPENAI_API_KEY || ''}`
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [{ role: 'user', content: prompt }],
-              max_tokens: modelDef?.parameters?.max_tokens || 2048
-            })
-          }).catch(() => null);
+      if (response?.ok) {
+        const data = await response.json();
 
-          if (openaiRes?.ok) {
-            const data = await openaiRes.json();
-            return {
-              content: data.choices?.[0]?.message?.content || '',
-              tokens: data.usage?.total_tokens || 0,
-              provider
-            };
-          }
-          break;
+        // Parse MX2LM API response format
+        const content = data.response?.response ||
+                       data.response?.content ||
+                       data.response?.text ||
+                       data.response ||
+                       '';
 
-        case 'anthropic':
-          // Would use ANTHROPIC_API_KEY from env
-          break;
-
-        case 'deepseek':
-        case 'huggingface':
-        case 'local':
-        case 'custom':
-        default:
-          // Generic POST inference
-          const genericRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, model: modelName })
-          }).catch(() => null);
-
-          if (genericRes?.ok) {
-            const data = await genericRes.json();
-            return {
-              content: data.response || data.content || data.text || '',
-              tokens: data.tokens || data.eval_count || 0,
-              provider
-            };
-          }
+        return {
+          content: typeof content === 'string' ? content : JSON.stringify(content),
+          tokens: data.response?.tokens || data.tokens || 0,
+          provider,
+          model: modelName,
+          quantum_enhanced: isQuantum,
+          backend: 'mx2lm-unified-api-v7'
+        };
       }
 
-      // Fallback stub response
+      // API call failed - return informative stub
       return {
-        content: `[${modelName}] I received: "${prompt}". Provider: ${provider}. Endpoint: ${endpoint}`,
-        tokens: prompt.split(' ').length * 2,
+        content: `[${modelName}] Backend temporarily unavailable. Model: ${modelId}, Provider: ${provider}`,
+        tokens: 0,
         provider,
-        stub: true
+        model: modelName,
+        quantum_enhanced: isQuantum,
+        stub: true,
+        api_url: apiUrl
       };
     } catch (e) {
-      return { content: `[Error] Inference failed: ${e.message}`, tokens: 0, provider, error: true };
+      return {
+        content: `[Error] MX2LM API failed: ${e.message}`,
+        tokens: 0,
+        provider,
+        model: modelName,
+        error: true
+      };
     }
   }
 

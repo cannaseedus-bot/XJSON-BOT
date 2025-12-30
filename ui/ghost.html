@@ -501,11 +501,18 @@
           </div>
         </header>
 
-        <div class="model-pills" id="model-pills">
-          <div class="model-pill active" data-model="mx2lm">MX2LM</div>
-          <div class="model-pill" data-model="qwen">QWEN</div>
-          <div class="model-pill" data-model="deepseek">DeepSeek</div>
-          <div class="model-pill" data-model="local">Local</div>
+        <div class="model-pills" id="model-pills" style="max-height:80px;overflow-y:auto;flex-wrap:wrap;">
+          <div class="model-pill active" data-model="janus-pro" title="Quantum LLM">🧠 Janus Pro</div>
+          <div class="model-pill" data-model="janus-flow" title="Fast Streaming">⚡ Flow</div>
+          <div class="model-pill" data-model="deepseek-r1" title="Reasoning">🔮 R1</div>
+          <div class="model-pill" data-model="deepseek-coder" title="Code">💻 Coder</div>
+          <div class="model-pill" data-model="llama3" title="General">🦙 Llama3</div>
+          <div class="model-pill" data-model="mistral" title="Efficient">🌪️ Mistral</div>
+          <div class="model-pill" data-model="codellama" title="Code">🦙 CodeLlama</div>
+          <div class="model-pill" data-model="qwen-coder" title="Qwen Code">🌟 Qwen</div>
+          <div class="model-pill" data-model="cline-agent" title="Agentic">🤖 Cline</div>
+          <div class="model-pill" data-model="mx2-inference" title="Batch">⚙️ MX2</div>
+          <div class="model-pill" data-model="kuhul-quantum" title="Quantum Engine">⚛️ K'UHUL</div>
         </div>
 
         <div class="chat-body">
@@ -636,7 +643,7 @@
       });
 
       // KQL Chat State
-      let currentModel = 'mx2lm';
+      let currentModel = 'janus-pro';
       let currentChatId = `ghost_${Date.now()}`;
 
       // Model selection → KQL
