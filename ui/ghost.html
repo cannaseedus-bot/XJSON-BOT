@@ -521,6 +521,11 @@
               <span class="asx-btn-icon">➤</span>
             </button>
           </div>
+          <div class="chat-actions" style="display:flex;gap:6px;padding:6px 9px;border-top:1px solid rgba(30,64,175,0.4);">
+            <button class="asx-btn" id="btn-search" style="font-size:10px;padding:4px 10px;">🔍 Search</button>
+            <button class="asx-btn" id="btn-history" style="font-size:10px;padding:4px 10px;">📜 History</button>
+            <button class="asx-btn" id="btn-new-chat" style="font-size:10px;padding:4px 10px;">✨ New Chat</button>
+          </div>
         </div>
       </section>
     </main>
@@ -534,8 +539,9 @@
     <div class="ico" title="Settings">⚙️</div>
   </div>
 
-  <!-- SRP KERNEL -->
+  <!-- SRP KERNEL + KQL CHAT -->
   <script src="../core/SRP_KERNEL_MIN.js"></script>
+  <script src="../core/KQL_CHAT.js"></script>
   <script>
     /* G(HOST) Bootstrap — Wire SRP to Three-Panel Projection */
     (async function() {
@@ -629,15 +635,21 @@
         });
       });
 
-      // Model selection
+      // KQL Chat State
+      let currentModel = 'mx2lm';
+      let currentChatId = `ghost_${Date.now()}`;
+
+      // Model selection → KQL
       document.getElementById('model-pills').addEventListener('click', e => {
         const pill = e.target.closest('.model-pill');
         if (!pill) return;
         document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
+        currentModel = pill.dataset.model;
+        addChatMsg('system', `Model switched to <strong>${currentModel.toUpperCase()}</strong>`);
       });
 
-      // Chat
+      // Chat message renderer
       function addChatMsg(type, text) {
         const stream = document.getElementById('chat-stream');
         const msg = document.createElement('div');
@@ -645,21 +657,107 @@
         msg.innerHTML = text;
         stream.appendChild(msg);
         stream.scrollTop = stream.scrollHeight;
+        return msg;
+      }
+
+      // KQL-powered chat submit
+      async function submitChat(prompt) {
+        if (!prompt) return;
+
+        const input = document.getElementById('chat-input');
+        input.disabled = true;
+
+        // Show user message
+        addChatMsg('user', prompt);
+
+        // Show loading indicator
+        const loadingMsg = addChatMsg('assistant', '⏳ Thinking...');
+
+        // SRP event submission (if SRP is available)
+        if (typeof SRP !== 'undefined') {
+          await SRP.submit({
+            event_type: 'kql/infer',
+            payload: {
+              prompt,
+              model: currentModel,
+              chat_id: currentChatId,
+              tape: activeTape
+            }
+          });
+        }
+
+        // KQL inference query
+        try {
+          const result = await KQL.submit({
+            prompt,
+            model: currentModel,
+            chatId: currentChatId
+          });
+
+          if (result.ok) {
+            loadingMsg.innerHTML = result.assistant.content;
+            loadingMsg.innerHTML += `<br><small style="opacity:0.6">tokens: ${result.assistant.tokens || 0}</small>`;
+          } else {
+            loadingMsg.innerHTML = `<span style="color:#f87171">Error: ${result.error}</span>`;
+          }
+        } catch (err) {
+          loadingMsg.innerHTML = `<span style="color:#f87171">KQL Error: ${err.message}</span>`;
+        }
+
+        input.disabled = false;
+        input.focus();
       }
 
       document.getElementById('send-chat').addEventListener('click', () => {
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
-        if (!text) return;
-        addChatMsg('user', text);
         input.value = '';
-        setTimeout(() => {
-          addChatMsg('assistant', `Processing: "${text}" on tape "${activeTape}"`);
-        }, 500);
+        submitChat(text);
       });
 
       document.getElementById('chat-input').addEventListener('keypress', e => {
-        if (e.key === 'Enter') document.getElementById('send-chat').click();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('send-chat').click();
+        }
+      });
+
+      // KQL Action Buttons
+      document.getElementById('btn-search').addEventListener('click', async () => {
+        const term = prompt('Search messages:');
+        if (!term) return;
+        const result = await KQL.search(term, 20);
+        if (result.ok && result.count > 0) {
+          addChatMsg('system', `<strong>🔍 Search: "${term}"</strong> — ${result.count} results`);
+          result.data.slice(0, 5).forEach(msg => {
+            addChatMsg(msg.role, `<em style="opacity:0.7">[${new Date(msg.ts).toLocaleString()}]</em> ${msg.content}`);
+          });
+        } else {
+          addChatMsg('system', `No results for "${term}"`);
+        }
+      });
+
+      document.getElementById('btn-history').addEventListener('click', async () => {
+        const chats = await KQL.loadChats(10);
+        if (chats.ok && chats.data.length > 0) {
+          addChatMsg('system', `<strong>📜 Recent Chats</strong> (${chats.data.length})`);
+          chats.data.forEach(chat => {
+            addChatMsg('system', `• <code>${chat.id}</code> — ${new Date(chat.ts).toLocaleString()}`);
+          });
+        } else {
+          addChatMsg('system', 'No chat history found');
+        }
+      });
+
+      document.getElementById('btn-new-chat').addEventListener('click', () => {
+        currentChatId = `ghost_${Date.now()}`;
+        document.getElementById('chat-stream').innerHTML = `
+          <div class="chat-msg system">
+            <strong>✨ New Chat Started</strong><br>
+            Chat ID: <code>${currentChatId}</code>
+          </div>
+        `;
+        addChatMsg('system', 'SRP kernel active. Select a tape from the center panel.');
       });
 
       // Boot SRP with G(HOST) class
@@ -686,6 +784,7 @@
         }
       };
 
+      // Boot SRP kernel
       if (typeof SRP !== 'undefined') {
         await SRP.boot(ghostClass);
         document.getElementById('kernel-status').textContent = 'online';
@@ -697,6 +796,20 @@
           document.getElementById('editor-tick').textContent = SRP.state.tick;
         }, 5000);
       }
+
+      // Boot KQL chat system
+      if (typeof KQL !== 'undefined') {
+        await KQL.boot();
+        addChatMsg('system', 'KQL chat database initialized. History persisted to IndexedDB.');
+
+        // Load previous messages for this session
+        const history = await KQL.loadMessages(currentChatId, 20);
+        if (history.ok && history.data.length > 0) {
+          history.data.forEach(msg => addChatMsg(msg.role, msg.content));
+        }
+      }
+
+      console.log('[G(HOST)] Trinity Shell booted — SRP + KQL online');
     })();
   </script>
 </body>
