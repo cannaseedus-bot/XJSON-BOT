@@ -2,6 +2,13 @@
 
 Free serverless backend using Google Sheets as database.
 
+## Shards
+
+| File | Purpose | Artifact ID |
+|------|---------|-------------|
+| `Code.gs` | Chat API, models, memory, SCXQ2 | `XJSON_GAS_API_v1` |
+| `auth.gs` | Auth, sessions, per-user DB | `AUTH_IDB_KQL_SHEETS_GLOBAL_v5` |
+
 ## Why GAS?
 
 - **100% Free** - No hosting costs
@@ -79,6 +86,40 @@ console.log(data.choices[0].message.content);
 | `compress` | SCXQ2 compress | `data` |
 | `decompress` | SCXQ2 decompress | `data` |
 
+### Auth Actions (auth.gs)
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `securoLogin` | Google OAuth login | `idToken`, `app_id` |
+
+**SecuroLogin Response:**
+```json
+{
+  "ok": true,
+  "app_id": "global",
+  "identity": {
+    "external_id": "google_sub_id",
+    "email": "user@example.com",
+    "verified": true,
+    "name": "User Name",
+    "picture": "https://..."
+  },
+  "securoToken": "base64_payload.hmac_sig",
+  "apiKey": "key_uuid",
+  "db_json": {
+    "@schema": "asx://db/db.json.v1",
+    "users": [...],
+    "sessions": [...],
+    "api_keys": [...],
+    "apps": [...],
+    "events": [...],
+    "rlhf": [...]
+  },
+  "persistence": { "server": "google_sheets", "client": "indexeddb" },
+  "query": { "language": "kql.v1", "authority": "client" }
+}
+```
+
 ### GET Actions
 
 | Action | Description | Parameters |
@@ -90,7 +131,9 @@ console.log(data.choices[0].message.content);
 
 ## Data Storage
 
-Data is stored in Google Sheets:
+### Code.gs (Chat API)
+
+Data is stored in the active spreadsheet:
 
 | Sheet | Purpose |
 |-------|---------|
@@ -98,6 +141,19 @@ Data is stored in Google Sheets:
 | `Messages` | Chat messages |
 | `Memory` | K'UHUL memory |
 | `Usage` | Token usage logs |
+
+### auth.gs (Per-User Sheets)
+
+Each user gets their own spreadsheet (`ASX_USER_{external_id}`):
+
+| Sheet | Columns |
+|-------|---------|
+| `users` | `external_id`, `email`, `verified`, `name`, `picture`, `last_login` |
+| `sessions` | `securoToken`, `external_id`, `issued_at` |
+| `api_keys` | `key`, `owner`, `active`, `created`, `lastUsed` |
+| `apps` | `app_id`, `first_seen`, `last_seen` |
+| `events` | `event_id`, `app_id`, `type`, `timestamp`, `payload` |
+| `rlhf` | `id`, `app_id`, `model`, `score`, `timestamp`, `meta` |
 
 ## Limitations
 
@@ -116,6 +172,8 @@ Data is stored in Google Sheets:
 | Local models | ❌ | ❌ | ✅ (Janus) |
 | Persistence | Sheets | MySQL | SQLite/Postgres |
 | Offline | ❌ | ❌ | ✅ |
+| Auth (SecuroLink) | ✅ | ✅ | ✅ |
+| Per-user DB | ✅ (Sheets) | ✅ | ✅ |
 
 ## Security
 
