@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xjson-bot.dev/schemas/asx-image-inference.schema.json",
+  "title": "ASX Image Inference Request",
+  "description": "Image Inference Plane v1 request schema",
+  "type": "object",
+  "required": ["type", "id", "task"],
+  "properties": {
+    "type": {
+      "const": "asx-image-inference",
+      "description": "Image inference request type"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^img_(gen|understand|transform)_[0-9]+(_[a-z0-9]+)?$",
+      "description": "Unique image inference request ID"
+    },
+    "task": {
+      "enum": ["generate", "understand", "transform"],
+      "description": "Image inference task type"
+    },
+    "model": {
+      "type": "string",
+      "default": "janus-pro-7b",
+      "description": "Model identifier (e.g., janus-pro-7b, dall-e-3)"
+    },
+    "input": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Text prompt or image URL/base64"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Text prompt for generation or understanding"
+            },
+            "image": {
+              "type": "string",
+              "description": "Input image (URL or base64)"
+            },
+            "mask": {
+              "type": "string",
+              "description": "Mask image for inpainting (URL or base64)"
+            },
+            "negative_prompt": {
+              "type": "string",
+              "description": "Negative prompt for generation"
+            }
+          }
+        }
+      ],
+      "description": "Input data (text, image, or both)"
+    },
+    "output_format": {
+      "enum": ["url", "base64", "structured"],
+      "default": "base64",
+      "description": "Output format for generated images or structured data"
+    },
+    "size": {
+      "type": "string",
+      "pattern": "^\\d+x\\d+$",
+      "default": "1024x1024",
+      "description": "Output image dimensions"
+    },
+    "n": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 1,
+      "description": "Number of images to generate"
+    },
+    "quality": {
+      "enum": ["standard", "hd"],
+      "default": "standard",
+      "description": "Image quality level"
+    },
+    "style": {
+      "enum": ["natural", "vivid"],
+      "default": "natural",
+      "description": "Image style"
+    },
+    "schema": {
+      "type": "object",
+      "description": "JSON Schema for structured output (understanding task)"
+    },
+    "trace": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate execution trace"
+    }
+  },
+  "examples": [
+    {
+      "type": "asx-image-inference",
+      "id": "img_gen_1704067200000",
+      "task": "generate",
+      "model": "janus-pro-7b",
+      "input": {
+        "prompt": "A serene mountain landscape at sunset, digital art style"
+      },
+      "output_format": "base64",
+      "size": "1024x1024",
+      "n": 1
+    },
+    {
+      "type": "asx-image-inference",
+      "id": "img_understand_1704067200000",
+      "task": "understand",
+      "model": "janus-pro-7b",
+      "input": {
+        "image": "data:image/png;base64,...",
+        "prompt": "Describe what you see in this image"
+      },
+      "output_format": "structured",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "objects": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  ]
+}

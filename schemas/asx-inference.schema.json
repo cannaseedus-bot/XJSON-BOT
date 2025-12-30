@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xjson-bot.dev/schemas/asx-inference.schema.json",
+  "title": "ASX Inference Request",
+  "description": "Inference Plane v1 request schema for text completion",
+  "type": "object",
+  "required": ["type", "id", "model", "messages"],
+  "properties": {
+    "type": {
+      "const": "asx-inference",
+      "description": "Inference request type"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^infer_[0-9]+(_[a-z0-9]+)?$",
+      "description": "Unique inference request ID"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model identifier (e.g., gpt-4o-mini, deepseek-r1)"
+    },
+    "messages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "enum": ["system", "user", "assistant"],
+            "description": "Message role"
+          },
+          "content": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "enum": ["text", "image_url"] },
+                    "text": { "type": "string" },
+                    "image_url": {
+                      "type": "object",
+                      "properties": {
+                        "url": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            ],
+            "description": "Message content (text or multimodal)"
+          }
+        }
+      }
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 2,
+      "default": 0.7,
+      "description": "Sampling temperature"
+    },
+    "max_tokens": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 128000,
+      "default": 4096,
+      "description": "Maximum tokens to generate"
+    },
+    "stream": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable streaming response"
+    },
+    "trace": {
+      "type": "boolean",
+      "default": true,
+      "description": "Generate execution trace"
+    },
+    "routing": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "enum": ["task-based", "round-robin", "priority", "cost"],
+          "description": "Multi-brain routing strategy"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task": { "type": "string" },
+              "model": { "type": "string" },
+              "priority": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "description": "Multi-brain routing configuration"
+    },
+    "stop": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Stop sequences"
+    },
+    "presence_penalty": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2,
+      "default": 0
+    },
+    "frequency_penalty": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2,
+      "default": 0
+    }
+  },
+  "examples": [
+    {
+      "type": "asx-inference",
+      "id": "infer_1704067200000",
+      "model": "gpt-4o-mini",
+      "messages": [
+        { "role": "system", "content": "You are a helpful assistant." },
+        { "role": "user", "content": "Hello!" }
+      ],
+      "temperature": 0.7,
+      "max_tokens": 4096,
+      "stream": false,
+      "trace": true
+    }
+  ]
+}
