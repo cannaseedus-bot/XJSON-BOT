@@ -420,6 +420,107 @@ class XJSONBackend {
     return this.request('/v1/auth/logout', data);
   }
 
+  // ==================== API SHARD (Proxy/Inference/Mesh) ====================
+
+  /**
+   * Proxy request to registered provider
+   * @param {string} providerId - Registered provider ID
+   * @param {string} providerRoute - Route on the provider
+   * @param {object} options - Optional: method, query, headers, body
+   */
+  async proxy(providerId, providerRoute, options = {}) {
+    const data = {
+      provider_id: providerId,
+      provider_route: providerRoute,
+      provider_method: options.method || 'GET'
+    };
+
+    if (options.query) {
+      data.provider_query = JSON.stringify(options.query);
+    }
+    if (options.headers) {
+      data.headers = JSON.stringify(options.headers);
+    }
+
+    if (this.type === 'gas') {
+      return this.request(`?route=proxy`, data, options.method || 'POST');
+    }
+
+    return this.request('/v1/proxy', data, options.method || 'POST');
+  }
+
+  /**
+   * KQL-aware inference routing
+   * @param {string} providerId - Provider to route to
+   * @param {object} options - model, kql, input, meta
+   */
+  async inference(providerId, options = {}) {
+    const data = {
+      provider_id: providerId,
+      model: options.model || null,
+      kql: options.kql || null,
+      input: options.input || options.prompt || '',
+      meta: options.meta || {}
+    };
+
+    if (this.type === 'gas') {
+      return this.request(`?route=inference`, data, 'POST');
+    }
+
+    return this.request('/v1/inference', data, 'POST');
+  }
+
+  /**
+   * List registered providers
+   */
+  async listProviders() {
+    if (this.type === 'gas') {
+      return this.request(`?route=providers`, null, 'GET');
+    }
+    return this.request('/v1/providers', null, 'GET');
+  }
+
+  /**
+   * Register a new provider
+   * @param {object} provider - { id, baseUrl, name, description, public, routes }
+   */
+  async registerProvider(provider) {
+    if (this.type === 'gas') {
+      return this.request(`?route=register-provider`, provider, 'POST');
+    }
+    return this.request('/v1/providers', provider, 'POST');
+  }
+
+  /**
+   * Mesh discovery - get providers and capabilities
+   */
+  async meshDiscovery() {
+    if (this.type === 'gas') {
+      return this.request(`?route=mesh.discovery`, null, 'GET');
+    }
+    return this.request('/v1/mesh/discovery', null, 'GET');
+  }
+
+  /**
+   * Get conformance test vectors
+   */
+  async conformance() {
+    if (this.type === 'gas') {
+      return this.request(`?route=conformance`, null, 'GET');
+    }
+    return this.request('/v1/conformance', null, 'GET');
+  }
+
+  /**
+   * Run conformance tests
+   */
+  async runConformance() {
+    if (this.type === 'gas') {
+      return this.request(`?route=conformance-run`, null, 'GET');
+    }
+    return this.request('/v1/conformance/run', null, 'GET');
+  }
+
   // ==================== UTILITY ====================
 
   /**
@@ -450,11 +551,11 @@ class XJSONBackend {
   getCapabilities() {
     switch (this.type) {
       case 'python':
-        return ['chat', 'stream', 'images', 'vision', 'kuhul', 'memory', 'local_models', 'auth'];
+        return ['chat', 'stream', 'images', 'vision', 'kuhul', 'memory', 'local_models', 'auth', 'proxy', 'inference', 'mesh'];
       case 'php':
-        return ['chat', 'stream', 'images', 'kuhul', 'memory', 'auth'];
+        return ['chat', 'stream', 'images', 'kuhul', 'memory', 'auth', 'proxy'];
       case 'gas':
-        return ['chat', 'memory', 'storage', 'auth'];
+        return ['chat', 'memory', 'storage', 'auth', 'proxy', 'inference', 'mesh'];
       default:
         return [];
     }
