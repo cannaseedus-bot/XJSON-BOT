@@ -1,0 +1,123 @@
+{
+  "@registry": {
+    "@version": "v1",
+    "@generated_at": 1735516800000,
+    "@rules": {
+      "metadata_only": true,
+      "no_auto_execute": true,
+      "law_required": true
+    }
+  },
+  "@entries": [
+    {
+      "id": "ui.score.increment",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "ui",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Increment score and update UI label",
+      "@tags": ["ui", "game", "counter", "state"],
+      "@inputs": ["state.score"],
+      "@outputs": ["dom:#score", "event:message"]
+    },
+    {
+      "id": "ui.message.emit",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "ui",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Emit a message to the UI",
+      "@tags": ["ui", "message", "notification"],
+      "@inputs": ["text"],
+      "@outputs": ["event:message"]
+    },
+    {
+      "id": "ui.dom.patch",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "ui",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Apply a DOM patch to a target element",
+      "@tags": ["ui", "dom", "patch"],
+      "@inputs": ["selector", "patch"],
+      "@outputs": ["dom:*"]
+    },
+    {
+      "id": "cluster.sum.mapreduce",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "cluster",
+      "@law_hint": "law.pi_xcfe.cluster_runtime.v1",
+      "@description": "Parallel sum using map/reduce",
+      "@tags": ["cluster", "parallel", "math", "reduce"],
+      "@inputs": ["input.data"],
+      "@outputs": ["result.sum"]
+    },
+    {
+      "id": "cluster.parallel.map",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "cluster",
+      "@law_hint": "law.pi_xcfe.cluster_runtime.v1",
+      "@description": "Parallel map operation across cluster nodes",
+      "@tags": ["cluster", "parallel", "map"],
+      "@inputs": ["input.data", "fn"],
+      "@outputs": ["result.mapped"]
+    },
+    {
+      "id": "verify.invariant.check",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "verify",
+      "@law_hint": "law.pi_xcfe.native_verify.v1",
+      "@description": "Verify data invariants without side effects",
+      "@tags": ["verify", "invariant", "check", "pure"],
+      "@inputs": ["data", "schema"],
+      "@outputs": ["result.valid"]
+    },
+    {
+      "id": "verify.schema.validate",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "verify",
+      "@law_hint": "law.pi_xcfe.native_verify.v1",
+      "@description": "Validate data against JSON schema",
+      "@tags": ["verify", "schema", "validation"],
+      "@inputs": ["data", "schema_ref"],
+      "@outputs": ["result.valid", "result.errors"]
+    },
+    {
+      "id": "state.branch.conditional",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "state",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Conditional branching based on state",
+      "@tags": ["state", "branch", "conditional", "control"],
+      "@inputs": ["state.*", "condition"],
+      "@outputs": ["branch.result"]
+    },
+    {
+      "id": "svg.vector.render",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "svg",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Render SVG vector graphics",
+      "@tags": ["svg", "vector", "graphics", "render"],
+      "@inputs": ["svg.data"],
+      "@outputs": ["dom:svg"]
+    },
+    {
+      "id": "canvas.tick.animation",
+      "@type": "atomic-script",
+      "@version": "v1",
+      "@category": "canvas",
+      "@law_hint": "law.pi_xcfe.holotape_ui.v1",
+      "@description": "Single animation tick for canvas",
+      "@tags": ["canvas", "animation", "tick", "game"],
+      "@inputs": ["state.frame", "state.entities"],
+      "@outputs": ["canvas:frame"]
+    }
+  ]
+}

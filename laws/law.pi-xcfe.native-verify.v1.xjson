@@ -1,0 +1,50 @@
+{
+  "@xcfe": {
+    "@law": "law.pi_xcfe.native_verify.v1",
+    "@phase": "pi_verify",
+    "@allow": [
+      "read",
+      "decode",
+      "verify"
+    ],
+    "@deny": [
+      "branch",
+      "loop",
+      "effect",
+      "seal",
+      "dom",
+      "bom",
+      "network",
+      "crypto",
+      "resource",
+      "cluster",
+      "ui",
+      "svg",
+      "canvas",
+      "storage",
+      "idb",
+      "mesh",
+      "tape",
+      "audit"
+    ],
+    "@scope": "verify:native",
+    "@barrier": "idle",
+    "@entropy": "static",
+    "@runtime": "sandbox",
+    "@limits": {
+      "max_clusters": 0,
+      "max_effects_per_tick": 0,
+      "max_decode_bytes": 1048576
+    },
+    "@audit": {
+      "enabled": false,
+      "mode": "none"
+    }
+  },
+  "@meta": {
+    "@name": "Native Verifier Law",
+    "@version": "1.0.0",
+    "@description": "Verifier-safe law - read/decode/verify only, no side effects",
+    "@created": "2025-12-30T00:00:00Z"
+  }
+}

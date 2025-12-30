@@ -1,0 +1,113 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-script://registry/v1",
+  "$comment": "Discoverability Registry (Sealed) - Metadata-only, no execution",
+  "title": "Atomic Script Registry",
+  "description": "Discoverability index for atomic-scripts. Metadata-only. No execution semantics.",
+  "type": "object",
+  "required": ["@registry", "@entries"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@registry": {
+      "type": "object",
+      "required": ["@version", "@generated_at", "@rules"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": {
+          "const": "v1"
+        },
+        "@generated_at": {
+          "type": "integer",
+          "description": "Monotonic timestamp (ms). Informational only."
+        },
+        "@rules": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "metadata_only": {
+              "const": true,
+              "description": "Registry entries never grant execution authority."
+            },
+            "no_auto_execute": {
+              "const": true,
+              "description": "Discovery does not imply permission or execution."
+            },
+            "law_required": {
+              "const": true,
+              "description": "Every atomic-script must still declare @xcfe.@law."
+            }
+          }
+        }
+      }
+    },
+
+    "@entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "@type", "@version", "@category", "@law_hint"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_\\-\\.]+$",
+            "description": "Stable registry identifier."
+          },
+          "@type": {
+            "const": "atomic-script"
+          },
+          "@version": {
+            "type": "string",
+            "pattern": "^v[0-9]+$"
+          },
+          "@category": {
+            "type": "string",
+            "enum": [
+              "ui",
+              "canvas",
+              "svg",
+              "state",
+              "cluster",
+              "network",
+              "verify",
+              "utility"
+            ]
+          },
+          "@law_hint": {
+            "type": "string",
+            "description": "Suggested XCFE law (non-authoritative hint)."
+          },
+          "@description": {
+            "type": "string"
+          },
+          "@entry": {
+            "type": "string",
+            "description": "Optional symbolic entry point."
+          },
+          "@tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "@inputs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Expected input keys (informational)."
+          },
+          "@outputs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Produced state or events (informational)."
+          }
+        }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Registry entries are metadata-only",
+    "Registry MUST NOT imply permission or authority",
+    "Execution always requires schema validation and XCFE law verification",
+    "Registry MAY be cached, indexed, or searched without risk"
+  ]
+}

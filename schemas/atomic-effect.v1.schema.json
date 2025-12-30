@@ -1,0 +1,203 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-effect://schema/v1",
+  "$comment": "Effect Algebra Schema (Sealed) - Validates effect lattice instances",
+  "title": "atomic-effect",
+  "description": "Schema for formal effect algebra. Effects are semantic classifications of side effects, not permissions. XCFE uses the lattice to enforce permissions.",
+  "type": "object",
+  "required": ["@effect_lattice"],
+  "additionalProperties": true,
+
+  "properties": {
+    "@effect_lattice": {
+      "type": "object",
+      "required": ["@version", "@atoms", "@order", "@conflicts", "@operator_effects", "@xcfe_mapping", "@invariants"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": {
+          "type": "string",
+          "pattern": "^v[0-9]+$",
+          "description": "Lattice version"
+        },
+
+        "@atoms": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z][a-z_]*$" },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Primitive effects. Must include 'pure' as the identity element."
+        },
+
+        "@order": {
+          "type": "array",
+          "description": "Partial order edges (a <= b). Transitive closure computed at load time.",
+          "items": {
+            "type": "object",
+            "required": ["leq"],
+            "additionalProperties": true,
+            "properties": {
+              "leq": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": { "type": "string" },
+                "description": "[a, b] means a <= b (a is contained in b)"
+              },
+              "$comment": { "type": "string" }
+            }
+          }
+        },
+
+        "@joins": {
+          "type": "array",
+          "description": "Canonical join rules for common composites.",
+          "items": {
+            "type": "object",
+            "required": ["join", "as"],
+            "additionalProperties": true,
+            "properties": {
+              "join": {
+                "type": "array",
+                "minItems": 2,
+                "items": { "type": "string" },
+                "description": "Effects to join"
+              },
+              "as": {
+                "type": "string",
+                "description": "Name of the composite effect"
+              },
+              "$comment": { "type": "string" }
+            }
+          }
+        },
+
+        "@conflicts": {
+          "type": "array",
+          "description": "Pairs that cannot coexist under a single law scope without explicit bridge.",
+          "items": {
+            "type": "object",
+            "required": ["perp"],
+            "additionalProperties": false,
+            "properties": {
+              "perp": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": { "type": "string" },
+                "description": "[a, b] means a ⟂ b (mutually exclusive)"
+              },
+              "note": {
+                "type": "string",
+                "description": "Explanation of why these conflict"
+              }
+            }
+          }
+        },
+
+        "@operator_effects": {
+          "type": "array",
+          "description": "Normative mapping: π operator -> required effects (minimum).",
+          "items": {
+            "type": "object",
+            "required": ["@op", "@requires"],
+            "additionalProperties": true,
+            "properties": {
+              "@op": {
+                "type": "string",
+                "pattern": "^pi_[a-z_]+$",
+                "description": "π operator identifier"
+              },
+              "@requires": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Required effects for this operator"
+              },
+              "$comment": { "type": "string" }
+            }
+          }
+        },
+
+        "@xcfe_mapping": {
+          "type": "object",
+          "description": "How XCFE allow/deny is interpreted over the lattice.",
+          "required": ["allow_semantics", "deny_semantics", "closure"],
+          "additionalProperties": true,
+          "properties": {
+            "allow_semantics": {
+              "type": "string",
+              "description": "Rule for evaluating allow list"
+            },
+            "deny_semantics": {
+              "type": "string",
+              "description": "Rule for evaluating deny list"
+            },
+            "closure": {
+              "type": "string",
+              "description": "How transitive closure is computed"
+            },
+            "@allow_algorithm": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Step-by-step allow evaluation"
+            },
+            "@deny_algorithm": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Step-by-step deny evaluation"
+            },
+            "@precedence": {
+              "type": "string",
+              "description": "Which wins in conflict (must be 'deny')"
+            }
+          }
+        },
+
+        "@invariants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Hard law invariants that must always hold"
+        }
+      }
+    },
+
+    "@unlocks": {
+      "type": "object",
+      "description": "Documentation of what this lattice enables",
+      "properties": {
+        "@description": { "type": "string" },
+        "@capabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "effect_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z_]*$",
+      "description": "Effect atom identifier"
+    },
+
+    "operator_id": {
+      "type": "string",
+      "pattern": "^pi_[a-z_]+$",
+      "description": "π operator identifier"
+    }
+  },
+
+  "@canonical_lattice": "atomic-effect://lattice/canonical.v1",
+
+  "@invariants": [
+    "Effects are semantic classifications, not permissions",
+    "XCFE uses the lattice to enforce permissions",
+    "All π operators must have effect signatures",
+    "Partial order defines containment (a <= b means b grants a)",
+    "Conflicts (perp) define projection boundaries",
+    "pure is the identity element (no effects)",
+    "Deny always wins over allow",
+    "Transitive closure computed once at law load time"
+  ]
+}

@@ -23,10 +23,21 @@ This project provides a complete browser-based AI development environment that c
 │   └── kuhul-engine.js        # K'UHUL runtime engine
 ├── scripts/                    # Application scripts
 │   └── mx2lm-chat-app.js      # Chat application logic
+├── api/                        # Multi-backend API options
+│   ├── backend-adapter.js     # Unified frontend client
+│   ├── php/                   # PHP backend (cPanel-friendly)
+│   └── gas/                   # Google Apps Script (free serverless)
+├── python/                     # Python FastAPI backend (advanced)
+│   ├── main.py                # FastAPI entry point
+│   ├── models/                # Multi-brain model router
+│   └── core/                  # K'UHUL + SCXQ2 engine
+├── schemas/                    # ASX-R JSON schema files
+│   ├── asx-block.schema.json
+│   ├── asx-inference.schema.json
+│   └── execution-trace.schema.json
 ├── components/                 # Reusable UI components
 ├── docs/                       # Documentation
 │   └── multi-hive-stack.html  # Multi-Hive architecture docs
-├── python/                     # Python integration scripts
 ├── assets/                     # Static assets (CSS, fonts, SVG)
 │   ├── css/
 │   ├── fonts/
@@ -194,12 +205,58 @@ const job = await KUHULColab.submitTrainingJob({
 });
 ```
 
+## 🔌 Multi-Backend API
+
+Choose the backend that fits your needs:
+
+| Feature | Python | PHP | GAS (Google) |
+|---------|--------|-----|--------------|
+| **Cost** | Server required | Hosting required | **Free** |
+| **Setup** | Complex | Medium | **Easy** |
+| **Streaming** | ✅ Full SSE | ✅ Simulated | ❌ No |
+| **Local Models** | ✅ Janus/Ollama | ❌ API only | ❌ API only |
+| **K'UHUL Engine** | ✅ Full | ✅ Basic | ✅ Basic |
+
+```javascript
+// Unified frontend client
+const api = new XJSONBackend('gas', 'https://script.google.com/.../exec');
+const response = await api.chat('Hello!');
+
+// Switch backends easily
+api.configure('php', 'https://yourdomain.com/api/php');
+```
+
+See [api/README.md](api/README.md) for full setup instructions.
+
+## 📐 ASX-R Runtime Specification
+
+ASX-R (ASX Runtime) is the deterministic, phase-gated execution language:
+
+**XCFE Phases:**
+| Phase | Glyph | Purpose |
+|-------|-------|---------|
+| @Pop | `⟁Pop⟁` | Populate - Load data, initialize |
+| @Wo | `⟁Wo⟁` | Work - Transform, compute |
+| @Sek | `⟁Sek⟁` | Seek - Query, filter |
+| @Collapse | `⟁Collapse⟁` | Collapse - Finalize, commit |
+
+**Key Features:**
+- Deterministic execution (same input → same output)
+- Replay-verifiable execution traces
+- JSON Schema validation for all blocks
+- Inference Plane v1 for AI operations
+- Image Inference Plane v1 for vision/generation
+
+See [ASX-R_SPEC.md](ASX-R_SPEC.md) for the complete specification.
+
 ## 📚 Documentation
 
+- **[ASX-R Specification](ASX-R_SPEC.md)** - Runtime language spec (🔒 Frozen)
 - **[Multi-Hive Stack](docs/multi-hive-stack.html)** - Complete architecture overview
 - **[PRIME SUPER-CODEX](docs/prime-super-codex.html)** - 10-part OS backbone specification
 - **[ASX Blocks Guide](docs/asx-blocks-guide.html)** - UI component system
 - **[K'UHUL Engine Reference](docs/kuhul-engine-reference.html)** - Complete API documentation
+- **[API Backends](api/README.md)** - Multi-backend setup guide
 
 ## 🏗️ Architecture
 

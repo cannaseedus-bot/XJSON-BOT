@@ -1,0 +1,225 @@
+{
+  "$schema": "atomic-effect://lattice/v1",
+  "$id": "atomic-effect://lattice/canonical.v1",
+  "$comment": "Formal Effect Algebra (Sealed) - The math that makes π⊗XCFE provably correct",
+  "title": "Atomic Effect Lattice - Canonical Instance",
+  "description": "Effects are semantic classifications of side effects. XCFE uses this lattice to enforce permissions deterministically.",
+
+  "@effect_lattice": {
+    "@version": "v1",
+
+    "@atoms": [
+      "pure",
+      "decode",
+      "verify",
+      "branch",
+      "time",
+      "state",
+      "ui",
+      "dom",
+      "canvas",
+      "svg",
+      "bom",
+      "network",
+      "crypto",
+      "resource",
+      "storage",
+      "cluster",
+      "process"
+    ],
+
+    "@order": [
+      { "leq": ["ui", "dom"], "$comment": "DOM write implies UI-visible effect" },
+      { "leq": ["svg", "dom"], "$comment": "SVG is a DOM projection" },
+      { "leq": ["canvas", "dom"], "$comment": "Canvas is a DOM projection" },
+      { "leq": ["bom", "dom"], "$comment": "BOM (window/navigator) implies DOM context" },
+
+      { "leq": ["decode", "verify"], "$comment": "Verification implies decoding occurred" },
+      { "leq": ["branch", "verify"], "$comment": "Branching implies verification occurred" },
+
+      { "leq": ["state", "resource"], "$comment": "State mutation is resource class" },
+      { "leq": ["storage", "resource"], "$comment": "Persistence is resource class" },
+
+      { "leq": ["crypto", "resource"], "$comment": "Cryptography is resource class" },
+      { "leq": ["network", "resource"], "$comment": "Network IO is resource class" },
+
+      { "leq": ["cluster", "resource"], "$comment": "Cluster compute is resource class" },
+      { "leq": ["process", "resource"], "$comment": "Process spawn is resource class (highest risk)" }
+    ],
+
+    "@joins": [
+      { "join": ["ui", "state"], "as": "ui_stateful", "$comment": "Interactive UI with local state" },
+      { "join": ["dom", "time"], "as": "animation", "$comment": "DOM + time = animation loop" },
+      { "join": ["canvas", "time"], "as": "canvas_loop", "$comment": "Canvas render loop" },
+      { "join": ["network", "storage"], "as": "sync", "$comment": "Network + storage = sync pattern" },
+      { "join": ["cluster", "storage"], "as": "distributed_state", "$comment": "Cluster + storage = distributed state" },
+      { "join": ["crypto", "storage"], "as": "sealed_storage", "$comment": "Encrypted persistence" },
+      { "join": ["verify", "state"], "as": "validated_state", "$comment": "State with runtime validation" }
+    ],
+
+    "@conflicts": [
+      {
+        "perp": ["ui", "network"],
+        "note": "UI and Network are disjoint lanes unless a bridge law explicitly permits both."
+      },
+      {
+        "perp": ["ui", "crypto"],
+        "note": "UI and Crypto are disjoint lanes unless a bridge law explicitly permits both."
+      },
+      {
+        "perp": ["dom", "cluster"],
+        "note": "DOM projection and cluster runtime are separate execution lanes."
+      },
+      {
+        "perp": ["canvas", "network"],
+        "note": "Canvas loop must not perform network IO in the same law scope."
+      },
+      {
+        "perp": ["storage", "network"],
+        "note": "Durable storage + network in one scope is restricted; prefer explicit bridge."
+      },
+      {
+        "perp": ["process", "ui"],
+        "note": "Process spawning is never allowed in UI projection scope."
+      },
+      {
+        "perp": ["process", "dom"],
+        "note": "Process spawning cannot coexist with DOM projection."
+      },
+      {
+        "perp": ["cluster", "canvas"],
+        "note": "Cluster compute and canvas rendering are separate lanes."
+      }
+    ],
+
+    "@operator_effects": [
+      { "@op": "pi_nop", "@requires": ["pure"], "$comment": "No-op, pure computation" },
+      { "@op": "pi_id", "@requires": ["pure"], "$comment": "Identity, pure" },
+
+      { "@op": "pi_tokenize", "@requires": ["decode"] },
+      { "@op": "pi_decode", "@requires": ["decode"] },
+      { "@op": "pi_parse", "@requires": ["decode"] },
+
+      { "@op": "pi_verify", "@requires": ["verify"] },
+      { "@op": "pi_match", "@requires": ["verify", "branch"] },
+      { "@op": "pi_guard", "@requires": ["verify"] },
+      { "@op": "pi_assert", "@requires": ["verify"] },
+
+      { "@op": "pi_branch", "@requires": ["branch"] },
+      { "@op": "pi_commit", "@requires": ["branch"] },
+      { "@op": "pi_alternate", "@requires": ["branch"] },
+      { "@op": "pi_loop", "@requires": ["branch", "time"] },
+
+      { "@op": "pi_tick", "@requires": ["time"] },
+      { "@op": "pi_delay", "@requires": ["time"] },
+      { "@op": "pi_schedule", "@requires": ["time"] },
+
+      { "@op": "pi_state_read", "@requires": ["state"] },
+      { "@op": "pi_state_write", "@requires": ["state"] },
+      { "@op": "pi_state_swap", "@requires": ["state"] },
+
+      { "@op": "pi_ui_emit", "@requires": ["ui"] },
+      { "@op": "pi_ui_event", "@requires": ["ui"] },
+      { "@op": "pi_ui_render", "@requires": ["ui"] },
+
+      { "@op": "pi_dom_patch", "@requires": ["dom"] },
+      { "@op": "pi_dom_mount", "@requires": ["dom"] },
+      { "@op": "pi_dom_query", "@requires": ["dom"] },
+      { "@op": "pi_dom_listen", "@requires": ["dom"] },
+
+      { "@op": "pi_svg_vector", "@requires": ["svg"] },
+      { "@op": "pi_svg_path", "@requires": ["svg"] },
+      { "@op": "pi_svg_animate", "@requires": ["svg", "time"] },
+
+      { "@op": "pi_canvas_tick", "@requires": ["canvas", "time"] },
+      { "@op": "pi_canvas_draw", "@requires": ["canvas"] },
+      { "@op": "pi_canvas_clear", "@requires": ["canvas"] },
+
+      { "@op": "pi_bom_nav", "@requires": ["bom"] },
+      { "@op": "pi_bom_history", "@requires": ["bom"] },
+      { "@op": "pi_bom_location", "@requires": ["bom"] },
+
+      { "@op": "pi_open", "@requires": ["resource"] },
+      { "@op": "pi_using", "@requires": ["resource"] },
+      { "@op": "pi_close", "@requires": ["resource"] },
+      { "@op": "pi_acquire", "@requires": ["resource"] },
+      { "@op": "pi_release", "@requires": ["resource"] },
+
+      { "@op": "pi_store", "@requires": ["storage"] },
+      { "@op": "pi_load", "@requires": ["storage"] },
+      { "@op": "pi_delete", "@requires": ["storage"] },
+      { "@op": "pi_idb_tx", "@requires": ["storage"] },
+
+      { "@op": "pi_net_fetch", "@requires": ["network"] },
+      { "@op": "pi_net_ws", "@requires": ["network"] },
+      { "@op": "pi_net_sse", "@requires": ["network"] },
+
+      { "@op": "pi_crypto_seal", "@requires": ["crypto"] },
+      { "@op": "pi_crypto_unseal", "@requires": ["crypto"] },
+      { "@op": "pi_crypto_hash", "@requires": ["crypto"] },
+      { "@op": "pi_crypto_sign", "@requires": ["crypto"] },
+      { "@op": "pi_crypto_verify", "@requires": ["crypto", "verify"] },
+
+      { "@op": "pi_cluster_spawn", "@requires": ["cluster"] },
+      { "@op": "pi_cluster_map", "@requires": ["cluster"] },
+      { "@op": "pi_cluster_reduce", "@requires": ["cluster"] },
+      { "@op": "pi_cluster_sync", "@requires": ["cluster"] },
+
+      { "@op": "pi_process_spawn", "@requires": ["process"] },
+      { "@op": "pi_process_kill", "@requires": ["process"] },
+      { "@op": "pi_process_ipc", "@requires": ["process"] },
+
+      { "@op": "pi_collapse", "@requires": ["verify"], "$comment": "Collapse must emit audit/proof, gated by verify" },
+      { "@op": "pi_abort", "@requires": ["verify"], "$comment": "Abort must be verifiable" }
+    ],
+
+    "@xcfe_mapping": {
+      "allow_semantics": "allow must include all required effects or their supersets (via order closure).",
+      "deny_semantics": "deny rejects if it contains any required effect or any of its supersets/subsets per closure rules.",
+      "closure": "runtime computes transitive closure of @order for leq checks.",
+
+      "@allow_algorithm": [
+        "For each required effect r in eff(op):",
+        "  1. If r in allow: PASS",
+        "  2. If exists a in allow such that r <= a (via @order closure): PASS",
+        "  3. Otherwise: REJECT"
+      ],
+
+      "@deny_algorithm": [
+        "For each required effect r in eff(op):",
+        "  1. If r in deny: REJECT",
+        "  2. If exists d in deny such that r <= d: REJECT (deny superset blocks)",
+        "  3. If exists d in deny such that d <= r: REJECT (deny subset blocks too)",
+        "  4. Otherwise: PASS to allow check"
+      ],
+
+      "@precedence": "deny wins over allow in all cases"
+    },
+
+    "@invariants": [
+      "All π operators must declare effect requirements (directly or via this lattice mapping).",
+      "XCFE must reject any op whose required effects are not satisfied by allow closure.",
+      "XCFE must reject any op whose required effects intersect deny closure.",
+      "Conflicting effects must not coexist in the same law scope unless an explicit bridge law exists.",
+      "UI scope must never include process effect.",
+      "Every tick must end in pi_collapse regardless of effects.",
+      "pure effect requires no capabilities (always allowed).",
+      "Deny is conservative: blocks subsets AND supersets.",
+      "Effect lattice is finite and closed under join/meet.",
+      "Transitive closure of @order is computed once at law load time."
+    ]
+  },
+
+  "@unlocks": {
+    "@description": "What this formal lattice enables:",
+    "@capabilities": [
+      "Auto-derive minimal laws from scripts by computing required effect set",
+      "Prove 'this UI demo cannot possibly touch network' via conflict rules",
+      "Enforce 'cluster compute can't mutate DOM' via perp rules",
+      "Generate safe bridge patterns (UI -> network via audited relay script)",
+      "Static analysis of script capability requirements",
+      "Runtime verification of law compliance",
+      "Audit trail generation for all resource-class effects"
+    ]
+  }
+}

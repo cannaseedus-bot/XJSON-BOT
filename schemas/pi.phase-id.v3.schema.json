@@ -1,0 +1,15 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/phase_id.v3",
+  "$comment": "π Phase ID v3 (Sealed) - Canonical execution phases",
+  "title": "π Phase ID v3",
+  "type": "string",
+  "enum": [
+    "pi_perceive",
+    "pi_decode",
+    "pi_verify",
+    "pi_decide",
+    "pi_act",
+    "pi_collapse"
+  ]
+}

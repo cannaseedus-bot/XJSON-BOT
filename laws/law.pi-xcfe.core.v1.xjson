@@ -1,0 +1,49 @@
+{
+  "@xcfe": {
+    "@law": "law.pi_xcfe.core.v1",
+    "@phase": "pi_perceive",
+    "@allow": [
+      "read",
+      "decode",
+      "verify",
+      "branch",
+      "loop",
+      "effect",
+      "seal",
+      "dom",
+      "bom",
+      "network",
+      "crypto",
+      "resource",
+      "cluster",
+      "ui",
+      "svg",
+      "canvas",
+      "storage",
+      "idb",
+      "mesh",
+      "tape",
+      "audit"
+    ],
+    "@deny": [],
+    "@scope": "os:prime",
+    "@barrier": "idle",
+    "@entropy": "static",
+    "@runtime": "browser_cpu",
+    "@limits": {
+      "max_clusters": 1000,
+      "max_effects_per_tick": 10000,
+      "max_decode_bytes": 10485760
+    },
+    "@audit": {
+      "enabled": true,
+      "mode": "full"
+    }
+  },
+  "@meta": {
+    "@name": "π⊗XCFE Core OS Law",
+    "@version": "1.0.0",
+    "@description": "Base operating system law - all capabilities enabled",
+    "@created": "2025-12-30T00:00:00Z"
+  }
+}

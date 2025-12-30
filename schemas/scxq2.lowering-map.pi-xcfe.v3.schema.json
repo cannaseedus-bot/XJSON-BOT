@@ -1,0 +1,44 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "scxq2://schema/lowering_map.pi_xcfe.v3",
+  "$comment": "SCXQ2 → π⊗XCFE Lowering Map v3 (Sealed) - Deterministic token→opcode mapping",
+  "title": "SCXQ2 → π⊗XCFE Lowering Map v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@law", "@scxq2", "@maps"],
+  "properties": {
+    "@law": { "$ref": "xcfe://schema/law_id.v1" },
+    "@scxq2": { "const": "v3" },
+    "@maps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scx_token", "pi_op", "requires"],
+        "properties": {
+          "scx_token": {
+            "type": "string",
+            "minLength": 1,
+            "description": "SCX token symbol (e.g., '(?)', '(💬>)', '(⊕)')"
+          },
+          "pi_op": { "$ref": "pi://schema/opcode_id.v3" },
+          "requires": {
+            "type": "array",
+            "items": { "$ref": "xcfe://schema/capability_id.v1" },
+            "uniqueItems": true,
+            "description": "XCFE capabilities required for this operation"
+          },
+          "phase": {
+            "$ref": "pi://schema/phase_id.v3",
+            "description": "Execution phase for this operation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable operation description"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-script://schema/v1",
+  "$comment": "atomic-script v1 (Sealed) - Law-governed executable unit for ASX-R π⊗XCFE",
+  "title": "atomic-script",
+  "description": "Law-governed executable unit for ASX-R π⊗XCFE. Scripts are symbolic, deterministic, phase-gated, and collapse-sealed.",
+  "type": "object",
+  "required": ["@xcfe", "@script"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@xcfe": {
+      "type": "object",
+      "required": ["@law"],
+      "additionalProperties": true,
+      "properties": {
+        "@law": {
+          "type": "string",
+          "pattern": "^law\\.[a-zA-Z0-9_\\.\\-]+\\.v[0-9]+$",
+          "description": "Law identity enforced by XCFE. Must exist in law://index.v1 with matching hash."
+        },
+        "@phase": {
+          "type": "string",
+          "enum": [
+            "pi_perceive",
+            "pi_decode",
+            "pi_verify",
+            "pi_decide",
+            "pi_act",
+            "pi_collapse"
+          ],
+          "description": "Current XCFE-governed execution phase."
+        },
+        "@allow": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicitly allowed capabilities."
+        },
+        "@deny": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicitly denied capabilities. Overrides @allow."
+        },
+        "@scope": {
+          "type": "string",
+          "description": "Authority scope for the atomic-script."
+        },
+        "@barrier": {
+          "type": "string",
+          "enum": ["idle", "locked", "awaiting"],
+          "description": "Synchronization / reentrancy barrier."
+        },
+        "@entropy": {
+          "type": "string",
+          "enum": ["static", "rotating"],
+          "description": "Alias / cipher entropy policy."
+        },
+        "@runtime": {
+          "type": "string",
+          "description": "Execution lane (browser_cpu, server_io, cluster_runtime, sandbox, etc)."
+        },
+        "@limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_clusters": { "type": "integer", "minimum": 0 },
+            "max_effects_per_tick": { "type": "integer", "minimum": 0 },
+            "max_decode_bytes": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "@audit": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "mode": {
+              "type": "string",
+              "enum": ["hash_only", "full"]
+            }
+          }
+        }
+      }
+    },
+
+    "@script": {
+      "type": "object",
+      "required": ["@type", "@version"],
+      "additionalProperties": false,
+      "properties": {
+        "@type": {
+          "const": "atomic-script",
+          "description": "Must be exactly 'atomic-script'."
+        },
+        "@version": {
+          "type": "string",
+          "pattern": "^v[0-9]+$",
+          "description": "Schema version of the atomic-script."
+        },
+        "@description": {
+          "type": "string",
+          "description": "Optional human-readable description."
+        },
+        "@entry": {
+          "type": "string",
+          "description": "Optional symbolic entry point (used for multi-script containers)."
+        }
+      }
+    },
+
+    "@pi": {
+      "type": "object",
+      "description": "π AST block container (produced after SCXQ2 lowering).",
+      "additionalProperties": false,
+      "properties": {
+        "@ops": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["@op", "@phase"],
+            "additionalProperties": false,
+            "properties": {
+              "@op": {
+                "type": "string",
+                "description": "π operator opcode (e.g. pi_branch, pi_dom_patch, pi_collapse)."
+              },
+              "@phase": {
+                "type": "string",
+                "enum": [
+                  "pi_decode",
+                  "pi_verify",
+                  "pi_decide",
+                  "pi_act",
+                  "pi_collapse"
+                ]
+              },
+              "@args": {
+                "type": "object",
+                "description": "Operator arguments. Interpreted only after XCFE gate."
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "@projection": {
+      "type": "object",
+      "description": "Optional projection hints (DOM, Canvas, SVG, IO). Effects occur only if law allows.",
+      "additionalProperties": true
+    }
+  },
+
+  "@invariants": [
+    "atomic-script MUST include @xcfe with a valid @law",
+    "atomic-script MUST NOT execute decoded strings",
+    "atomic-script MUST pass XCFE verification before π execution",
+    "Deny overrides allow",
+    "Each tick MUST end in pi_collapse",
+    "Failure MUST collapse with audit"
+  ]
+}

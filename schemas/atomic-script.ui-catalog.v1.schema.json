@@ -1,0 +1,94 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-script://ui-catalog/v1",
+  "$comment": "Pure Projection Visual Catalog (Sealed) - No execution semantics",
+  "title": "Atomic Script UI Catalog",
+  "description": "Pure projection catalog of atomic-scripts. No execution semantics.",
+  "type": "object",
+  "required": ["@catalog", "@views"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@catalog": {
+      "type": "object",
+      "required": ["@version", "@rules"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": { "const": "v1" },
+        "@rules": {
+          "type": "object",
+          "properties": {
+            "projection_only": { "const": true },
+            "no_execution": { "const": true },
+            "no_xcfe": { "const": true },
+            "no_pi": { "const": true }
+          }
+        }
+      }
+    },
+
+    "@views": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "layout", "cards"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "layout": {
+            "type": "string",
+            "enum": ["grid", "list", "gallery"]
+          },
+          "cards": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/card" }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "card": {
+      "type": "object",
+      "required": ["id", "title", "category", "visual"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["ui", "canvas", "svg", "state", "cluster", "utility", "verify"]
+        },
+        "summary": { "type": "string" },
+        "visual": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["mock-dom", "svg-preview", "canvas-frame", "code-block"]
+            },
+            "asset": { "type": "string" }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "law_hint": { "type": "string" },
+            "inputs": { "type": "array", "items": { "type": "string" } },
+            "outputs": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  },
+
+  "@invariants": [
+    "UI catalog is projection-only",
+    "UI catalog MUST NOT contain executable atomic-scripts",
+    "UI catalog MUST NOT trigger XCFE or π operations",
+    "Visual elements are purely illustrative"
+  ]
+}

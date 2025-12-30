@@ -1,0 +1,24 @@
+{
+  "$id": "asx://schema/inference.plan.v1",
+  "$comment": "ASX-R Inference Plan (Authoritative, Frozen)",
+  "type": "object",
+  "required": ["@type", "@steps", "@bounds"],
+  "properties": {
+    "@type": { "const": "inference.plan.v1" },
+    "@steps": {
+      "type": "array",
+      "items": { "$ref": "asx://schema/inference.step.v1" }
+    },
+    "@bounds": {
+      "type": "object",
+      "required": ["@max_steps"],
+      "properties": {
+        "@max_steps": { "type": "integer", "minimum": 1 },
+        "@max_tokens": { "type": "integer", "minimum": 1 },
+        "@max_bytes": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,151 @@
+{
+  "$id": "asx://schema/scxq2-packet.v1",
+  "$comment": "ASX-R SCXQ2 Packet Schema (Frozen)",
+  "title": "SCXQ2 Packet",
+  "description": "SCXQ2 symbolic compression packet format",
+  "type": "object",
+  "required": ["header", "payload"],
+  "properties": {
+    "raw": {
+      "type": "string",
+      "pattern": "^☣[A-Z]+:[A-Z_]+:[0-9]+\\.[0-9]+:[a-f0-9]+:.+$",
+      "description": "Raw packet string format: ☣{NAMESPACE}:{ACTION}:{VERSION}:{CHECKSUM}:{PAYLOAD}"
+    },
+    "header": {
+      "type": "object",
+      "required": ["namespace", "action", "version", "checksum"],
+      "properties": {
+        "hazard": {
+          "const": "☣",
+          "description": "Hazard cipher prefix"
+        },
+        "namespace": {
+          "type": "string",
+          "enum": ["CHAT", "MODEL", "MEMORY", "INFER", "IMAGE", "KUHUL", "SYSTEM"],
+          "description": "Packet namespace"
+        },
+        "action": {
+          "type": "string",
+          "pattern": "^[A-Z_]+$",
+          "description": "Action identifier"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "default": "2.0",
+          "description": "SCXQ2 version"
+        },
+        "checksum": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}$",
+          "description": "8-character hex checksum"
+        }
+      }
+    },
+    "payload": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Base64-encoded payload"
+        },
+        {
+          "type": "object",
+          "description": "Decoded payload object"
+        }
+      ]
+    },
+    "compression": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Compression level: 0=none, 1=lz4, 2=zstd, 3=zstd+dict"
+        },
+        "algorithm": {
+          "enum": ["none", "lz4", "zstd"],
+          "description": "Compression algorithm used"
+        },
+        "original_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Original payload size in bytes"
+        },
+        "compressed_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Compressed payload size in bytes"
+        },
+        "ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Compression ratio (compressed/original)"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "integer",
+          "description": "Unix timestamp in milliseconds"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source identifier"
+        },
+        "ttl": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Time-to-live in seconds"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "raw": "☣CHAT:VIEW:2.0:a1b2c3d4:eyJtZXNzYWdlcyI6W119",
+      "header": {
+        "hazard": "☣",
+        "namespace": "CHAT",
+        "action": "VIEW",
+        "version": "2.0",
+        "checksum": "a1b2c3d4"
+      },
+      "payload": {
+        "messages": []
+      },
+      "compression": {
+        "level": 0,
+        "algorithm": "none",
+        "original_size": 16,
+        "compressed_size": 16,
+        "ratio": 1.0
+      }
+    },
+    {
+      "header": {
+        "hazard": "☣",
+        "namespace": "INFER",
+        "action": "REQUEST",
+        "version": "2.0",
+        "checksum": "f0e1d2c3"
+      },
+      "payload": {
+        "model": "gpt-4o-mini",
+        "messages": [
+          { "role": "user", "content": "Hello" }
+        ]
+      },
+      "compression": {
+        "level": 2,
+        "algorithm": "zstd",
+        "original_size": 256,
+        "compressed_size": 64,
+        "ratio": 0.25
+      }
+    }
+  ]
+}

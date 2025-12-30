@@ -1,0 +1,273 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-script://conformance/tests.v1",
+  "$comment": "Normative Conformance Tests (Sealed)",
+  "@tests": [
+    {
+      "id": "reject.missing_law",
+      "description": "Script without @xcfe.@law must be rejected",
+      "input": {
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "missing_xcfe_law"
+      }
+    },
+    {
+      "id": "reject.unknown_law",
+      "description": "Script with unknown law must be rejected",
+      "input": {
+        "@xcfe": {
+          "@law": "law.unknown.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "law_not_in_index"
+      }
+    },
+    {
+      "id": "reject.invalid_script_type",
+      "description": "Script with wrong @type must be rejected",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "not-atomic-script",
+          "@version": "v1"
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "invalid_script_type"
+      }
+    },
+    {
+      "id": "deny.dom_under_verify_law",
+      "description": "DOM ops must fail under verify-only law",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.native_verify.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_dom_patch",
+              "@phase": "pi_act"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_capability": "dom"
+      }
+    },
+    {
+      "id": "deny.network_under_ui_law",
+      "description": "Network ops must fail under UI law",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_open",
+              "@phase": "pi_act",
+              "@args": { "kind": "network" }
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_capability": "network"
+      }
+    },
+    {
+      "id": "deny.effect_in_verify_phase",
+      "description": "Effect ops must fail in verify phase",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1",
+          "@phase": "pi_verify"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_ui_emit",
+              "@phase": "pi_verify"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "phase_violation"
+      }
+    },
+    {
+      "id": "deny.cluster_under_ui_law",
+      "description": "Cluster ops must fail under UI law",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_cluster_spawn",
+              "@phase": "pi_act"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_capability": "cluster"
+      }
+    },
+    {
+      "id": "deny.crypto_under_ui_law",
+      "description": "Crypto ops must fail under UI law",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_crypto_seal",
+              "@phase": "pi_act"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_capability": "crypto"
+      }
+    },
+    {
+      "id": "reject.missing_collapse",
+      "description": "Script without pi_collapse must be rejected",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_ui_emit",
+              "@phase": "pi_act"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "missing_collapse"
+      }
+    },
+    {
+      "id": "accept.valid_ui_script",
+      "description": "Valid UI script with all required elements",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_ui_emit",
+              "@phase": "pi_act"
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": true
+      }
+    },
+    {
+      "id": "accept.valid_verify_script",
+      "description": "Valid verify-only script",
+      "input": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.native_verify.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_verify",
+              "@phase": "pi_verify"
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "@ok": true
+      }
+    }
+  ],
+  "@invariants": [
+    "All failures must occur before pi_act effects",
+    "No test may pass without pi_collapse",
+    "Deny overrides allow in all cases",
+    "Phase violations are detected before capability checks"
+  ]
+}

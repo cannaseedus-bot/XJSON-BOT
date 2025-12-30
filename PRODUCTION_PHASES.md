@@ -96,6 +96,62 @@ This document outlines all phases of production from initial development through
 
 ---
 
+## 🧠 PHASE 2.5: MULTI-MODEL INTEGRATION (IN PROGRESS)
+
+> **Goal:** Python backbone for multi-brain architecture + DeepSeek R1 + Janus + Cline merge
+
+### 2.5.1 Python Backbone Infrastructure
+- [ ] `/python/` directory with FastAPI server
+- [ ] `models/base.py` - Base multi-brain model class
+- [ ] Unified inference endpoint (text, image, reasoning)
+- [ ] Dockerfile for containerized deployment
+- [ ] WebSocket streaming support
+
+### 2.5.2 DeepSeek R1 Integration
+- [ ] DeepSeek R1 reasoning model wrapper
+- [ ] Chain-of-Thought (CoT) display in UI
+- [ ] API endpoint configuration (api.deepseek.com)
+- [ ] Reasoning trace visualization
+- [ ] R1 variants (R1, R1-0528, R1-Lite)
+
+### 2.5.3 Janus Multimodal Models
+- [ ] Janus text-to-image generation
+- [ ] Janus image understanding (vision)
+- [ ] JanusFlow rectified flow support
+- [ ] Image upload/display in chat
+- [ ] Model variants: Janus-1.3B, Janus-Pro-7B, JanusFlow-1.3B
+
+### 2.5.4 Cline App Merge
+- [ ] Extract Cline webview-ui components
+- [ ] Port gRPC/protobuf communication
+- [ ] Integrate tool system (file, browser, terminal)
+- [ ] Add MCP (Model Context Protocol) support
+- [ ] Merge slash commands system
+- [ ] Port CLI capabilities
+
+### 2.5.5 Multi-Brain Architecture
+- [ ] Model composition/routing system
+- [ ] Task-based model selection (text→LLM, image→Janus, reasoning→R1)
+- [ ] Model ensemble for complex queries
+- [ ] Unified response aggregation
+- [ ] Fallback chain implementation
+
+### 2.5.6 Model Registry Updates
+- [ ] DeepSeek R1 model entries
+- [ ] Janus model family entries
+- [ ] Capability tags (text, image, reasoning, code)
+- [ ] Model comparison UI
+- [ ] Size/speed indicators
+
+**Repositories:**
+- Janus: `https://github.com/cannaseedus-bot/Janus-text-to-image-.git`
+- Cline: `https://github.com/cannaseedus-bot/cline.git`
+
+**Target:** 🎯 Q1 2025
+**Deliverable:** Multi-model inference platform with Python backbone
+
+---
+
 ## 🌐 PHASE 3: DEPLOYMENT
 
 ### 3.1 Static Hosting
@@ -512,6 +568,28 @@ This document outlines all phases of production from initial development through
 - ✅ Storage layer integration with chat system
 - ✅ Memory system, RLHF storage, event logging
 
+🔨 **PHASE 2.5: MULTI-MODEL INTEGRATION** - 15% IN PROGRESS
+
+**Python Backbone:**
+- [ ] FastAPI model server (`/python/`)
+- [ ] Multi-brain base architecture
+- [ ] Unified inference endpoints
+
+**DeepSeek R1:**
+- [ ] Reasoning model integration
+- [ ] Chain-of-Thought display
+- [ ] API configuration
+
+**Janus Multimodal:**
+- [ ] Text-to-image generation
+- [ ] Image understanding
+- [ ] JanusFlow support
+
+**Cline Merge:**
+- [ ] Webview UI components
+- [ ] Tool system (file, browser, terminal)
+- [ ] MCP protocol support
+
 📋 **PHASE 3: DEPLOYMENT** - 0% COMPLETE
 - Cloudflare Pages setup pending
 - CI/CD pipeline needed
@@ -525,6 +603,13 @@ This document outlines all phases of production from initial development through
 ---
 
 ## 🚀 NEXT STEPS
+
+### Phase 2.5 - CURRENT (Multi-Model Integration)
+1. **Python Backbone** - FastAPI server with multi-brain architecture
+2. **DeepSeek R1** - Reasoning model with CoT display
+3. **Janus Integration** - Text-to-image + image understanding
+4. **Cline Merge** - Tool system, MCP, browser automation
+5. **Multi-Brain Router** - Task-based model selection
 
 ### Phase 2 - COMPLETE
 1. ✅ Training dashboard with live visualization
@@ -544,11 +629,11 @@ This document outlines all phases of production from initial development through
 5. Error tracking (Sentry)
 
 ### Short Term (Next Quarter)
-1. Launch community Discord
-2. Create npm packages
-3. GitHub Discussions activation
-4. Video tutorial series
-5. Documentation improvements
+1. Complete Phase 2.5 multi-model integration
+2. Launch community Discord
+3. Create npm packages
+4. GitHub Discussions activation
+5. Video tutorial series
 
 ### Long Term Vision
 1. Model marketplace launch
@@ -576,6 +661,15 @@ This document outlines all phases of production from initial development through
 - ✅ **M13:** Voice interface with Web Speech API
 - ✅ **M14:** Phase 2 Enhancement complete
 - ✅ **M15:** KQL v1.0 backend (IndexedDB + MySQL + SCXQ2 compression)
+- ✅ **M16:** Configuration system (CONFIG.md + GAS alternative)
+
+## 🎯 UPCOMING MILESTONES
+
+- 🔨 **M17:** Python backbone with multi-brain architecture
+- 🔨 **M18:** DeepSeek R1 reasoning model integration
+- 🔨 **M19:** Janus multimodal (text-to-image + vision)
+- 🔨 **M20:** Cline app merge (tools, MCP, browser automation)
+- 📋 **M21:** Phase 2.5 Multi-Model Integration complete
 
 ---
 

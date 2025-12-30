@@ -1,0 +1,87 @@
+{
+  "$id": "asx://schema/asx-block.v1",
+  "$comment": "ASX-R Core Block Schema (Frozen)",
+  "title": "ASX Block",
+  "description": "Core ASX block structure for UI composition",
+  "type": "object",
+  "required": ["type", "id", "component"],
+  "properties": {
+    "type": {
+      "const": "asx-block",
+      "description": "Block type identifier"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Unique block identifier in kebab-case"
+    },
+    "component": {
+      "type": "string",
+      "pattern": "^[A-Z][a-zA-Z0-9]*$",
+      "description": "Component class name in PascalCase"
+    },
+    "props": {
+      "type": "object",
+      "description": "Component properties",
+      "additionalProperties": true
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "#"
+      },
+      "description": "Nested child blocks"
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^⟁.*⟁$"
+      },
+      "description": "Event handlers using K'UHUL glyph syntax"
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "enum": ["@Pop", "@Wo", "@Sek", "@Collapse"],
+          "description": "Current XCFE phase"
+        },
+        "mounted": {
+          "type": "boolean"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "type": "asx-block",
+      "id": "chat-view",
+      "component": "ChatView",
+      "props": {
+        "messages": [],
+        "isGenerating": false
+      }
+    },
+    {
+      "type": "asx-block",
+      "id": "main-layout",
+      "component": "Layout",
+      "props": {
+        "variant": "sidebar"
+      },
+      "children": [
+        {
+          "type": "asx-block",
+          "id": "sidebar",
+          "component": "Sidebar",
+          "props": {}
+        }
+      ]
+    }
+  ]
+}

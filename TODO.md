@@ -1,8 +1,8 @@
 # XJSON-BOT - Master Todo List
 
 > **Last Updated:** December 29, 2025
-> **Current Phase:** Phase 2 Enhancement (100% Complete)
-> **Next Milestone:** Phase 3 - Deploy to Production
+> **Current Phase:** Phase 2.5 Multi-Model Integration (In Progress)
+> **Next Milestone:** Python Backbone + Cline Merge
 
 ---
 
@@ -12,6 +12,7 @@
 |-------|--------|----------|
 | Phase 1: Foundation | Complete | 100% |
 | Phase 2: Enhancement | Complete | 100% |
+| **Phase 2.5: Multi-Model** | **In Progress** | **15%** |
 | Phase 3: Deployment | Not Started | 0% |
 | Phase 4: Distribution | Not Started | 0% |
 | Phase 5: Education | Not Started | 0% |
@@ -74,21 +75,96 @@
 - [x] RLHF data storage for feedback loops
 - [x] Event logging for analytics
 
+---
+
+## Phase 2.5: Multi-Model Integration - CURRENT PHASE
+
+> **Goal:** Create Python backbone for multi-brain models (like Llama), integrate DeepSeek R1, Janus, and merge Cline features.
+
+### P0 - Critical
+
+#### Python Backbone Infrastructure
+- [ ] Create `/python/` directory for Python model server
+- [ ] Implement `model_server.py` - FastAPI/Flask unified inference server
+- [ ] Create `models/base.py` - Base model class (multi-brain architecture)
+- [ ] Add `models/deepseek_r1.py` - DeepSeek R1 reasoning model wrapper
+- [ ] Add `models/janus.py` - Janus multimodal (text + image) wrapper
+- [ ] Add `models/janus_flow.py` - JanusFlow rectified flow wrapper
+- [ ] Create `requirements.txt` with all dependencies
+- [ ] Add Dockerfile for Python server
+
+#### DeepSeek R1 Integration
+- [ ] Add DeepSeek R1 to model registry (reasoning-focused)
+- [ ] Implement Chain-of-Thought (CoT) support for R1
+- [ ] Add reasoning trace UI display in chat
+- [ ] Configure API endpoints (api.deepseek.com)
+- [ ] Add R1 to provider configuration
+
+#### Janus Multimodal Integration
+- [ ] Port Janus inference code to unified server
+- [ ] Implement text-to-image generation endpoint
+- [ ] Add image understanding (vision) endpoint
+- [ ] Create image upload component in UI
+- [ ] Add generated image display in chat
+- [ ] Support Janus-Pro-7B, Janus-1.3B, JanusFlow-1.3B
+
 ### P1 - High Priority
 
-#### Interactive Features
-- [ ] Implement interactive weight editing in 3D visualizer
-- [ ] Add real-time collaboration features (WebRTC or similar)
-- [ ] Integrate voice interface (Web Speech API)
-- [ ] Add drag-and-drop model file upload
-- [ ] Implement export functionality (weights, conversations, settings)
+#### Cline App Merge
+- [ ] Extract Cline webview-ui components
+- [ ] Port Cline gRPC/protobuf communication patterns
+- [ ] Add Cline tool system (file ops, browser, commands)
+- [ ] Integrate Cline MCP (Model Context Protocol) support
+- [ ] Port Cline slash commands system
+- [ ] Add Cline task management UI
+- [ ] Merge Cline CLI capabilities
 
-#### Testing Infrastructure
-- [ ] Set up Jest for unit testing
-- [ ] Write tests for K'UHUL engine core functions
-- [ ] Write tests for SCXQ2 compression/decompression
-- [ ] Add integration tests for chat workflow
-- [ ] Create E2E tests with Playwright
+#### Multi-Brain Architecture
+- [ ] Create model composition system (like Llama multi-brain)
+- [ ] Implement model routing (text→LLM, image→Janus, reasoning→R1)
+- [ ] Add model ensemble for complex queries
+- [ ] Create unified response aggregator
+- [ ] Implement fallback chains
+
+#### Model Registry Updates
+- [ ] Add DeepSeek R1 variants (R1, R1-0528, R1-Lite)
+- [ ] Add Janus variants (1.3B, Pro-7B, Flow-1.3B)
+- [ ] Add model capability tags (text, image, reasoning, code)
+- [ ] Create model comparison UI
+- [ ] Add model size/speed indicators
+
+### P2 - Medium Priority
+
+#### Python Server Features
+- [ ] Add WebSocket support for streaming
+- [ ] Implement batch inference
+- [ ] Add model caching/preloading
+- [ ] Create health check endpoints
+- [ ] Add GPU memory management
+- [ ] Implement model hot-swapping
+
+#### Image Generation UI
+- [ ] Create image generation panel
+- [ ] Add prompt templates for image gen
+- [ ] Implement image history gallery
+- [ ] Add image editing controls (CFG, steps, size)
+- [ ] Create image-to-image support
+
+#### Cline Advanced Features
+- [ ] Port browser automation (Playwright)
+- [ ] Add terminal integration
+- [ ] Implement project understanding
+- [ ] Port context-aware assistance
+- [ ] Add Cline rules system (.clinerules)
+
+### P3 - Future
+
+#### Research Models
+- [ ] Add support for custom HuggingFace models
+- [ ] Implement LoRA adapter loading
+- [ ] Add model quantization options (4-bit, 8-bit)
+- [ ] Create model fine-tuning interface
+- [ ] Support GGUF/ONNX formats
 
 ---
 
@@ -290,6 +366,131 @@
 - [ ] Keyboard navigation complete
 - [ ] High contrast mode
 - [ ] Reduce motion option
+
+---
+
+## SaaS AI Stack Gap Analysis
+
+> **Comparison:** What XJSON-BOT needs to match commercial SaaS AI platforms (OpenAI, Anthropic Console, Vercel AI, etc.)
+
+### ✅ Already Have
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Chat Interface | ✅ | MX2LM chat with streaming |
+| Multi-Model Support | ✅ | OpenAI, Anthropic, Ollama |
+| Local Storage | ✅ | KQL + IndexedDB |
+| PWA/Offline | ✅ | Service worker |
+| Basic Auth | ✅ | Google OAuth + local |
+| Agent System | ✅ | 50+ agents, fusion |
+| Voice I/O | ✅ | Web Speech API |
+
+### 🔴 Critical Missing (P0)
+
+#### Billing & Monetization
+- [ ] Stripe/Paddle payment integration
+- [ ] Usage-based billing (tokens/requests)
+- [ ] Subscription tiers (Free/Pro/Team/Enterprise)
+- [ ] Credit/token wallet system
+- [ ] Invoice generation
+- [ ] Usage alerts and limits
+
+#### API Gateway
+- [ ] Public REST API with versioning (`/v1/chat`, `/v1/images`)
+- [ ] API key management (create, revoke, rotate)
+- [ ] OpenAPI/Swagger documentation
+- [ ] Rate limiting per API key
+- [ ] Request/response logging
+- [ ] SDK generation (Python, JS, Go)
+
+#### Usage Tracking & Quotas
+- [ ] Token counting per request
+- [ ] Monthly usage dashboards
+- [ ] Cost tracking per user/team
+- [ ] Quota enforcement
+- [ ] Overage handling
+- [ ] Usage export (CSV/JSON)
+
+### 🟡 Important Missing (P1)
+
+#### Admin Dashboard
+- [ ] User management panel
+- [ ] System health monitoring
+- [ ] Model performance metrics
+- [ ] Error rate tracking
+- [ ] Revenue/usage analytics
+- [ ] Feature flags management
+
+#### Multi-Tenancy
+- [ ] Workspace/Organization support
+- [ ] Team member invitations
+- [ ] Role-based access (Admin, Member, Viewer)
+- [ ] Data isolation per workspace
+- [ ] Custom branding per org
+- [ ] Shared prompt libraries
+
+#### Content Safety
+- [ ] Input/output content filtering
+- [ ] PII detection and redaction
+- [ ] Prompt injection detection
+- [ ] Safety guardrails (configurable)
+- [ ] Moderation API integration
+- [ ] Abuse detection
+
+### 🟢 Nice to Have (P2)
+
+#### Enterprise Features
+- [ ] SSO (SAML 2.0, OIDC)
+- [ ] SCIM user provisioning
+- [ ] Dedicated instances option
+- [ ] VPC/private deployment
+- [ ] Custom SLA contracts
+- [ ] Priority support tiers
+
+#### Developer Experience
+- [ ] Interactive API playground
+- [ ] Code snippets in multiple languages
+- [ ] Postman collection
+- [ ] CLI tool (`xjson-cli`)
+- [ ] Webhook management
+- [ ] Event streaming (SSE/WebSocket)
+
+#### Compliance & Security
+- [ ] SOC 2 Type II readiness
+- [ ] GDPR compliance tools
+- [ ] Data retention policies
+- [ ] Audit logging
+- [ ] Encryption at rest (AES-256)
+- [ ] Penetration testing
+
+#### Model Management
+- [ ] Model versioning
+- [ ] A/B testing for prompts
+- [ ] Canary deployments
+- [ ] Model performance comparison
+- [ ] Custom fine-tune uploads
+- [ ] Prompt template library
+
+#### Observability
+- [ ] Structured logging (JSON)
+- [ ] Metrics collection (Prometheus)
+- [ ] Distributed tracing (OpenTelemetry)
+- [ ] Error tracking (Sentry)
+- [ ] Performance APM
+- [ ] Alerting rules
+
+### 📊 SaaS Readiness Score
+
+| Category | Current | Target | Gap |
+|----------|---------|--------|-----|
+| Core Features | 85% | 100% | 15% |
+| Authentication | 40% | 100% | 60% |
+| Billing | 0% | 100% | 100% |
+| API Gateway | 10% | 100% | 90% |
+| Multi-Tenancy | 20% | 100% | 80% |
+| Compliance | 10% | 100% | 90% |
+| Observability | 20% | 100% | 80% |
+| **Overall** | **26%** | **100%** | **74%** |
 
 ---
 

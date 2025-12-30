@@ -1,0 +1,191 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-script://examples/v1",
+  "$comment": "Golden UI + Cluster Examples (Sealed)",
+  "@examples": [
+    {
+      "id": "ui.counter.increment",
+      "description": "UI atomic-script that increments a score and emits a message. No network, no crypto.",
+      "script": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1",
+          "@description": "Increment score and update UI"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_verify",
+              "@phase": "pi_verify",
+              "@args": {
+                "check": "state.score exists and is integer"
+              }
+            },
+            {
+              "@op": "pi_branch",
+              "@phase": "pi_decide",
+              "@args": {
+                "when": "state.score >= 100",
+                "then": "emit_level_up",
+                "else": "emit_continue"
+              }
+            },
+            {
+              "@op": "pi_dom_patch",
+              "@phase": "pi_act",
+              "@args": {
+                "selector": "#score",
+                "op": "increment",
+                "value": 5
+              }
+            },
+            {
+              "@op": "pi_ui_emit",
+              "@phase": "pi_act",
+              "@args": {
+                "event": "message",
+                "text": "Score updated"
+              }
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse",
+              "@args": {
+                "seal": true,
+                "emit_audit": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cluster.mapreduce.sum",
+      "description": "Cluster atomic-script that maps and reduces numeric data. No DOM/UI allowed.",
+      "script": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.cluster_runtime.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1",
+          "@description": "Parallel sum via clusters"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_verify",
+              "@phase": "pi_verify",
+              "@args": {
+                "check": "input.data is array<number>"
+              }
+            },
+            {
+              "@op": "pi_cluster_spawn",
+              "@phase": "pi_act",
+              "@args": {
+                "count": 8
+              }
+            },
+            {
+              "@op": "pi_cluster_map",
+              "@phase": "pi_act",
+              "@args": {
+                "fn": "partial_sum"
+              }
+            },
+            {
+              "@op": "pi_cluster_reduce",
+              "@phase": "pi_act",
+              "@args": {
+                "op": "sum"
+              }
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse",
+              "@args": {
+                "seal": true,
+                "emit_audit": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ui.message.emit",
+      "description": "Simple message emit with DOM update",
+      "script": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.holotape_ui.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1",
+          "@description": "Emit a user message"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_ui_emit",
+              "@phase": "pi_act",
+              "@args": {
+                "event": "message",
+                "text": "Hello from atomic-script!"
+              }
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse",
+              "@args": {
+                "seal": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "verify.invariant.check",
+      "description": "Pure verification script - no effects allowed",
+      "script": {
+        "@xcfe": {
+          "@law": "law.pi_xcfe.native_verify.v1"
+        },
+        "@script": {
+          "@type": "atomic-script",
+          "@version": "v1",
+          "@description": "Verify data invariants"
+        },
+        "@pi": {
+          "@ops": [
+            {
+              "@op": "pi_verify",
+              "@phase": "pi_verify",
+              "@args": {
+                "check": "data.valid === true"
+              }
+            },
+            {
+              "@op": "pi_collapse",
+              "@phase": "pi_collapse",
+              "@args": {
+                "seal": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "@invariants": [
+    "UI example must fail under network or cluster law",
+    "Cluster example must fail under holotape UI law",
+    "Verify example must fail if any effect ops present",
+    "All examples must collapse exactly once"
+  ]
+}

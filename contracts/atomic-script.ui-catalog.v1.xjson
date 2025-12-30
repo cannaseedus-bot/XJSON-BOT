@@ -1,0 +1,176 @@
+{
+  "@catalog": {
+    "@version": "v1",
+    "@rules": {
+      "projection_only": true,
+      "no_execution": true,
+      "no_xcfe": true,
+      "no_pi": true
+    }
+  },
+  "@views": [
+    {
+      "id": "ui-basics",
+      "label": "UI Scripts",
+      "layout": "grid",
+      "cards": [
+        {
+          "id": "ui.score.increment",
+          "title": "Score Increment",
+          "category": "ui",
+          "summary": "Increments a score and updates a label. Demonstrates pi_dom_patch and pi_ui_emit.",
+          "visual": {
+            "type": "mock-dom",
+            "asset": "mock://score-counter"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.holotape_ui.v1",
+            "inputs": ["state.score"],
+            "outputs": ["dom:#score"]
+          }
+        },
+        {
+          "id": "ui.message.emit",
+          "title": "Message Emit",
+          "category": "ui",
+          "summary": "Emits a notification message to the UI.",
+          "visual": {
+            "type": "mock-dom",
+            "asset": "mock://message-toast"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.holotape_ui.v1",
+            "inputs": ["text"],
+            "outputs": ["event:message"]
+          }
+        },
+        {
+          "id": "ui.dom.patch",
+          "title": "DOM Patch",
+          "category": "ui",
+          "summary": "Applies a JSON patch to a DOM element.",
+          "visual": {
+            "type": "code-block",
+            "asset": "code://dom-patch-example"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.holotape_ui.v1",
+            "inputs": ["selector", "patch"],
+            "outputs": ["dom:*"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cluster-patterns",
+      "label": "Cluster Patterns",
+      "layout": "gallery",
+      "cards": [
+        {
+          "id": "cluster.sum.mapreduce",
+          "title": "MapReduce Sum",
+          "category": "cluster",
+          "summary": "Parallel sum using map/reduce across cluster nodes.",
+          "visual": {
+            "type": "svg-preview",
+            "asset": "svg://mapreduce-diagram"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.cluster_runtime.v1",
+            "inputs": ["input.data"],
+            "outputs": ["result.sum"]
+          }
+        },
+        {
+          "id": "cluster.parallel.map",
+          "title": "Parallel Map",
+          "category": "cluster",
+          "summary": "Distributes a map operation across cluster nodes.",
+          "visual": {
+            "type": "svg-preview",
+            "asset": "svg://parallel-map-diagram"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.cluster_runtime.v1",
+            "inputs": ["input.data", "fn"],
+            "outputs": ["result.mapped"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "verification",
+      "label": "Verification Scripts",
+      "layout": "list",
+      "cards": [
+        {
+          "id": "verify.invariant.check",
+          "title": "Invariant Check",
+          "category": "verify",
+          "summary": "Pure verification with no side effects. Runs under native_verify law.",
+          "visual": {
+            "type": "code-block",
+            "asset": "code://invariant-check"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.native_verify.v1",
+            "inputs": ["data", "schema"],
+            "outputs": ["result.valid"]
+          }
+        },
+        {
+          "id": "verify.schema.validate",
+          "title": "Schema Validation",
+          "category": "verify",
+          "summary": "Validates data against a JSON schema reference.",
+          "visual": {
+            "type": "code-block",
+            "asset": "code://schema-validate"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.native_verify.v1",
+            "inputs": ["data", "schema_ref"],
+            "outputs": ["result.valid", "result.errors"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphics",
+      "label": "Graphics Scripts",
+      "layout": "grid",
+      "cards": [
+        {
+          "id": "svg.vector.render",
+          "title": "SVG Vector Render",
+          "category": "svg",
+          "summary": "Renders SVG vector graphics to DOM.",
+          "visual": {
+            "type": "svg-preview",
+            "asset": "svg://vector-render"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.holotape_ui.v1",
+            "inputs": ["svg.data"],
+            "outputs": ["dom:svg"]
+          }
+        },
+        {
+          "id": "canvas.tick.animation",
+          "title": "Canvas Animation Tick",
+          "category": "canvas",
+          "summary": "Single frame tick for canvas animations.",
+          "visual": {
+            "type": "canvas-frame",
+            "asset": "canvas://animation-tick"
+          },
+          "metadata": {
+            "law_hint": "law.pi_xcfe.holotape_ui.v1",
+            "inputs": ["state.frame", "state.entities"],
+            "outputs": ["canvas:frame"]
+          }
+        }
+      ]
+    }
+  ]
+}

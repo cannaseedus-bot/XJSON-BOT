@@ -1,0 +1,263 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-memory://schema/v1",
+  "$comment": "Storage Semantics (Sealed) - Memory tiers, persistence, and lifecycle",
+  "title": "atomic-memory",
+  "description": "Formal storage semantics for atomic-script state. Defines memory tiers, persistence guarantees, and lifecycle.",
+  "type": "object",
+  "required": ["@memory"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@memory": {
+      "type": "object",
+      "required": ["@version", "@tier"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": { "const": "v1" },
+        "@tier": {
+          "type": "string",
+          "enum": ["ephemeral", "tick", "frame", "session", "durable", "distributed"],
+          "description": "Memory tier determining lifetime and persistence"
+        }
+      }
+    },
+
+    "@tiers": {
+      "type": "object",
+      "description": "Memory tier definitions",
+      "additionalProperties": false,
+      "properties": {
+        "@ephemeral": {
+          "type": "object",
+          "description": "Exists only during current operation",
+          "properties": {
+            "@lifetime": { "const": "single_op" },
+            "@persists": { "const": false },
+            "@example": { "const": "function locals, intermediate values" }
+          }
+        },
+        "@tick": {
+          "type": "object",
+          "description": "Exists for current tick only",
+          "properties": {
+            "@lifetime": { "const": "current_tick" },
+            "@persists": { "const": false },
+            "@survives_phase": { "type": "boolean", "default": true },
+            "@example": { "const": "phase-local state, guards" }
+          }
+        },
+        "@frame": {
+          "type": "object",
+          "description": "Exists for current animation frame",
+          "properties": {
+            "@lifetime": { "const": "current_frame" },
+            "@persists": { "const": false },
+            "@batched_writes": { "type": "boolean", "default": true },
+            "@example": { "const": "animation deltas, visual updates" }
+          }
+        },
+        "@session": {
+          "type": "object",
+          "description": "Exists for browser session",
+          "properties": {
+            "@lifetime": { "const": "browser_session" },
+            "@persists": { "const": false },
+            "@storage": { "const": "sessionStorage" },
+            "@example": { "const": "user preferences, view state" }
+          }
+        },
+        "@durable": {
+          "type": "object",
+          "description": "Persists across sessions",
+          "properties": {
+            "@lifetime": { "const": "persistent" },
+            "@persists": { "const": true },
+            "@storage": {
+              "type": "string",
+              "enum": ["localStorage", "indexedDB", "file"]
+            },
+            "@example": { "const": "saved data, user history" }
+          }
+        },
+        "@distributed": {
+          "type": "object",
+          "description": "Replicated across nodes",
+          "properties": {
+            "@lifetime": { "const": "persistent" },
+            "@persists": { "const": true },
+            "@replication": {
+              "type": "string",
+              "enum": ["eventual", "strong", "causal"]
+            },
+            "@example": { "const": "shared state, cluster data" }
+          }
+        }
+      }
+    },
+
+    "@allocation": {
+      "type": "object",
+      "description": "Memory allocation specification",
+      "additionalProperties": false,
+      "properties": {
+        "@id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_\\.]+$",
+          "description": "Allocation identifier"
+        },
+        "@tier": {
+          "type": "string",
+          "enum": ["ephemeral", "tick", "frame", "session", "durable", "distributed"]
+        },
+        "@shape": {
+          "type": "string",
+          "description": "Reference to atomic-shape defining structure"
+        },
+        "@initial": {
+          "description": "Initial value (must match shape)"
+        },
+        "@quota": {
+          "type": "object",
+          "properties": {
+            "@max_bytes": { "type": "integer", "minimum": 0 },
+            "@max_entries": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "@lifecycle": {
+      "type": "object",
+      "description": "Memory lifecycle hooks",
+      "additionalProperties": false,
+      "properties": {
+        "@on_create": {
+          "type": "string",
+          "description": "Script to run on allocation"
+        },
+        "@on_read": {
+          "type": "string",
+          "description": "Script to run on read access"
+        },
+        "@on_write": {
+          "type": "string",
+          "description": "Script to run on write access"
+        },
+        "@on_destroy": {
+          "type": "string",
+          "description": "Script to run on deallocation"
+        },
+        "@on_evict": {
+          "type": "string",
+          "description": "Script to run when evicted from cache"
+        }
+      }
+    },
+
+    "@gc": {
+      "type": "object",
+      "description": "Garbage collection policy",
+      "additionalProperties": false,
+      "properties": {
+        "@strategy": {
+          "type": "string",
+          "enum": ["reference_counting", "mark_sweep", "generational", "manual"],
+          "default": "reference_counting"
+        },
+        "@trigger": {
+          "type": "string",
+          "enum": ["threshold", "periodic", "explicit", "idle"],
+          "default": "idle"
+        },
+        "@threshold_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Memory threshold to trigger GC"
+        },
+        "@retain_policy": {
+          "type": "string",
+          "enum": ["lru", "lfu", "fifo", "priority"],
+          "default": "lru",
+          "description": "Policy for cache eviction"
+        }
+      }
+    },
+
+    "@isolation": {
+      "type": "object",
+      "description": "Memory isolation boundaries",
+      "additionalProperties": false,
+      "properties": {
+        "@scope": {
+          "type": "string",
+          "enum": ["global", "script", "phase", "law"],
+          "description": "Isolation scope for this memory"
+        },
+        "@visibility": {
+          "type": "string",
+          "enum": ["private", "shared", "readonly", "writeonce"],
+          "default": "private"
+        },
+        "@cross_law_access": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow access from different law contexts"
+        }
+      }
+    },
+
+    "@sync": {
+      "type": "object",
+      "description": "Synchronization primitives",
+      "additionalProperties": false,
+      "properties": {
+        "@mode": {
+          "type": "string",
+          "enum": ["none", "atomic", "transactional", "versioned"],
+          "default": "atomic"
+        },
+        "@conflict_resolution": {
+          "type": "string",
+          "enum": ["last_write_wins", "merge", "reject", "custom"],
+          "default": "last_write_wins"
+        },
+        "@version_tracking": {
+          "type": "boolean",
+          "default": false,
+          "description": "Track all versions for MVCC"
+        }
+      }
+    },
+
+    "@compression": {
+      "type": "object",
+      "description": "Storage compression settings",
+      "additionalProperties": false,
+      "properties": {
+        "@enabled": { "type": "boolean", "default": false },
+        "@algorithm": {
+          "type": "string",
+          "enum": ["none", "scxq2", "lz4", "zstd"],
+          "default": "scxq2"
+        },
+        "@threshold_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1024,
+          "description": "Only compress above this size"
+        }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Tier determines maximum lifetime",
+    "Ephemeral < tick < frame < session < durable < distributed",
+    "Writes to higher tiers require capability",
+    "Distributed tier requires cluster capability",
+    "GC never collects referenced memory",
+    "Isolation violations fail at verify phase",
+    "Compression is transparent to scripts"
+  ]
+}

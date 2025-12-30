@@ -1,0 +1,14 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/proof.v3",
+  "$comment": "π Proof Block v3 (Sealed) - Execution proof hashes",
+  "title": "π Proof Block v3",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "@ok": { "type": "boolean" },
+    "@hash": { "type": "string", "minLength": 8 },
+    "@root": { "type": "string", "minLength": 8 },
+    "@law": { "type": "string", "minLength": 3 }
+  }
+}

@@ -1,0 +1,116 @@
+# XJSON-BOT Docker Compose
+# Multi-model AI API Server
+
+version: '3.8'
+
+services:
+  # ==================== API Server (CPU) ====================
+  api:
+    build:
+      context: .
+      target: cpu
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - WORKERS=4
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./cache:/app/cache
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== API Server (GPU) ====================
+  api-gpu:
+    build:
+      context: .
+      target: gpu
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - WORKERS=1
+      - JANUS_DEVICE=cuda
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - OLLAMA_BASE_URL=http://ollama:11434
+    volumes:
+      - ./cache:/app/cache
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - redis
+    restart: unless-stopped
+    profiles:
+      - gpu
+
+  # ==================== Redis (Optional Cache) ====================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # ==================== Ollama (Local Models) ====================
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    profiles:
+      - local
+
+  # ==================== Ollama with GPU ====================
+  ollama-gpu:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    profiles:
+      - gpu
+
+volumes:
+  redis_data:
+  ollama_data:
+
+# Usage:
+# CPU only:     docker-compose up api
+# With GPU:     docker-compose --profile gpu up api-gpu ollama-gpu
+# With Ollama:  docker-compose --profile local up api ollama

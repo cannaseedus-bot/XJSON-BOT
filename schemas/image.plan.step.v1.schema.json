@@ -1,0 +1,66 @@
+{
+  "$id": "asx://schema/image.plan.step.v1",
+  "title": "Image Plan Step v1",
+  "type": "object",
+  "required": ["@op"],
+  "properties": {
+    "@op": {
+      "type": "string",
+      "enum": [
+        "idb.kql", "idb.txn",
+        "scxq2.decode", "scxq2.encode",
+        "img.fetch", "img.decode", "img.preprocess",
+        "vision.run",
+        "return"
+      ]
+    },
+    "@into": { "type": "string" },
+    "@from": { "type": "string" },
+
+    "@kql": { "type": "string" },
+
+    "@ops": { "type": "array", "items": { "type": "object" } },
+
+    "@ref_from": { "type": "string" },
+    "@field": { "type": "string" },
+
+    "@format": { "type": "string", "enum": ["auto", "png", "jpeg", "webp"] },
+
+    "@resize": {
+      "type": "object",
+      "properties": {
+        "@w": { "type": "integer", "minimum": 1, "maximum": 8192 },
+        "@h": { "type": "integer", "minimum": 1, "maximum": 8192 },
+        "@mode": { "type": "string", "enum": ["fit", "fill", "crop_center"] }
+      },
+      "required": ["@w", "@h", "@mode"],
+      "additionalProperties": false
+    },
+    "@normalize": {
+      "type": "object",
+      "properties": {
+        "@mean": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+        "@std": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+      },
+      "required": ["@mean", "@std"],
+      "additionalProperties": false
+    },
+
+    "@task": {
+      "type": "string",
+      "enum": ["caption", "embed", "detect", "ocr-lite", "vqa", "caption+embed", "custom"]
+    },
+    "@model_ref": {
+      "type": "object",
+      "properties": {
+        "@family": { "type": "string", "enum": ["janus", "qwen_vl", "mx2lm_vision"] },
+        "@id": { "type": "string" }
+      },
+      "required": ["@family", "@id"],
+      "additionalProperties": false
+    },
+    "@input": { "type": "string" },
+    "@prompt": { "type": "string" }
+  },
+  "additionalProperties": false
+}

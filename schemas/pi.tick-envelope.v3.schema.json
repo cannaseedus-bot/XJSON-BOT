@@ -1,0 +1,24 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/tick_envelope.v3",
+  "$comment": "π Tick Envelope v3 (Sealed) - Law-governed execution tick",
+  "title": "π Tick Envelope v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@xcfe", "@input", "@state"],
+  "properties": {
+    "@xcfe": { "$ref": "xcfe://schema/control_vectors.v1" },
+    "@input": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "token_stream": { "$ref": "pi://schema/token_stream.v3" }
+      }
+    },
+    "@state": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "@out": { "$ref": "pi://schema/op_list.v3" }
+  }
+}
