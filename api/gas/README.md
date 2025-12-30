@@ -7,7 +7,8 @@ Free serverless backend using Google Sheets as database.
 | File | Purpose | Artifact ID |
 |------|---------|-------------|
 | `Code.gs` | Chat API, models, memory, SCXQ2 | `XJSON_GAS_API_v1` |
-| `auth.gs` | Auth, sessions, per-user DB | `AUTH_IDB_KQL_SHEETS_GLOBAL_v5` |
+| `auth.gs` | Auth, sessions, per-user DB, capability hooks | `AUTH_IDB_KQL_SHEETS_GLOBAL_v5.1` |
+| `api.gs` | REST router, proxy, inference, mesh | `MX2LM_API_SHARD_v1.1` |
 
 ## Why GAS?
 
@@ -129,6 +130,87 @@ console.log(data.choices[0].message.content);
 | `chats` | Get chat list | `userId` |
 | `messages` | Get messages | `chatId` |
 
+### API Shard Routes (api.gs)
+
+Uses `?route=` parameter instead of `action`:
+
+| Route | Method | Description | Parameters |
+|-------|--------|-------------|------------|
+| `health` | GET | Health check | - |
+| `status` | GET | Shard status | - |
+| `providers` | GET | List providers | - |
+| `provider` | GET | Get provider | `id` |
+| `register-provider` | POST | Register provider | `id`, `baseUrl`, `name`, `public` |
+| `proxy` | GET/POST | Proxy to provider | `provider_id`, `provider_route` |
+| `inference` | POST | KQL-aware inference | `provider_id`, `model`, `kql`, `input` |
+| `mesh.discovery` | GET | Mesh discovery | - |
+| `conformance` | GET | Conformance vectors | - |
+| `conformance-run` | GET | Run conformance tests | - |
+
+**Proxy Example:**
+```javascript
+// Proxy to registered provider
+const response = await fetch(API_URL + '?route=proxy', {
+  method: 'POST',
+  body: JSON.stringify({
+    provider_id: 'openai',
+    provider_route: 'chat/completions',
+    provider_method: 'POST'
+  })
+});
+```
+
+**Inference Example (KQL-aware):**
+```javascript
+// KQL-aware inference forward
+const response = await fetch(API_URL + '?route=inference', {
+  method: 'POST',
+  body: JSON.stringify({
+    provider_id: 'deepseek',
+    model: 'deepseek-r1',
+    kql: 'SELECT * FROM context WHERE relevance > 0.8',
+    input: 'Explain quantum entanglement'
+  })
+});
+```
+
+**Security Features:**
+- SSRF protection (blocks private/localhost targets)
+- Hop-by-hop header filtering
+- Capability-gated routes (`proxy.provider.<id>`, `inference.provider.<id>`)
+- Usage metering per route
+
+### Capability Hooks (auth.gs → api.gs)
+
+auth.gs exposes two functions for api.gs integration:
+
+| Function | Purpose |
+|----------|---------|
+| `authCheckAccessFromParams(params, route, method)` | Route-level auth gate |
+| `authCheckCapabilityFromParams(params, capability, context)` | Fine-grained capability check |
+
+**Public Routes (no apiKey required):**
+- `health`, `status`, `providers`, `conformance`
+- `mesh.discovery`
+
+**Capability Auto-Grants:**
+- Provider owners get `proxy.provider.<id>` and `inference.provider.<id>` automatically
+
+**Fine-Grained Capabilities:**
+```javascript
+// API key record structure
+{
+  key: "key_uuid",
+  owner: "user@example.com",
+  active: true,
+  scopes: ["*"],           // legacy
+  capabilities: [          // v5.1+
+    "proxy.provider.openai",
+    "inference.provider.deepseek"
+  ]
+}
+```
+
 ## Data Storage
 
 ### Code.gs (Chat API)
@@ -174,6 +256,9 @@ Each user gets their own spreadsheet (`ASX_USER_{external_id}`):
 | Offline | ❌ | ❌ | ✅ |
 | Auth (SecuroLink) | ✅ | ✅ | ✅ |
 | Per-user DB | ✅ (Sheets) | ✅ | ✅ |
+| Provider Proxy | ✅ | ✅ | ✅ |
+| Mesh Discovery | ✅ | ✅ | ✅ |
+| KQL Inference | ✅ | ❌ | ✅ |
 
 ## Security
 
