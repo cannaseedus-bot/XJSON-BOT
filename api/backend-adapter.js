@@ -347,6 +347,79 @@ class XJSONBackend {
     return this.request(`/v1/messages?chatId=${chatId}`, null, 'GET');
   }
 
+  // ==================== AUTH API (SecuroLink) ====================
+
+  /**
+   * Login with Google ID token
+   * @param {string} idToken - Google OAuth ID token
+   * @param {string} appId - Application identifier
+   * @returns {object} Auth response with identity, tokens, and db_json
+   */
+  async securoLogin(idToken, appId = 'global') {
+    const data = {
+      action: 'securoLogin',
+      idToken,
+      app_id: appId
+    };
+
+    if (this.type === 'gas') {
+      return this.request('', data);
+    }
+
+    return this.request('/v1/auth/securoLogin', data);
+  }
+
+  /**
+   * Verify SecuroLink token
+   * @param {string} securoToken - SecuroLink HMAC token
+   */
+  async verifyToken(securoToken) {
+    const data = {
+      action: 'verifyToken',
+      securoToken
+    };
+
+    if (this.type === 'gas') {
+      return this.request('', data);
+    }
+
+    return this.request('/v1/auth/verify', data);
+  }
+
+  /**
+   * Get user db.json snapshot
+   * @param {string} securoToken - SecuroLink token for auth
+   */
+  async getDbJson(securoToken) {
+    const data = {
+      action: 'getDbJson',
+      securoToken
+    };
+
+    if (this.type === 'gas') {
+      return this.request('', data);
+    }
+
+    return this.request('/v1/auth/db', data);
+  }
+
+  /**
+   * Logout / invalidate session
+   * @param {string} securoToken - SecuroLink token to invalidate
+   */
+  async logout(securoToken) {
+    const data = {
+      action: 'logout',
+      securoToken
+    };
+
+    if (this.type === 'gas') {
+      return this.request('', data);
+    }
+
+    return this.request('/v1/auth/logout', data);
+  }
+
   // ==================== UTILITY ====================
 
   /**
@@ -377,11 +450,11 @@ class XJSONBackend {
   getCapabilities() {
     switch (this.type) {
       case 'python':
-        return ['chat', 'stream', 'images', 'vision', 'kuhul', 'memory', 'local_models'];
+        return ['chat', 'stream', 'images', 'vision', 'kuhul', 'memory', 'local_models', 'auth'];
       case 'php':
-        return ['chat', 'stream', 'images', 'kuhul', 'memory'];
+        return ['chat', 'stream', 'images', 'kuhul', 'memory', 'auth'];
       case 'gas':
-        return ['chat', 'memory', 'storage'];
+        return ['chat', 'memory', 'storage', 'auth'];
       default:
         return [];
     }
