@@ -6,11 +6,14 @@
      KQL.submit({ prompt: "Hello", model: "mx2lm" });
      KQL.query("⟁LOAD⟁ ⟁CHATS⟁ ⟁LIMIT⟁ 25");
      KQL.search("quantum physics");
+     KQL.getModels(); // Returns all registered models
 */
 (() => {
   const DB_NAME = 'asx_kql_chat';
   const DB_VERSION = 1;
+  const REGISTRY_PATH = '../schemas/kql.model-registry.v1.json';
   let db = null;
+  let modelRegistry = null;
 
   // ---- IndexedDB Setup ----
   async function openDB() {
@@ -200,41 +203,132 @@
     };
   }
 
+  // ---- Model Registry Loader ----
+  async function loadModelRegistry() {
+    if (modelRegistry) return modelRegistry;
+
+    try {
+      const res = await fetch(REGISTRY_PATH);
+      if (res.ok) {
+        modelRegistry = await res.json();
+        console.log(`[KQL] Loaded ${modelRegistry.models?.length || 0} models from registry`);
+        return modelRegistry;
+      }
+    } catch (e) {
+      console.warn('[KQL] Registry load failed, using defaults:', e.message);
+    }
+
+    // Fallback registry
+    modelRegistry = {
+      models: [
+        { "@id": "asx://model/mx2lm.v1", name: "MX2LM", endpoint: "/api/inference/mx2lm", provider: "local", icon: "🧠", status: "active" },
+        { "@id": "asx://model/qwen.v1", name: "Qwen 2.5", endpoint: "/api/inference/qwen", provider: "huggingface", icon: "🌟", status: "active" },
+        { "@id": "asx://model/deepseek-r1.v1", name: "DeepSeek R1", endpoint: "/api/inference/deepseek", provider: "deepseek", icon: "🔮", status: "active" },
+        { "@id": "asx://model/ollama-local.v1", name: "Local (Ollama)", endpoint: "http://localhost:11434/api/generate", provider: "ollama", icon: "🦙", status: "active" },
+        { "@id": "asx://model/openai-gpt4.v1", name: "GPT-4o", endpoint: "https://api.openai.com/v1/chat/completions", provider: "openai", icon: "🤖", status: "active" }
+      ],
+      default_model: "asx://model/mx2lm.v1"
+    };
+    return modelRegistry;
+  }
+
+  function getModelById(modelId) {
+    if (!modelRegistry) return null;
+    // Support both short names (mx2lm) and full IDs (asx://model/mx2lm.v1)
+    return modelRegistry.models.find(m =>
+      m["@id"] === modelId ||
+      m["@id"].includes(`/${modelId}.`) ||
+      m.name.toLowerCase().replace(/\s+/g, '') === modelId.toLowerCase()
+    );
+  }
+
   // ---- Inference Router ----
   async function routeInference(prompt, model) {
-    const routes = {
-      'mx2lm': '/api/inference/mx2lm',
-      'qwen': '/api/inference/qwen',
-      'deepseek': '/api/inference/deepseek',
-      'local': 'http://localhost:11434/api/generate',
-      'openai': 'https://api.openai.com/v1/chat/completions'
-    };
+    await loadModelRegistry();
 
-    const endpoint = routes[model] || routes['mx2lm'];
+    // Find model in registry
+    const modelDef = getModelById(model);
+    const endpoint = modelDef?.endpoint || '/api/inference/mx2lm';
 
-    // Stub response for demo (replace with actual fetch)
+    const provider = modelDef?.provider || 'local';
+    const modelName = modelDef?.name || model;
+
     try {
-      // Check if we have a local model running
-      if (model === 'local') {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'llama2', prompt })
-        }).catch(() => null);
+      // Provider-specific routing
+      switch (provider) {
+        case 'ollama':
+          const ollamaRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'llama2', prompt, stream: false })
+          }).catch(() => null);
 
-        if (res?.ok) {
-          const data = await res.json();
-          return { content: data.response, tokens: data.eval_count || 0 };
-        }
+          if (ollamaRes?.ok) {
+            const data = await ollamaRes.json();
+            return { content: data.response, tokens: data.eval_count || 0, provider };
+          }
+          break;
+
+        case 'openai':
+          // Would use OPENAI_API_KEY from env
+          const openaiRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${window.OPENAI_API_KEY || ''}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: modelDef?.parameters?.max_tokens || 2048
+            })
+          }).catch(() => null);
+
+          if (openaiRes?.ok) {
+            const data = await openaiRes.json();
+            return {
+              content: data.choices?.[0]?.message?.content || '',
+              tokens: data.usage?.total_tokens || 0,
+              provider
+            };
+          }
+          break;
+
+        case 'anthropic':
+          // Would use ANTHROPIC_API_KEY from env
+          break;
+
+        case 'deepseek':
+        case 'huggingface':
+        case 'local':
+        case 'custom':
+        default:
+          // Generic POST inference
+          const genericRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, model: modelName })
+          }).catch(() => null);
+
+          if (genericRes?.ok) {
+            const data = await genericRes.json();
+            return {
+              content: data.response || data.content || data.text || '',
+              tokens: data.tokens || data.eval_count || 0,
+              provider
+            };
+          }
       }
 
-      // Fallback to stub
+      // Fallback stub response
       return {
-        content: `[${model.toUpperCase()}] I received: "${prompt}". In production, this routes to the ${model} inference API.`,
-        tokens: prompt.split(' ').length * 2
+        content: `[${modelName}] I received: "${prompt}". Provider: ${provider}. Endpoint: ${endpoint}`,
+        tokens: prompt.split(' ').length * 2,
+        provider,
+        stub: true
       };
     } catch (e) {
-      return { content: `[Error] Inference failed: ${e.message}`, tokens: 0 };
+      return { content: `[Error] Inference failed: ${e.message}`, tokens: 0, provider, error: true };
     }
   }
 
@@ -367,11 +461,31 @@
   // ---- KQL Public API ----
   const KQL = window.KQL = {
     db: null,
+    registry: null,
 
     async boot() {
       this.db = await openDB();
+      this.registry = await loadModelRegistry();
       console.log('[KQL] Chat database initialized');
+      console.log(`[KQL] ${this.registry.models?.length || 0} models registered`);
       return this;
+    },
+
+    // Model Registry API
+    getModels() {
+      return modelRegistry?.models || [];
+    },
+
+    getActiveModels() {
+      return (modelRegistry?.models || []).filter(m => m.status === 'active');
+    },
+
+    getModel(id) {
+      return getModelById(id);
+    },
+
+    getDefaultModel() {
+      return modelRegistry?.default_model || 'mx2lm';
     },
 
     query(kqlString) {

@@ -1,0 +1,203 @@
+{
+  "$id": "asx://registry/kql.models.v1",
+  "$schema": "asx://schema/kql.model.v1",
+  "@type": "kql.model-registry",
+  "@version": "1.0.0",
+  "@status": "active",
+
+  "models": [
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/mx2lm.v1",
+      "name": "MX2LM",
+      "endpoint": "/api/inference/mx2lm",
+      "provider": "local",
+      "capabilities": ["chat", "code", "reasoning"],
+      "context_window": 8192,
+      "quantization": "q4_k_m",
+      "parameters": {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_tokens": 4096
+      },
+      "auth": { "type": "none" },
+      "status": "active",
+      "icon": "🧠",
+      "color": "#16f2aa"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/qwen.v1",
+      "name": "Qwen 2.5",
+      "endpoint": "/api/inference/qwen",
+      "provider": "huggingface",
+      "capabilities": ["chat", "code", "reasoning", "function-call"],
+      "context_window": 32768,
+      "quantization": "bf16",
+      "parameters": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": 8192
+      },
+      "auth": {
+        "type": "bearer",
+        "header": "Authorization",
+        "env_var": "HF_TOKEN"
+      },
+      "status": "active",
+      "icon": "🌟",
+      "color": "#7c3aed"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/deepseek-r1.v1",
+      "name": "DeepSeek R1",
+      "endpoint": "/api/inference/deepseek",
+      "provider": "deepseek",
+      "capabilities": ["chat", "code", "reasoning"],
+      "context_window": 65536,
+      "quantization": "bf16",
+      "parameters": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "max_tokens": 16384
+      },
+      "auth": {
+        "type": "api-key",
+        "header": "Authorization",
+        "env_var": "DEEPSEEK_API_KEY"
+      },
+      "status": "active",
+      "icon": "🔮",
+      "color": "#3b82f6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/ollama-local.v1",
+      "name": "Local (Ollama)",
+      "endpoint": "http://localhost:11434/api/generate",
+      "provider": "ollama",
+      "capabilities": ["chat", "code"],
+      "context_window": 4096,
+      "quantization": "q4_k_m",
+      "parameters": {
+        "temperature": 0.8,
+        "top_p": 0.9,
+        "max_tokens": 2048
+      },
+      "auth": { "type": "none" },
+      "status": "active",
+      "icon": "🦙",
+      "color": "#f59e0b"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/openai-gpt4.v1",
+      "name": "GPT-4o",
+      "endpoint": "https://api.openai.com/v1/chat/completions",
+      "provider": "openai",
+      "capabilities": ["chat", "code", "reasoning", "vision", "function-call"],
+      "context_window": 128000,
+      "quantization": "f16",
+      "parameters": {
+        "temperature": 0.7,
+        "top_p": 1.0,
+        "max_tokens": 4096
+      },
+      "auth": {
+        "type": "bearer",
+        "header": "Authorization",
+        "env_var": "OPENAI_API_KEY"
+      },
+      "status": "active",
+      "icon": "🤖",
+      "color": "#10b981"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/claude-sonnet.v1",
+      "name": "Claude Sonnet",
+      "endpoint": "https://api.anthropic.com/v1/messages",
+      "provider": "anthropic",
+      "capabilities": ["chat", "code", "reasoning", "vision"],
+      "context_window": 200000,
+      "quantization": "f16",
+      "parameters": {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_tokens": 8192
+      },
+      "auth": {
+        "type": "api-key",
+        "header": "x-api-key",
+        "env_var": "ANTHROPIC_API_KEY"
+      },
+      "status": "active",
+      "icon": "🎭",
+      "color": "#d97706"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/janus-pro.v1",
+      "name": "Janus Pro 7B",
+      "endpoint": "/api/inference/janus",
+      "provider": "local",
+      "capabilities": ["chat", "vision", "image-gen"],
+      "context_window": 8192,
+      "quantization": "q4_k_m",
+      "parameters": {
+        "temperature": 0.9,
+        "top_p": 0.95,
+        "max_tokens": 4096
+      },
+      "auth": { "type": "none" },
+      "status": "active",
+      "icon": "🎨",
+      "color": "#ec4899"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/llama3.v1",
+      "name": "Llama 3.3 70B",
+      "endpoint": "http://localhost:11434/api/generate",
+      "provider": "ollama",
+      "capabilities": ["chat", "code", "reasoning"],
+      "context_window": 131072,
+      "quantization": "q4_k_m",
+      "parameters": {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "max_tokens": 8192
+      },
+      "auth": { "type": "none" },
+      "status": "pending",
+      "icon": "🦙",
+      "color": "#6366f1"
+    }
+  ],
+
+  "default_model": "asx://model/mx2lm.v1",
+
+  "provider_configs": {
+    "ollama": {
+      "base_url": "http://localhost:11434",
+      "health_check": "/api/tags"
+    },
+    "huggingface": {
+      "base_url": "https://api-inference.huggingface.co",
+      "models_endpoint": "/models"
+    },
+    "openai": {
+      "base_url": "https://api.openai.com/v1",
+      "models_endpoint": "/models"
+    },
+    "anthropic": {
+      "base_url": "https://api.anthropic.com/v1",
+      "version": "2024-01-01"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "models_endpoint": "/models"
+    }
+  }
+}

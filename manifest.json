@@ -29,6 +29,15 @@
       "demo": "ui/srp-demo.html"
     },
 
+    "kql": {
+      "@id": "asx://kql/chat.v1",
+      "module": "core/KQL_CHAT.js",
+      "schema": "schemas/kql.model.v1.schema.json",
+      "registry": "schemas/kql.model-registry.v1.json",
+      "default_model": "mx2lm",
+      "models_count": 8
+    },
+
     "tapes": {
       "system": [
         { "id": "system_boot", "name": "System Boot", "icon": "⚡" },
