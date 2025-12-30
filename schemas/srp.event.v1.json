@@ -1,0 +1,89 @@
+{
+  "$schema": "asx://schema/xjson.draft/2020-12",
+  "$id": "asx://schema/srp.event.v1",
+  "$comment": "SRP Event Schema v1 - External triggers for state transitions",
+  "title": "SRP Event",
+  "description": "Machine-readable event for SRP runtime. Events trigger state transitions without imperative handlers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "@id", "@ts", "@source", "@name"],
+  "properties": {
+    "@type": {
+      "const": "srp.event.v1",
+      "description": "Schema type identifier"
+    },
+    "@id": {
+      "type": "string",
+      "pattern": "^evt:[a-z0-9_]+:[a-z0-9]+$",
+      "description": "Unique event identifier (evt:{name}:{id})"
+    },
+    "@ts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix timestamp in milliseconds when event was created"
+    },
+    "@source": {
+      "type": "string",
+      "enum": ["ui", "system", "network", "timer", "kernel", "agent"],
+      "description": "Origin surface that produced the event"
+    },
+    "@name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9_.]*$",
+      "description": "Event name (e.g., 'click', 'submit', 'tick')"
+    },
+    "@payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Event-specific data payload"
+    },
+    "@trace": {
+      "type": "object",
+      "properties": {
+        "parent_id": {
+          "type": "string",
+          "description": "ID of parent event (for event chains)"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier for replay grouping"
+        },
+        "replay": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this event is from a replay"
+        }
+      },
+      "description": "Optional tracing metadata for replay/audit"
+    }
+  },
+  "examples": [
+    {
+      "@type": "srp.event.v1",
+      "@id": "evt:click:abc123",
+      "@ts": 1735570800000,
+      "@source": "ui",
+      "@name": "click",
+      "@payload": {
+        "target": "btn:save",
+        "position": { "x": 100, "y": 200 }
+      }
+    },
+    {
+      "@type": "srp.event.v1",
+      "@id": "evt:phase_complete:def456",
+      "@ts": 1735570800500,
+      "@source": "kernel",
+      "@name": "phase.complete",
+      "@payload": {
+        "phase": "pop",
+        "duration_ms": 150
+      },
+      "@trace": {
+        "session_id": "session_abc",
+        "replay": false
+      }
+    }
+  ]
+}

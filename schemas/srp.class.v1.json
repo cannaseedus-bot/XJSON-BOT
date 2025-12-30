@@ -1,0 +1,298 @@
+{
+  "$schema": "asx://schema/xjson.draft/2020-12",
+  "$id": "asx://schema/srp.class.v1",
+  "$comment": "SRP Class Schema v1 - System Runtime Preprocessor Interface Contract",
+  "title": "SRP Class",
+  "description": "Always-active runtime layer that preprocesses system state through deterministic transitions. Replaces imperative handlers with declarative directives.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "@id", "@version", "name", "state", "directives"],
+  "properties": {
+    "@type": {
+      "const": "srp.class.v1",
+      "description": "Schema type identifier"
+    },
+    "@id": {
+      "type": "string",
+      "pattern": "^asx://srp/class/[a-zA-Z0-9._:-]+$",
+      "description": "Unique class identifier"
+    },
+    "@version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of this class definition"
+    },
+    "@status": {
+      "type": "string",
+      "enum": ["draft", "candidate", "frozen"],
+      "default": "draft",
+      "description": "Specification status"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable class name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Class purpose and behavior description"
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Initial/seed state (authoritative baseline for Wo-plane)"
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "check"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "check": {
+            "type": "object",
+            "description": "Condition that must always be true (same format as @if)"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["error", "warning"],
+            "default": "error"
+          }
+        }
+      },
+      "description": "State invariants that must hold after every transition"
+    },
+    "directives": {
+      "type": "array",
+      "items": { "$ref": "asx://schema/srp.directive.v1" },
+      "description": "Directive list applied during collapse phase"
+    },
+    "projector": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dom", "css", "route", "storage", "io", "network"]
+          },
+          "default": ["dom", "css"],
+          "description": "Enabled projection surfaces"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["when", "project"],
+            "properties": {
+              "when": {
+                "type": "object",
+                "description": "State condition for this projection rule"
+              },
+              "project": { "$ref": "asx://schema/srp.projection.v1" }
+            }
+          },
+          "description": "Conditional projection rules"
+        }
+      },
+      "description": "Projector configuration"
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tick_mode": {
+          "type": "string",
+          "enum": ["immediate", "microtask", "animation_frame", "interval"],
+          "default": "microtask",
+          "description": "When to execute tick/collapse cycle"
+        },
+        "tick_interval_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 16,
+          "description": "Interval for 'interval' tick mode"
+        },
+        "batch_events": {
+          "type": "boolean",
+          "default": true,
+          "description": "Batch multiple events per tick"
+        },
+        "max_queue_size": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000,
+          "description": "Maximum event queue size before dropping"
+        }
+      },
+      "description": "Scheduler configuration"
+    },
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "validate_events": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate events against schema before processing"
+        },
+        "validate_deltas": {
+          "type": "boolean",
+          "default": true,
+          "description": "Validate deltas before commit"
+        },
+        "check_invariants": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check state invariants after each commit"
+        },
+        "record_trace": {
+          "type": "boolean",
+          "default": false,
+          "description": "Record execution trace for replay"
+        }
+      },
+      "description": "Verifier configuration"
+    },
+    "router": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "surfaces": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean", "default": true },
+              "mode": { "type": "string", "enum": ["sync", "async"], "default": "sync" }
+            }
+          },
+          "description": "Surface routing configuration"
+        }
+      },
+      "description": "Side-effect router configuration"
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "on_boot": {
+          "type": "array",
+          "items": { "$ref": "asx://schema/srp.directive.v1" },
+          "description": "Directives to run on boot"
+        },
+        "on_shutdown": {
+          "type": "array",
+          "items": { "$ref": "asx://schema/srp.directive.v1" },
+          "description": "Directives to run on shutdown"
+        }
+      },
+      "description": "Lifecycle hooks (still deterministic)"
+    },
+    "allow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed event type names (whitelist)"
+        },
+        "sources": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["ui", "system", "network", "timer", "kernel", "agent"] },
+          "description": "Allowed event sources"
+        }
+      },
+      "description": "Event filtering/security configuration"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional metadata"
+    }
+  },
+  "$defs": {
+    "lifecycle_phases": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["boot", "tick", "perceive", "verify", "plan", "collapse", "commit", "project", "shutdown"]
+      },
+      "description": "SRP execution phases in order"
+    }
+  },
+  "examples": [
+    {
+      "@type": "srp.class.v1",
+      "@id": "asx://srp/class/progress-tracker",
+      "@version": "1.0.0",
+      "@status": "draft",
+      "name": "ProgressTracker",
+      "description": "XCFE phase-based progress tracking with SRP runtime",
+      "state": {
+        "phases": {
+          "pop": { "status": "pending", "progress": 0 },
+          "wo": { "status": "pending", "progress": 0 },
+          "sek": { "status": "pending", "progress": 0 },
+          "collapse": { "status": "pending", "progress": 0 }
+        },
+        "active_phase": null,
+        "overall_progress": 0
+      },
+      "invariants": [
+        {
+          "name": "valid_progress",
+          "description": "Progress must be 0-100",
+          "check": {
+            "and": [
+              { "path": "overall_progress", "gte": 0 },
+              { "path": "overall_progress", "lte": 100 }
+            ]
+          }
+        }
+      ],
+      "directives": [
+        {
+          "@type": "srp.directive.v1",
+          "@control": {
+            "@if": { "path": "phases.pop.status", "eq": "pending" },
+            "@then": {
+              "@sequence": [
+                { "@set": { "path": "phases.pop.status", "value": "active" } },
+                { "@set": { "path": "active_phase", "value": "pop" } }
+              ]
+            }
+          }
+        }
+      ],
+      "projector": {
+        "surfaces": ["dom", "css", "storage"],
+        "rules": [
+          {
+            "when": { "path": "active_phase", "neq": null },
+            "project": {
+              "@type": "srp.projection.v1",
+              "@css_vars": {
+                "--active-phase": "{{state.active_phase}}"
+              }
+            }
+          }
+        ]
+      },
+      "scheduler": {
+        "tick_mode": "microtask",
+        "batch_events": true
+      },
+      "verifier": {
+        "validate_events": true,
+        "check_invariants": true,
+        "record_trace": true
+      }
+    }
+  ]
+}

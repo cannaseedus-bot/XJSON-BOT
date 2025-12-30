@@ -828,8 +828,566 @@ if (typeof window !== 'undefined') {
   window.ASXProgressBlock = ASXProgressBlock;
 }
 
-console.log('K\'UHUL PROGRESS TRACKER v1.0 - LOADED');
+/* ============================================================
+   SRP KERNEL - System Runtime Preprocessor
+   ============================================================ */
+
+/**
+ * SRP (System Runtime Preprocessor) - Always-active runtime layer
+ * Implements: submit -> tick -> collapse -> project cycle
+ */
+const SRP = {
+  // Core state (Wo-plane)
+  state: {},
+
+  // Event queue
+  queue: [],
+
+  // Registered directives
+  directives: [],
+
+  // Projector rules
+  projectorRules: [],
+
+  // Configuration
+  config: {
+    tick_mode: 'microtask',
+    batch_events: true,
+    validate_events: true,
+    record_trace: false
+  },
+
+  // Execution trace for replay
+  trace: [],
+
+  // Listeners for projections
+  projectionListeners: [],
+
+  /**
+   * Boot the SRP kernel with initial state
+   */
+  boot(seed = {}) {
+    this.state = { ...seed.state };
+    this.directives = seed.directives || [];
+    this.projectorRules = seed.projector?.rules || [];
+    this.config = { ...this.config, ...seed.scheduler };
+
+    console.log('SRP Kernel booted with state:', Object.keys(this.state));
+    return { status: 'booted', state_keys: Object.keys(this.state) };
+  },
+
+  /**
+   * Submit an event to the SRP queue
+   */
+  submit(event) {
+    // Validate event structure
+    if (this.config.validate_events && !this._validateEvent(event)) {
+      console.warn('SRP: Invalid event rejected:', event);
+      return { status: 'rejected', reason: 'invalid_event' };
+    }
+
+    // Add timestamp if missing
+    if (!event['@ts']) {
+      event['@ts'] = Date.now();
+    }
+
+    // Enqueue
+    this.queue.push(event);
+
+    // Record trace
+    if (this.config.record_trace) {
+      this.trace.push({ type: 'submit', event, ts: Date.now() });
+    }
+
+    // Schedule tick
+    this._scheduleTick();
+
+    return { status: 'queued', event_id: event['@id'] };
+  },
+
+  /**
+   * Schedule the next tick based on config
+   */
+  _scheduleTick() {
+    if (this._tickScheduled) return;
+    this._tickScheduled = true;
+
+    switch (this.config.tick_mode) {
+      case 'immediate':
+        this.tick();
+        break;
+      case 'microtask':
+        queueMicrotask(() => this.tick());
+        break;
+      case 'animation_frame':
+        requestAnimationFrame(() => this.tick());
+        break;
+      default:
+        setTimeout(() => this.tick(), 0);
+    }
+  },
+
+  /**
+   * Tick - Process queued events through collapse cycle
+   */
+  tick() {
+    this._tickScheduled = false;
+
+    if (this.queue.length === 0) return;
+
+    // Drain queue deterministically
+    const events = this.config.batch_events
+      ? this.queue.splice(0, this.queue.length)
+      : [this.queue.shift()];
+
+    // Collapse phase
+    const deltas = [];
+    for (const event of events) {
+      const eventDeltas = this._collapse(event);
+      deltas.push(...eventDeltas);
+    }
+
+    // Commit deltas
+    for (const delta of deltas) {
+      this._commit(delta);
+    }
+
+    // Project
+    const projection = this._project();
+
+    // Record trace
+    if (this.config.record_trace) {
+      this.trace.push({ type: 'tick', events: events.length, deltas: deltas.length, ts: Date.now() });
+    }
+
+    // Emit projection to listeners
+    this._emitProjection(projection);
+
+    // Continue if more events
+    if (this.queue.length > 0) {
+      this._scheduleTick();
+    }
+  },
+
+  /**
+   * Collapse - Apply directives to produce deltas
+   */
+  _collapse(event) {
+    const deltas = [];
+
+    for (const directive of this.directives) {
+      if (!this._matchesDirective(directive, event)) continue;
+
+      const control = directive['@control'];
+      const conditionMet = this._evaluateCondition(control['@if']);
+
+      const actions = conditionMet ? control['@then'] : control['@else'];
+      if (!actions) continue;
+
+      const delta = this._executeActions(actions, event);
+      if (delta) {
+        delta['@source'] = directive['@id'] || 'anonymous_directive';
+        deltas.push(delta);
+      }
+    }
+
+    return deltas;
+  },
+
+  /**
+   * Check if directive matches event
+   */
+  _matchesDirective(directive, event) {
+    const when = directive['@control']?.['@if'];
+    // If directive has no explicit event filter, it matches all
+    return true;
+  },
+
+  /**
+   * Evaluate a condition against current state
+   */
+  _evaluateCondition(condition) {
+    if (!condition) return true;
+
+    // Path equality
+    if (condition.path && 'eq' in condition) {
+      return this._getPath(condition.path) === condition.eq;
+    }
+
+    // Path inequality
+    if (condition.path && 'neq' in condition) {
+      return this._getPath(condition.path) !== condition.neq;
+    }
+
+    // Path membership
+    if (condition.path && 'in' in condition) {
+      return condition.in.includes(this._getPath(condition.path));
+    }
+
+    // Greater than
+    if (condition.path && 'gt' in condition) {
+      return this._getPath(condition.path) > condition.gt;
+    }
+
+    // Less than
+    if (condition.path && 'lt' in condition) {
+      return this._getPath(condition.path) < condition.lt;
+    }
+
+    // Exists
+    if (condition.path && 'exists' in condition) {
+      const exists = this._getPath(condition.path) !== undefined;
+      return condition.exists ? exists : !exists;
+    }
+
+    // Logical AND
+    if (condition.and) {
+      return condition.and.every(c => this._evaluateCondition(c));
+    }
+
+    // Logical OR
+    if (condition.or) {
+      return condition.or.some(c => this._evaluateCondition(c));
+    }
+
+    // Logical NOT
+    if (condition.not) {
+      return !this._evaluateCondition(condition.not);
+    }
+
+    return true;
+  },
+
+  /**
+   * Execute actions and produce delta
+   */
+  _executeActions(actions, event) {
+    const delta = {
+      '@type': 'srp.delta.v1',
+      '@ts': Date.now(),
+      '@writes': [],
+      '@emits': []
+    };
+
+    // Handle sequence of actions
+    if (actions['@sequence']) {
+      for (const action of actions['@sequence']) {
+        this._processAction(action, delta, event);
+      }
+    } else {
+      this._processAction(actions, delta, event);
+    }
+
+    return delta['@writes'].length > 0 || delta['@emits'].length > 0 ? delta : null;
+  },
+
+  /**
+   * Process a single action
+   */
+  _processAction(action, delta, event) {
+    // Set value
+    if (action['@set']) {
+      delta['@writes'].push({
+        op: 'set',
+        path: action['@set'].path,
+        value: action['@set'].value
+      });
+    }
+
+    // Toggle boolean
+    if (action['@toggle']) {
+      const currentValue = this._getPath(action['@toggle'].path);
+      delta['@writes'].push({
+        op: 'set',
+        path: action['@toggle'].path,
+        value: !currentValue,
+        prev: currentValue
+      });
+    }
+
+    // Increment
+    if (action['@inc']) {
+      const currentValue = this._getPath(action['@inc'].path) || 0;
+      const by = action['@inc'].by || 1;
+      delta['@writes'].push({
+        op: 'set',
+        path: action['@inc'].path,
+        value: currentValue + by,
+        prev: currentValue
+      });
+    }
+
+    // Decrement
+    if (action['@dec']) {
+      const currentValue = this._getPath(action['@dec'].path) || 0;
+      const by = action['@dec'].by || 1;
+      delta['@writes'].push({
+        op: 'set',
+        path: action['@dec'].path,
+        value: currentValue - by,
+        prev: currentValue
+      });
+    }
+
+    // Push to array
+    if (action['@push']) {
+      delta['@writes'].push({
+        op: 'push',
+        path: action['@push'].path,
+        value: action['@push'].value
+      });
+    }
+
+    // Emit to surface
+    if (action['@view']) {
+      delta['@emits'].push({
+        surface: 'view',
+        value: action['@view']
+      });
+    }
+
+    // Emit event
+    if (action['@emit']) {
+      this.submit({
+        '@type': 'srp.event.v1',
+        '@id': `evt:${action['@emit'].event}:${Date.now()}`,
+        '@ts': Date.now(),
+        '@source': 'kernel',
+        '@name': action['@emit'].event,
+        '@payload': action['@emit'].payload || {}
+      });
+    }
+  },
+
+  /**
+   * Commit delta to state
+   */
+  _commit(delta) {
+    for (const write of delta['@writes'] || []) {
+      switch (write.op) {
+        case 'set':
+          this._setPath(write.path, write.value);
+          break;
+        case 'push':
+          const arr = this._getPath(write.path) || [];
+          arr.push(write.value);
+          this._setPath(write.path, arr);
+          break;
+        case 'toggle':
+          const current = this._getPath(write.path);
+          this._setPath(write.path, !current);
+          break;
+      }
+    }
+  },
+
+  /**
+   * Project state to output surfaces
+   */
+  _project() {
+    const projection = {
+      '@type': 'srp.projection.v1',
+      '@ts': Date.now(),
+      '@css_vars': {},
+      '@dom_tokens': []
+    };
+
+    // Apply projector rules
+    for (const rule of this.projectorRules) {
+      if (rule.when && !this._evaluateCondition(rule.when)) continue;
+
+      const proj = rule.project;
+      if (proj['@css_vars']) {
+        Object.assign(projection['@css_vars'], proj['@css_vars']);
+      }
+      if (proj['@dom_tokens']) {
+        projection['@dom_tokens'].push(...proj['@dom_tokens']);
+      }
+    }
+
+    // Add state-derived CSS vars
+    projection['@css_vars']['--srp-state'] = JSON.stringify(this.state);
+
+    return projection;
+  },
+
+  /**
+   * Emit projection to listeners
+   */
+  _emitProjection(projection) {
+    for (const listener of this.projectionListeners) {
+      try {
+        listener(projection, this.state);
+      } catch (e) {
+        console.error('SRP projection listener error:', e);
+      }
+    }
+  },
+
+  /**
+   * Register projection listener
+   */
+  onProjection(callback) {
+    this.projectionListeners.push(callback);
+  },
+
+  /**
+   * Validate event structure
+   */
+  _validateEvent(event) {
+    return event &&
+      event['@type'] === 'srp.event.v1' &&
+      typeof event['@name'] === 'string';
+  },
+
+  /**
+   * Get value at dot-notation path
+   */
+  _getPath(path) {
+    const keys = path.split('.');
+    let current = this.state;
+    for (const key of keys) {
+      if (current === undefined || current === null) return undefined;
+      current = current[key];
+    }
+    return current;
+  },
+
+  /**
+   * Set value at dot-notation path
+   */
+  _setPath(path, value) {
+    const keys = path.split('.');
+    let current = this.state;
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (current[key] === undefined) {
+        current[key] = {};
+      }
+      current = current[key];
+    }
+    current[keys[keys.length - 1]] = value;
+  },
+
+  /**
+   * Get current state snapshot
+   */
+  snapshot() {
+    return {
+      state: JSON.parse(JSON.stringify(this.state)),
+      queue_length: this.queue.length,
+      directive_count: this.directives.length,
+      trace_length: this.trace.length
+    };
+  },
+
+  /**
+   * Replay from trace
+   */
+  replay(trace) {
+    const results = [];
+    for (const entry of trace) {
+      if (entry.type === 'submit') {
+        results.push(this.submit(entry.event));
+      }
+    }
+    return results;
+  }
+};
+
+/* ============================================================
+   SRP + PROGRESS TRACKER INTEGRATION
+   ============================================================ */
+
+/**
+ * Create SRP class for ProgressTracker
+ */
+function createProgressTrackerSRPClass(tracker) {
+  return {
+    '@type': 'srp.class.v1',
+    '@id': `asx://srp/class/progress-tracker-${tracker.tracker_id}`,
+    '@version': '1.0.0',
+    'name': 'ProgressTrackerSRP',
+    'state': {
+      phases: tracker.phases,
+      active_phase: null,
+      overall_progress: tracker.progress_pct,
+      status: tracker.status
+    },
+    'directives': [
+      {
+        '@type': 'srp.directive.v1',
+        '@id': 'dir:start_phase',
+        '@control': {
+          '@if': { 'path': 'active_phase', 'eq': null },
+          '@then': { '@set': { 'path': 'active_phase', 'value': 'pop' } }
+        }
+      },
+      {
+        '@type': 'srp.directive.v1',
+        '@id': 'dir:phase_progress',
+        '@control': {
+          '@if': { 'path': 'overall_progress', 'lt': 100 },
+          '@then': { '@view': 'in_progress' }
+        }
+      },
+      {
+        '@type': 'srp.directive.v1',
+        '@id': 'dir:phase_complete',
+        '@control': {
+          '@if': { 'path': 'overall_progress', 'eq': 100 },
+          '@then': {
+            '@sequence': [
+              { '@set': { 'path': 'status', 'value': 'completed' } },
+              { '@view': 'completed' }
+            ]
+          }
+        }
+      }
+    ],
+    'projector': {
+      'surfaces': ['dom', 'css'],
+      'rules': [
+        {
+          'when': { 'path': 'status', 'eq': 'in_progress' },
+          'project': {
+            '@type': 'srp.projection.v1',
+            '@css_vars': { '--tracker-status': 'in_progress' },
+            '@dom_tokens': [
+              { 'selector': '.tracker', 'class_add': ['active'] }
+            ]
+          }
+        }
+      ]
+    }
+  };
+}
+
+// Export SRP integration
+if (typeof window !== 'undefined') {
+  window.SRP = SRP;
+  window.createProgressTrackerSRPClass = createProgressTrackerSRPClass;
+}
+
+/* ============================================================
+   INITIALIZE AND EXPORT
+   ============================================================ */
+
+// Load existing trackers on initialization
+if (typeof localStorage !== 'undefined') {
+  ProgressTracker.load();
+}
+
+// Make available globally
+if (typeof window !== 'undefined') {
+  window.ProgressTracker = ProgressTracker;
+  window.SCXQ2_PROGRESS = SCXQ2_PROGRESS;
+  window.ASXProgressBlock = ASXProgressBlock;
+}
+
+console.log('K\'UHUL PROGRESS TRACKER v1.0 + SRP v1 - LOADED');
 console.log('- XCFE Phases: Ready');
 console.log('- Todo Management: Active');
 console.log('- Systems Matrix: Initialized');
 console.log('- Recap Engine: Ready');
+console.log('- SRP Kernel: Initialized');
