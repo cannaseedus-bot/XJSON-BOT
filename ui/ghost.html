@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="emerald-ghost">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MX2LM OS — G(HOST) Trinity Studio</title>
+  <link rel="manifest" href="../manifest.json" />
+  <style>
+    /* =========================================================
+       G(HOST) — Three-Panel PWA Shell for Tape Loading
+       Each panel is a canvas that tapes can paint into
+       SRP projects state → CSS vars → DOM
+       ========================================================= */
+    :root {
+      /* SRP Projection Vars (updated by kernel) */
+      --srp_active_tape: "none";
+      --srp_panel_left: "studio";
+      --srp_panel_center: "dashboard";
+      --srp_panel_right: "inference";
+      --srp_tick: 0;
+      --srp_kernel_status: "booting";
+
+      /* Core Theme */
+      --asx-bg: #020617;
+      --asx-text: #e6fffa;
+      --asx-muted: #7dd3fc;
+      --asx-emerald: #16f2aa;
+      --asx-cyan: #22d3ee;
+      --asx-stroke-emerald: rgba(45, 212, 191, 0.55);
+      --asx-glow-emerald: 0 0 32px rgba(16, 185, 129, 0.42);
+
+      /* Glass */
+      --glass-primary: rgba(255, 255, 255, 0.08);
+      --glass-secondary: rgba(255, 255, 255, 0.06);
+      --stroke-primary: rgba(148, 163, 184, 0.35);
+      --stroke-accent: rgba(22, 242, 170, 0.55);
+      --text-primary: #e6fffa;
+      --text-secondary: #7dd3fc;
+      --text-muted: #5d8ba3;
+
+      /* Layout */
+      --radius-lg: 18px;
+      --radius-xl: 22px;
+      --radius-pill: 999px;
+      --panel-gap: 16px;
+      --font-sans: system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--asx-text);
+      background:
+        radial-gradient(circle at 5% 0%, rgba(34, 211, 238, 0.12) 0, transparent 55%),
+        radial-gradient(circle at 95% 100%, rgba(16, 185, 129, 0.12) 0, transparent 55%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0, #020617 60%);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      color-scheme: dark;
+      overflow: hidden;
+    }
+
+    /* G(HOST) Root */
+    .ghost-root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 14px 18px;
+      gap: 14px;
+    }
+
+    /* Header */
+    .ghost-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: var(--radius-xl);
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.28), transparent 55%),
+        linear-gradient(120deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.86));
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.95), var(--asx-glow-emerald);
+      backdrop-filter: blur(20px);
+    }
+
+    .ghost-header-left { display: flex; align-items: center; gap: 12px; }
+
+    .ghost-logo {
+      width: 32px; height: 32px; border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 0%, rgba(34, 211, 238, 0.8) 0, transparent 65%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.7) 0, transparent 65%),
+        linear-gradient(145deg, #020617, #0b1120);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--asx-glow-emerald);
+      font-size: 16px;
+    }
+
+    .ghost-header-title { display: flex; flex-direction: column; gap: 2px; }
+    .ghost-header-title span { display: inline-flex; align-items: center; gap: 6px; }
+    .ghost-header-right { display: flex; align-items: center; gap: 10px; }
+
+    /* Chips & Badges */
+    .badge-emerald {
+      border-radius: 999px; padding: 2px 9px; font-size: 10px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1px solid rgba(45, 212, 191, 0.9); color: #bbf7d0;
+      background: linear-gradient(120deg, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.95));
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    .asx-chip {
+      border-radius: 999px; padding: 6px 12px; font-size: 11px;
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.75));
+    }
+
+    .asx-chip-dot {
+      width: 8px; height: 8px; border-radius: 999px;
+      background: radial-gradient(circle, #22c55e 0, #22c55e 40%, transparent 70%);
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    .asx-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: radial-gradient(circle at 0 0, rgba(45, 212, 191, 0.18), transparent 55%),
+                  linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.88));
+      color: var(--asx-text); font-size: 12px; padding: 7px 14px;
+      display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer; outline: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .asx-btn-primary {
+      border-color: var(--asx-stroke-emerald);
+      background: radial-gradient(circle at 0 0, rgba(45, 212, 191, 0.24), transparent 55%),
+                  linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(16, 185, 129, 0.2));
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    .asx-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 18px rgba(15, 23, 42, 0.9), var(--asx-glow-emerald);
+    }
+
+    .asx-btn-icon {
+      width: 18px; height: 18px; border-radius: 999px;
+      background: radial-gradient(circle, var(--asx-emerald) 0, transparent 65%);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px;
+    }
+
+    .text-xs { font-size: 11px; }
+    .text-sm { font-size: 13px; }
+    .text-soft { color: rgba(148, 163, 184, 0.75); }
+
+    /* =========================================================
+       THREE-PANEL LAYOUT — Tape Projection Surfaces
+       ========================================================= */
+    .ghost-main {
+      display: grid;
+      grid-template-columns: minmax(260px, 320px) minmax(380px, 1.1fr) minmax(320px, 0.9fr);
+      gap: var(--panel-gap);
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .ghost-panel {
+      border-radius: var(--radius-xl);
+      padding: 14px;
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.22), transparent 55%),
+        linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.88));
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(22px);
+      display: flex; flex-direction: column;
+      min-height: 0; position: relative; overflow: hidden;
+    }
+
+    .ghost-panel-soft {
+      background:
+        radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.14), transparent 55%),
+        linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+    }
+
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; gap: 10px;
+    }
+
+    .panel-title {
+      font-size: 13px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: #a5f3fc;
+    }
+
+    .panel-subtitle { font-size: 11px; color: rgba(148, 163, 184, 0.9); }
+
+    .divider-soft {
+      height: 1px; border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.4), transparent);
+      margin: 8px 0 10px 0;
+    }
+
+    /* LEFT PANEL — Studio */
+    .studio-tabs {
+      display: flex; border-radius: var(--radius-pill); padding: 2px;
+      background: radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.28), transparent 60%);
+      border: 1px solid rgba(148, 163, 184, 0.5); gap: 3px;
+    }
+
+    .studio-tab {
+      flex: 1; border-radius: var(--radius-pill);
+      padding: 5px 8px; font-size: 11px; text-align: center;
+      cursor: pointer; border: 1px solid transparent;
+      color: rgba(209, 213, 219, 0.9); background: transparent;
+    }
+
+    .studio-tab.active {
+      border-color: rgba(45, 212, 191, 0.85);
+      background: radial-gradient(circle at 0 0, rgba(45, 212, 191, 0.35), transparent 60%);
+      box-shadow: var(--asx-glow-emerald); color: #bbf7d0;
+    }
+
+    .editor-shell {
+      margin-top: 10px; border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.18), transparent 55%),
+                  linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+      display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0; flex: 1 1 auto;
+    }
+
+    .editor-shell-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; border-bottom: 1px solid rgba(51, 65, 85, 0.9);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.82));
+    }
+
+    .editor-shell-title {
+      font-size: 11px; color: rgba(226, 232, 240, 0.95);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .editor-shell-dots { display: inline-flex; gap: 5px; }
+    .editor-shell-dot { width: 7px; height: 7px; border-radius: 999px; }
+    .editor-shell-dot:nth-child(1) { background: radial-gradient(circle, #f87171, transparent 75%); }
+    .editor-shell-dot:nth-child(2) { background: radial-gradient(circle, #facc15, transparent 75%); }
+    .editor-shell-dot:nth-child(3) { background: radial-gradient(circle, #4ade80, transparent 75%); }
+
+    .editor-body {
+      flex: 1; padding: 10px; font-size: 11px; line-height: 1.5;
+      color: rgba(226, 232, 240, 0.86);
+      font-family: var(--font-mono);
+      overflow: auto; white-space: pre-wrap;
+      background: radial-gradient(circle at 0 0, rgba(45, 212, 191, 0.16), transparent 60%),
+                  linear-gradient(145deg, #020617, #020617);
+    }
+
+    .editor-footer {
+      padding: 6px 9px;
+      border-top: 1px solid rgba(30, 64, 175, 0.6);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 10px; color: rgba(148, 163, 184, 0.95);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+    }
+
+    /* CENTER PANEL — Tape Grid */
+    .center-scroll { flex: 1; overflow-y: auto; padding-right: 8px; }
+
+    .tape-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .tape-card {
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+      padding: 12px; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .tape-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(45, 212, 191, 0.8);
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    .tape-card.active {
+      border-color: var(--asx-emerald);
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    .tape-icon { font-size: 24px; margin-bottom: 8px; }
+    .tape-name { font-size: 12px; font-weight: 600; color: var(--asx-text); }
+    .tape-type { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+    /* RIGHT PANEL — Chat */
+    .chat-body {
+      margin-top: 10px; border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.2), transparent 60%),
+                  linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+      flex: 1; display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+    }
+
+    .chat-stream { flex: 1; padding: 10px; overflow-y: auto; font-size: 12px; }
+
+    .chat-msg {
+      margin-bottom: 8px; padding: 7px 9px; border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+    }
+
+    .chat-msg.system {
+      border-color: rgba(45, 212, 191, 0.8);
+      box-shadow: var(--asx-glow-emerald);
+      font-size: 11px;
+    }
+
+    .chat-msg.user { border-style: dashed; }
+
+    .chat-input-row {
+      border-top: 1px solid rgba(30, 64, 175, 0.6);
+      padding: 8px 9px; display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
+    }
+
+    .chat-input-row input {
+      flex: 1; background: transparent; border: none;
+      color: var(--asx-text); font-size: 12px; outline: none;
+    }
+
+    .model-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+
+    .model-pill {
+      padding: 4px 9px; border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 10px; cursor: pointer;
+      color: rgba(209, 213, 219, 0.96);
+      background: linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.88));
+      transition: all 0.15s;
+    }
+
+    .model-pill.active {
+      border-color: rgba(45, 212, 191, 0.9);
+      color: #bbf7d0; box-shadow: var(--asx-glow-emerald);
+    }
+
+    /* DOCK */
+    .dock {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 16px; z-index: 100;
+      display: flex; gap: 8px; padding: 12px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--stroke-primary);
+      background: var(--glass-primary);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+
+    .dock .ico {
+      width: 48px; height: 48px; border-radius: var(--radius-lg);
+      display: grid; place-items: center;
+      border: 1px solid var(--stroke-primary);
+      background: var(--glass-secondary);
+      font-size: 20px; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .dock .ico:hover {
+      transform: translateY(-4px);
+      border-color: var(--stroke-accent);
+      box-shadow: var(--asx-glow-emerald);
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .ghost-main {
+        grid-template-columns: minmax(260px, 320px) minmax(320px, 1.2fr);
+        grid-template-rows: minmax(260px, 1fr) minmax(280px, 0.9fr);
+      }
+      .ghost-main > .ghost-panel:nth-child(3) { grid-column: 1 / span 2; }
+    }
+
+    @media (max-width: 880px) {
+      .ghost-main { display: flex; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="ghost-root" class="ghost-root" data-srp-class="ghost.shell.v1">
+    <!-- G(HOST) HEADER -->
+    <header class="ghost-header">
+      <div class="ghost-header-left">
+        <div class="ghost-logo"><span>⟁</span></div>
+        <div class="ghost-header-title">
+          <span>
+            <strong class="text-sm">MX2LM OS</strong>
+            <span class="badge-emerald">G(HOST) TRINITY</span>
+          </span>
+          <span class="text-xs text-soft">
+            Three-File Rule • <span style="color:#a5f3fc;">index.html · manifest.json · sw.khl</span>
+          </span>
+        </div>
+      </div>
+      <div class="ghost-header-right">
+        <div class="asx-chip">
+          <div class="asx-chip-dot" id="kernel-status-dot"></div>
+          <span class="text-xs">SRP</span>
+          <span class="text-xs" style="color:#bbf7d0;" id="kernel-status">booting</span>
+        </div>
+        <div class="asx-chip">
+          <span class="text-xs">Tape:</span>
+          <span class="text-xs" style="color:#a5f3fc;" id="active-tape">system_boot</span>
+        </div>
+        <button class="asx-btn asx-btn-primary" type="button" id="boot-btn">
+          <span class="asx-btn-icon">⚡</span>
+          <span class="text-xs">Boot Tape</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- THREE-PANEL LAYOUT -->
+    <main class="ghost-main">
+      <!-- LEFT: STUDIO -->
+      <section class="ghost-panel ghost-panel-soft" data-panel="left" data-role="studio">
+        <header class="panel-header">
+          <div>
+            <div class="panel-title">Studio</div>
+            <div class="panel-subtitle">Three-File Rule · Edit OS files</div>
+          </div>
+          <div class="asx-chip" style="padding:4px 8px;">
+            <div class="asx-chip-dot" style="width:6px;height:6px;"></div>
+            <span class="text-xs">Live</span>
+          </div>
+        </header>
+
+        <div class="studio-tabs" id="studio-tabs">
+          <button class="studio-tab active" data-file="index">index.html</button>
+          <button class="studio-tab" data-file="manifest">manifest.json</button>
+          <button class="studio-tab" data-file="kernel">sw.khl</button>
+        </div>
+
+        <div class="editor-shell">
+          <div class="editor-shell-header">
+            <div class="editor-shell-title">
+              <div class="editor-shell-dots">
+                <span class="editor-shell-dot"></span>
+                <span class="editor-shell-dot"></span>
+                <span class="editor-shell-dot"></span>
+              </div>
+              <span id="editor-filename">index.html</span>
+            </div>
+            <span class="text-xs text-soft">ASX · Three-File Rule</span>
+          </div>
+          <div class="editor-body" id="editor-body">&lt;!-- G(HOST) Shell --&gt;
+&lt;div id="ghost-root"
+     data-srp-class="ghost.shell.v1"
+     data-panels="left|center|right"&gt;
+  &lt;!-- Panels controlled by SRP --&gt;
+&lt;/div&gt;</div>
+          <div class="editor-footer">
+            <span>Tape: <span style="color:#a5f3fc;" id="editor-tape">system</span></span>
+            <span>SRP tick: <span id="editor-tick">0</span></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTER: TAPE CONTENT -->
+      <section class="ghost-panel" data-panel="center" data-role="content">
+        <header class="panel-header">
+          <div>
+            <div class="panel-title">Tapes</div>
+            <div class="panel-subtitle">Select a tape to load into G(HOST)</div>
+          </div>
+          <span class="badge-emerald">SYSTEM</span>
+        </header>
+        <div class="divider-soft"></div>
+        <div class="center-scroll">
+          <div class="tape-grid" id="tape-grid"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT: INFERENCE -->
+      <section class="ghost-panel" data-panel="right" data-role="inference">
+        <header class="panel-header">
+          <div>
+            <div class="panel-title">Inference</div>
+            <div class="panel-subtitle">AI-assisted tape editing</div>
+          </div>
+        </header>
+
+        <div class="model-pills" id="model-pills">
+          <div class="model-pill active" data-model="mx2lm">MX2LM</div>
+          <div class="model-pill" data-model="qwen">QWEN</div>
+          <div class="model-pill" data-model="deepseek">DeepSeek</div>
+          <div class="model-pill" data-model="local">Local</div>
+        </div>
+
+        <div class="chat-body">
+          <div class="chat-stream" id="chat-stream">
+            <div class="chat-msg system">
+              <strong>G(HOST) ONLINE.</strong><br>
+              SRP kernel active. Select a tape from the center panel.
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <input id="chat-input" placeholder="Describe what you want to change...">
+            <button class="asx-btn asx-btn-primary" id="send-chat">
+              <span class="asx-btn-icon">➤</span>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- DOCK -->
+  <div class="dock">
+    <div class="ico" title="Tapes">📼</div>
+    <div class="ico" title="Studio">🔧</div>
+    <div class="ico" title="Chat">💬</div>
+    <div class="ico" title="Settings">⚙️</div>
+  </div>
+
+  <!-- SRP KERNEL -->
+  <script src="../core/SRP_KERNEL_MIN.js"></script>
+  <script>
+    /* G(HOST) Bootstrap — Wire SRP to Three-Panel Projection */
+    (async function() {
+      // System Tapes (each follows 3-file rule)
+      const TAPES = [
+        { id: 'system_boot', name: 'System Boot', icon: '⚡', type: 'system' },
+        { id: 'studio', name: 'Studio', icon: '🔧', type: 'system' },
+        { id: 'inference', name: 'Inference', icon: '🧠', type: 'system' },
+        { id: 'dashboard', name: 'Dashboard', icon: '📊', type: 'system' },
+        { id: 'doom_world', name: 'DOOM World', icon: '🎮', type: 'game' },
+        { id: 'wallet', name: 'Wallet', icon: '💰', type: 'app' },
+        { id: 'market', name: 'Market', icon: '🛍️', type: 'app' },
+        { id: 'builder', name: 'Builder', icon: '🏗️', type: 'app' },
+        { id: 'srp_demo', name: 'SRP Demo', icon: '⚙️', type: 'system' },
+      ];
+
+      // Three-File contents for editor
+      const FILES = {
+        index: `<!-- G(HOST) Shell -->
+<div id="ghost-root"
+     data-srp-class="ghost.shell.v1"
+     data-panels="left|center|right">
+  <!-- Panels controlled by SRP projection -->
+</div>`,
+        manifest: `{
+  "@id": "asx://tape/ghost.shell.v1",
+  "@type": "tape.ghost",
+  "name": "G(HOST) Trinity Shell",
+  "panels": {
+    "left": { "role": "studio", "tape": "studio" },
+    "center": { "role": "content", "tape": "dashboard" },
+    "right": { "role": "inference", "tape": "inference" }
+  },
+  "srp_class": "ghost.shell.v1",
+  "three_file_rule": true
+}`,
+        kernel: `/* sw.khl — SRP Kernel (Three-File Rule)
+   submit → tick → collapse → project → verify
+*/
+
+[⚡Pop kernel_boot]
+  SRP.boot(manifest.srp_class)
+  [🌐Sek load_tapes]
+  [🎨Sek project_panels]
+[⚡Xul]
+
+[🎨Wo project_panels]
+  for panel in [left, center, right]:
+    project(panel.tape → panel.canvas)
+[🎨Xul]`
+      };
+
+      // Render tape grid
+      const tapeGrid = document.getElementById('tape-grid');
+      tapeGrid.innerHTML = TAPES.map(t => `
+        <div class="tape-card" data-tape="${t.id}">
+          <div class="tape-icon">${t.icon}</div>
+          <div class="tape-name">${t.name}</div>
+          <div class="tape-type">${t.type}</div>
+        </div>
+      `).join('');
+
+      // Tape selection
+      let activeTape = 'system_boot';
+      tapeGrid.addEventListener('click', e => {
+        const card = e.target.closest('.tape-card');
+        if (!card) return;
+        document.querySelectorAll('.tape-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        activeTape = card.dataset.tape;
+        document.getElementById('active-tape').textContent = activeTape;
+        document.getElementById('editor-tape').textContent = activeTape;
+        addChatMsg('system', `Tape "${activeTape}" loaded. Panels updated.`);
+
+        // Special: load SRP demo
+        if (activeTape === 'srp_demo') {
+          window.location.href = 'srp-demo.html';
+        }
+      });
+
+      // Studio tabs
+      document.querySelectorAll('.studio-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.studio-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const file = tab.dataset.file;
+          document.getElementById('editor-filename').textContent =
+            file === 'index' ? 'index.html' :
+            file === 'manifest' ? 'manifest.json' : 'sw.khl';
+          document.getElementById('editor-body').textContent = FILES[file];
+        });
+      });
+
+      // Model selection
+      document.getElementById('model-pills').addEventListener('click', e => {
+        const pill = e.target.closest('.model-pill');
+        if (!pill) return;
+        document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+      });
+
+      // Chat
+      function addChatMsg(type, text) {
+        const stream = document.getElementById('chat-stream');
+        const msg = document.createElement('div');
+        msg.className = `chat-msg ${type}`;
+        msg.innerHTML = text;
+        stream.appendChild(msg);
+        stream.scrollTop = stream.scrollHeight;
+      }
+
+      document.getElementById('send-chat').addEventListener('click', () => {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        addChatMsg('user', text);
+        input.value = '';
+        setTimeout(() => {
+          addChatMsg('assistant', `Processing: "${text}" on tape "${activeTape}"`);
+        }, 500);
+      });
+
+      document.getElementById('chat-input').addEventListener('keypress', e => {
+        if (e.key === 'Enter') document.getElementById('send-chat').click();
+      });
+
+      // Boot SRP with G(HOST) class
+      const ghostClass = {
+        "@id": "asx://srp/class/ghost.shell.v1",
+        "@type": "srp.class",
+        "@version": "1.0.0",
+        "state0": {
+          "active_tape": "system_boot",
+          "panels": { "left": "studio", "center": "dashboard", "right": "inference" },
+          "kernel_status": "online",
+          "tick": 0
+        },
+        "projection": {
+          "css_root": {
+            "vars": {
+              "--srp_active_tape": "/active_tape",
+              "--srp_kernel_status": "/kernel_status",
+              "--srp_tick": "/tick"
+            }
+          },
+          "gpu_bridge": { "mode": "webgl_min", "inputs": {} },
+          "meshchain_hooks": { "mint_route": "/mesh/contract/execute", "rules": [] }
+        }
+      };
+
+      if (typeof SRP !== 'undefined') {
+        await SRP.boot(ghostClass);
+        document.getElementById('kernel-status').textContent = 'online';
+        document.getElementById('editor-tick').textContent = SRP.state.tick;
+
+        // Tick loop (5s)
+        setInterval(async () => {
+          await SRP.tick();
+          document.getElementById('editor-tick').textContent = SRP.state.tick;
+        }, 5000);
+      }
+    })();
+  </script>
+</body>
+</html>
