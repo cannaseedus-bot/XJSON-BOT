@@ -1,6 +1,6 @@
 // =======================================================
 // auth.gs — GLOBAL MULTI-APP AUTH SHARD
-// Artifact: AUTH_IDB_KQL_SHEETS_GLOBAL_v5
+// Artifact: AUTH_IDB_KQL_SHEETS_GLOBAL_v5.1
 // Status: FROZEN / CANONICAL
 // Scope: ALL APPS, ALL USERS
 // Authority: Auth + Automation ONLY
@@ -15,10 +15,21 @@
 
 var AUTH_CONFIG = {
   shardName: 'ASX_GAS_AUTH_SHARD',
-  version: '5.0.0',
+  version: '5.1.0',
 
   // Google OAuth Web Client ID
   googleClientId: '1007325672364-cha9ad0b520arhfo6vsnsjk8pa5jbabk.apps.googleusercontent.com',
+
+  // Public capabilities (no apiKey required)
+  publicCapabilities: [
+    'mesh.discovery'
+  ],
+
+  // Owner auto-grants
+  ownerCapabilityPrefixes: [
+    'proxy.provider.',
+    'inference.provider.'
+  ],
 
   props: {
     securolinkSecret: 'SECUROLINK_HMAC_SECRET',
@@ -131,7 +142,8 @@ function getOrCreateApiKey(email) {
     key: key,
     owner: email,
     active: true,
-    scopes: ['*'],
+    scopes: ['*'],          // legacy compatibility
+    capabilities: [],       // NEW (fine-grained)
     created: nowIso(),
     lastUsed: nowIso()
   };
@@ -252,6 +264,79 @@ function generateDbJson(ss) {
 
 
 // =======================================================
+// AUTH CHECK (USED BY api.gs)
+// =======================================================
+
+function authCheckAccessFromParams(params, route, method) {
+  var apiKey = params.apiKey || '__public__';
+
+  if (apiKey === '__public__') {
+    if (
+      AUTH_CONFIG.publicCapabilities.indexOf(route) !== -1 ||
+      route === 'health' ||
+      route === 'status' ||
+      route === 'providers' ||
+      route === 'conformance'
+    ) {
+      return { allowed: true, reason: 'public_route' };
+    }
+    return { allowed: false, reason: 'apiKey required' };
+  }
+
+  var keys = getScriptMap(AUTH_CONFIG.props.apiKeys);
+  var rec = keys[apiKey];
+  if (!rec || !rec.active) {
+    return { allowed: false, reason: 'invalid_apiKey' };
+  }
+
+  return {
+    allowed: true,
+    reason: 'authenticated',
+    identity: { email: rec.owner }
+  };
+}
+
+
+// =======================================================
+// CAPABILITY CHECK (USED BY api.gs)
+// =======================================================
+
+function authCheckCapabilityFromParams(params, capability, context) {
+  var apiKey = params.apiKey || '__public__';
+
+  // Public capability
+  if (apiKey === '__public__') {
+    if (AUTH_CONFIG.publicCapabilities.indexOf(capability) !== -1) {
+      return { allowed: true, reason: 'public_capability', capability: capability };
+    }
+    return { allowed: false, reason: 'capability_requires_auth', capability: capability };
+  }
+
+  var keys = getScriptMap(AUTH_CONFIG.props.apiKeys);
+  var rec = keys[apiKey];
+  if (!rec || !rec.active) {
+    return { allowed: false, reason: 'invalid_apiKey', capability: capability };
+  }
+
+  // Provider owner auto-grant
+  if (context && context.provider_id) {
+    for (var i = 0; i < AUTH_CONFIG.ownerCapabilityPrefixes.length; i++) {
+      if (capability.indexOf(AUTH_CONFIG.ownerCapabilityPrefixes[i]) === 0) {
+        return { allowed: true, reason: 'provider_owner', capability: capability };
+      }
+    }
+  }
+
+  // Explicit capability
+  if (rec.capabilities && rec.capabilities.indexOf(capability) !== -1) {
+    return { allowed: true, reason: 'explicit_capability', capability: capability };
+  }
+
+  return { allowed: false, reason: 'capability_denied', capability: capability };
+}
+
+
+// =======================================================
 // LOGIN — GLOBAL, MULTI-APP, AUTO-FIRE
 // =======================================================
 
@@ -283,12 +368,12 @@ function handleSecuroLogin(p) {
     apiKey: apiKey.key,
     db_json: generateDbJson(ss),
     persistence: {
-      server: "google_sheets",
-      client: "indexeddb"
+      server: 'google_sheets',
+      client: 'indexeddb'
     },
     query: {
-      language: "kql.v1",
-      authority: "client"
+      language: 'kql.v1',
+      authority: 'client'
     }
   };
 }

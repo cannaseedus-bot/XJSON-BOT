@@ -7,7 +7,7 @@ Free serverless backend using Google Sheets as database.
 | File | Purpose | Artifact ID |
 |------|---------|-------------|
 | `Code.gs` | Chat API, models, memory, SCXQ2 | `XJSON_GAS_API_v1` |
-| `auth.gs` | Auth, sessions, per-user DB | `AUTH_IDB_KQL_SHEETS_GLOBAL_v5` |
+| `auth.gs` | Auth, sessions, per-user DB, capability hooks | `AUTH_IDB_KQL_SHEETS_GLOBAL_v5.1` |
 | `api.gs` | REST router, proxy, inference, mesh | `MX2LM_API_SHARD_v1.1` |
 
 ## Why GAS?
@@ -179,6 +179,37 @@ const response = await fetch(API_URL + '?route=inference', {
 - Hop-by-hop header filtering
 - Capability-gated routes (`proxy.provider.<id>`, `inference.provider.<id>`)
 - Usage metering per route
+
+### Capability Hooks (auth.gs → api.gs)
+
+auth.gs exposes two functions for api.gs integration:
+
+| Function | Purpose |
+|----------|---------|
+| `authCheckAccessFromParams(params, route, method)` | Route-level auth gate |
+| `authCheckCapabilityFromParams(params, capability, context)` | Fine-grained capability check |
+
+**Public Routes (no apiKey required):**
+- `health`, `status`, `providers`, `conformance`
+- `mesh.discovery`
+
+**Capability Auto-Grants:**
+- Provider owners get `proxy.provider.<id>` and `inference.provider.<id>` automatically
+
+**Fine-Grained Capabilities:**
+```javascript
+// API key record structure
+{
+  key: "key_uuid",
+  owner: "user@example.com",
+  active: true,
+  scopes: ["*"],           // legacy
+  capabilities: [          // v5.1+
+    "proxy.provider.openai",
+    "inference.provider.deepseek"
+  ]
+}
+```
 
 ## Data Storage
 
