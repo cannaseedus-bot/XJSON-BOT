@@ -1,0 +1,15 @@
+{
+  "$id": "asx://schema/inference.request.v1",
+  "$comment": "ASX-R Inference Request Envelope (Frozen)",
+  "type": "object",
+  "required": ["@type", "@prompt"],
+  "properties": {
+    "@type": { "const": "inference.request.v1" },
+    "@prompt": { "type": "string" },
+    "@options": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

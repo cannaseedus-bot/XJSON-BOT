@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://xjson-bot.dev/schemas/execution-trace.schema.json",
+  "$id": "asx://schema/execution-trace.v1",
+  "$comment": "ASX-R Execution Trace Schema (Frozen)",
   "title": "Execution Trace",
   "description": "ASX-R execution trace for replay verification",
   "type": "object",

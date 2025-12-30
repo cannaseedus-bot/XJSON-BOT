@@ -1,6 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://xjson-bot.dev/schemas/asx-block.schema.json",
+  "$id": "asx://schema/asx-block.v1",
+  "$comment": "ASX-R Core Block Schema (Frozen)",
   "title": "ASX Block",
   "description": "Core ASX block structure for UI composition",
   "type": "object",
