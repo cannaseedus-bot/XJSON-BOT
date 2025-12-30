@@ -1,11 +1,68 @@
 {
-  "name": "K'UHUL - MX2LM LM-TAPE Engine",
-  "short_name": "K'UHUL-TAPES",
-  "start_url": ".",
+  "name": "MX2LM OS — G(HOST) Trinity",
+  "short_name": "MX2LM-OS",
+  "start_url": "ui/ghost.html",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#16f2aa",
-  "description": "K'uhul-powered MX2LM runtime with SCXQ2 LM-TAPES, Atomic OS, and 50+ AI agents",
+  "description": "G(HOST) PWA shell with three-panel tape system, SRP kernel, and K'UHUL runtime",
+
+  "asx_os": {
+    "@id": "asx://manifest/mx2lm.os.v1",
+    "@type": "asx.manifest",
+    "@version": "1.0.0",
+
+    "ghost": {
+      "@id": "asx://tape/ghost.shell.v1",
+      "entry": "ui/ghost.html",
+      "three_file_rule": ["index.html", "manifest.json", "sw.khl"],
+      "panels": {
+        "left": { "role": "studio", "default_tape": "studio" },
+        "center": { "role": "content", "default_tape": "dashboard" },
+        "right": { "role": "inference", "default_tape": "inference" }
+      }
+    },
+
+    "srp": {
+      "@pack": "schemas/SRP_PACK_v1.json",
+      "kernel": "core/SRP_KERNEL_MIN.js",
+      "demo": "ui/srp-demo.html"
+    },
+
+    "kql": {
+      "@id": "asx://kql/chat.v1",
+      "module": "core/KQL_CHAT.js",
+      "schema": "schemas/kql.model.v1.schema.json",
+      "registry": "schemas/kql.model-registry.v1.json",
+      "api_base": "https://mx2lm.app/api.php",
+      "default_model": "janus-pro",
+      "models_count": 11,
+      "quantum_models": 6
+    },
+
+    "tapes": {
+      "system": [
+        { "id": "system_boot", "name": "System Boot", "icon": "⚡" },
+        { "id": "studio", "name": "Studio", "icon": "🔧" },
+        { "id": "inference", "name": "Inference", "icon": "🧠" },
+        { "id": "dashboard", "name": "Dashboard", "icon": "📊" }
+      ],
+      "apps": [
+        { "id": "wallet", "name": "Wallet", "icon": "💰" },
+        { "id": "market", "name": "Market", "icon": "🛍️" },
+        { "id": "builder", "name": "Builder", "icon": "🏗️" }
+      ],
+      "games": [
+        { "id": "doom_world", "name": "DOOM World", "icon": "🎮" }
+      ]
+    },
+
+    "runtime": {
+      "primary": "ASXR",
+      "kernel": "kuhul-sw.khl",
+      "lanes": ["CPU", "GPU", "TPU", "IO"]
+    }
+  },
   "orientation": "any",
   "scope": "/",
   "icons": [

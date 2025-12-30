@@ -1,0 +1,267 @@
+{
+  "$id": "asx://registry/kql.models.v1",
+  "$schema": "asx://schema/kql.model.v1",
+  "@type": "kql.model-registry",
+  "@version": "2.0.0",
+  "@status": "active",
+  "@backend": "mx2lm-unified-api-v7",
+
+  "api_config": {
+    "base_url": "https://mx2lm.app/api.php",
+    "backend_base": "https://backend.refluxedpc.com/models/",
+    "routes": {
+      "chat": "?route=chat&model={model}&message={message}",
+      "stream": "?route=chat&model={model}&message={message}&stream=true",
+      "info": "?route=model.info&model={model}",
+      "batch": "?route=batch.inference",
+      "compress": "?route=quantum.compress",
+      "status": "?route=backend.status"
+    }
+  },
+
+  "models": [
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/deepseek-r1.v1",
+      "id": "deepseek-r1",
+      "name": "DeepSeek R1",
+      "type": "reasoning_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=deepseek-r1",
+      "provider": "deepseek",
+      "capabilities": ["chat", "reasoning", "analysis", "coding"],
+      "context_window": 128000,
+      "quantum_enhanced": true,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 4000
+      },
+      "status": "active",
+      "icon": "🔮",
+      "color": "#3b82f6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/deepseek-coder.v1",
+      "id": "deepseek-coder",
+      "name": "DeepSeek Coder",
+      "type": "code_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=deepseek-coder",
+      "provider": "deepseek",
+      "capabilities": ["code_completion", "debugging", "optimization", "review"],
+      "context_window": 64000,
+      "quantum_enhanced": true,
+      "parameters": {
+        "temperature": 0.5,
+        "max_tokens": 4000
+      },
+      "status": "active",
+      "icon": "💻",
+      "color": "#10b981"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/janus-pro.v1",
+      "id": "janus-pro",
+      "name": "Janus Pro",
+      "type": "quantum_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=janus-pro",
+      "provider": "mx2lm",
+      "capabilities": ["quantum_inference", "multi_modal", "planning", "analysis"],
+      "context_window": 256000,
+      "quantum_enhanced": true,
+      "special_features": ["kuhul_integration", "quantum_compression"],
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 8000
+      },
+      "status": "active",
+      "icon": "🧠",
+      "color": "#16f2aa"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/janus-flow.v1",
+      "id": "janus-flow",
+      "name": "Janus Flow",
+      "type": "streaming_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=janus-flow",
+      "provider": "mx2lm",
+      "capabilities": ["fast_chat", "streaming", "summarization", "translation"],
+      "context_window": 32000,
+      "quantum_enhanced": false,
+      "parameters": {
+        "temperature": 0.8,
+        "max_tokens": 2000
+      },
+      "status": "active",
+      "icon": "⚡",
+      "color": "#f59e0b"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/llama3.v1",
+      "id": "llama3",
+      "name": "Llama 3",
+      "type": "general_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=llama3",
+      "provider": "meta",
+      "capabilities": ["general_chat", "writing", "analysis", "qa"],
+      "context_window": 8000,
+      "quantum_enhanced": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 2000
+      },
+      "status": "active",
+      "icon": "🦙",
+      "color": "#6366f1"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/mistral.v1",
+      "id": "mistral",
+      "name": "Mistral",
+      "type": "efficient_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=mistral",
+      "provider": "mistral",
+      "capabilities": ["efficient_chat", "summarization", "classification"],
+      "context_window": 32000,
+      "quantum_enhanced": false,
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 2000
+      },
+      "status": "active",
+      "icon": "🌪️",
+      "color": "#ec4899"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/codellama.v1",
+      "id": "codellama",
+      "name": "CodeLlama",
+      "type": "code_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=codellama",
+      "provider": "meta",
+      "capabilities": ["code_generation", "explanation", "debugging"],
+      "context_window": 16000,
+      "quantum_enhanced": false,
+      "parameters": {
+        "temperature": 0.5,
+        "max_tokens": 2000
+      },
+      "status": "active",
+      "icon": "🦙",
+      "color": "#8b5cf6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/qwen-coder.v1",
+      "id": "qwen-coder",
+      "name": "Qwen Coder",
+      "type": "coding_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=qwen-coder",
+      "provider": "qwen",
+      "capabilities": ["code_completion", "python", "javascript", "sql"],
+      "context_window": 32000,
+      "quantum_enhanced": false,
+      "parameters": {
+        "temperature": 0.5,
+        "max_tokens": 4000
+      },
+      "status": "active",
+      "icon": "🌟",
+      "color": "#7c3aed"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/cline-agent.v1",
+      "id": "cline-agent",
+      "name": "Cline Agent",
+      "type": "agentic_llm",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=cline-agent",
+      "provider": "mx2lm",
+      "capabilities": ["task_execution", "tool_use", "reasoning", "planning"],
+      "context_window": 128000,
+      "quantum_enhanced": true,
+      "parameters": {
+        "temperature": 0.6,
+        "max_tokens": 8000
+      },
+      "status": "active",
+      "icon": "🤖",
+      "color": "#14b8a6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/mx2-inference.v1",
+      "id": "mx2-inference",
+      "name": "MX2 Inference",
+      "type": "inference_engine",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=mx2-inference",
+      "provider": "mx2lm",
+      "capabilities": ["batch_inference", "model_serving", "quantum_acceleration"],
+      "context_window": 512000,
+      "quantum_enhanced": true,
+      "special_features": ["distributed_inference", "model_parallelism"],
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 16000
+      },
+      "status": "active",
+      "icon": "⚙️",
+      "color": "#ef4444"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/kuhul-quantum.v1",
+      "id": "kuhul-quantum",
+      "name": "K'UHUL Quantum",
+      "type": "quantum_engine",
+      "endpoint": "https://mx2lm.app/api.php?route=chat&model=kuhul-quantum",
+      "provider": "mx2lm",
+      "capabilities": ["quantum_computation", "entanglement", "superposition", "compression"],
+      "context_window": 1024000,
+      "quantum_enhanced": true,
+      "special_features": ["scxq2_compression", "quantum_tokenization"],
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 32000
+      },
+      "status": "active",
+      "icon": "⚛️",
+      "color": "#22d3ee"
+    }
+  ],
+
+  "default_model": "janus-pro",
+
+  "provider_configs": {
+    "mx2lm": {
+      "base_url": "https://mx2lm.app",
+      "api_endpoint": "/api.php",
+      "quantum_enabled": true
+    },
+    "deepseek": {
+      "via_mx2lm": true,
+      "quantum_enhanced": true
+    },
+    "meta": {
+      "via_mx2lm": true,
+      "models": ["llama3", "codellama"]
+    },
+    "mistral": {
+      "via_mx2lm": true
+    },
+    "qwen": {
+      "via_mx2lm": true
+    }
+  },
+
+  "quantum_features": {
+    "scxq2_compression": "98.5% compression ratio",
+    "quantum_tokenization": "K'UHUL multi-hive",
+    "entanglement_processing": "Available in quantum models",
+    "quantum_models": ["deepseek-r1", "deepseek-coder", "janus-pro", "cline-agent", "mx2-inference", "kuhul-quantum"]
+  }
+}
