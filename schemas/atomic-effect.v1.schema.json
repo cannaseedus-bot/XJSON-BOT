@@ -1,0 +1,109 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-effect://schema/v1",
+  "$comment": "Effect Algebra (Sealed) - Formal effect lattice with containment and exclusion",
+  "title": "atomic-effect",
+  "description": "Formal effect algebra defining relationships between capabilities. Effects form a partially ordered set.",
+  "type": "object",
+  "required": ["@effects"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@effects": {
+      "type": "object",
+      "required": ["@version", "@lattice"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": { "const": "v1" }
+      }
+    },
+
+    "@lattice": {
+      "type": "object",
+      "description": "Effect lattice definition",
+      "additionalProperties": false,
+      "properties": {
+        "@pure": {
+          "const": [],
+          "description": "Empty effect set (pure computation)"
+        },
+        "@all": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "All possible effects (top of lattice)"
+        }
+      }
+    },
+
+    "@capabilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capability_def" },
+      "description": "Capability definitions with relationships"
+    },
+
+    "@rules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/effect_rule" },
+      "description": "Effect algebra rules"
+    }
+  },
+
+  "$defs": {
+    "capability_def": {
+      "type": "object",
+      "required": ["@id", "@description"],
+      "additionalProperties": false,
+      "properties": {
+        "@id": {
+          "type": "string",
+          "description": "Capability identifier"
+        },
+        "@description": { "type": "string" },
+        "@contains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capabilities this one contains (subset relation)"
+        },
+        "@excludes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capabilities that cannot coexist"
+        },
+        "@requires": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capabilities required for this one"
+        },
+        "@phase": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Valid phases for this capability"
+        }
+      }
+    },
+
+    "effect_rule": {
+      "type": "object",
+      "required": ["@type"],
+      "additionalProperties": false,
+      "properties": {
+        "@type": {
+          "type": "string",
+          "enum": ["containment", "exclusion", "implication", "composition"]
+        },
+        "@left": { "type": "string" },
+        "@right": { "type": "string" },
+        "@description": { "type": "string" }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Effects form a partially ordered set",
+    "Containment: A ⊂ B means having B grants A",
+    "Exclusion: A ⊥ B means A and B cannot coexist",
+    "Implication: A → B means A requires B",
+    "Pure is bottom of lattice (no effects)",
+    "Effect violations detected at verify phase"
+  ]
+}
