@@ -367,30 +367,61 @@ ASX-R execution flows through four deterministic phases:
 
 ---
 
-## 6. Tiny Kernel Skeleton (Three-File Rule)
+## 6. Runnable SRP Kernel
 
-### 6.1 Flow
-
-```
-submit → tick → collapse → project
-```
-
-### 6.2 Files
+### 6.1 Kernel Files
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Projection surface (DOM + inline scripts) |
-| `manifest.json` | SRP classes + directives + policy |
-| `sw.js` | SRP kernel routes + state machine |
+| `core/SRP_KERNEL_MIN.js` | Runnable SRP kernel (<200 lines) |
+| `schemas/SRP_PACK_v1.json` | Single source of truth (locked fold) |
+| `ui/srp-demo.html` | Demo: slider → CSS → GPU → MeshChain |
 
-### 6.3 sw.js Route Handlers
+### 6.2 Kernel API
 
 ```javascript
-// POST /srp/submit → accept event
-// POST /srp/tick → advance tick, return delta + projection
-// GET /srp/project → return last projection
-// POST /srp/verify → replay verifier
+// Boot with class definition
+SRP.boot(classDef);
+
+// Submit event
+SRP.submit({ event_type: 'ui/slider', payload: { value: 0.5 } });
+
+// Advance tick (triggers reduce → project)
+SRP.tick();
+
+// Verify replay determinism
+SRP.verifyReplay();
+
+// Attach WebGL GPU bridge
+SRP.attachGPU(canvasElement);
 ```
+
+### 6.3 10-Line Harness (Proof It Works)
+
+```javascript
+SRP.boot({ slider: 0 });
+SRP.submit({ event_type: 'ui/slider', payload: { value: 0.42 } });
+SRP.tick();
+console.log(SRP.state); // { slider: 0.42, tick: 1, ... }
+```
+
+### 6.4 Demo: Slider → CSS → GPU → MeshChain
+
+Open `ui/srp-demo.html`:
+
+1. Slider updates `--srp_slider` on `:root`
+2. WebGL triangle rotates deterministically from `/slider`
+3. Threshold crossing (>0.7) mints via MeshChain stub
+4. "Verify replay" recomputes hash chain and matches
+
+### 6.5 Projection Targets
+
+| Target | How |
+|--------|-----|
+| **CSS** | `:root` CSS variables (`--srp_slider`, `--srp_tick`, etc.) |
+| **GPU** | `SRP.attachGPU(canvas)` → WebGL triangle rotation |
+| **MeshChain** | `SRP._meshMint()` stub with deterministic receipt |
+| **Hash Chain** | `SRP.lastProjectionHash` updated on each projection |
 
 ---
 
@@ -462,16 +493,21 @@ SRP is the always-active preprocessor that collapses structured control directiv
 
 ## 9. Schema Files Reference
 
-### 9.1 SRP Schemas (New in v2)
+### 9.1 SRP Single Source of Truth (v2)
 
-| File | $id |
-|------|-----|
-| `SRP_PACK_v1.json` | `asx://fold/SRP_PACK_v1` |
-| `srp.class.v1.json` | `asx://schema/srp.class.v1` |
-| `srp.event.v1.json` | `asx://schema/srp.event.v1` |
-| `srp.directive.v1.json` | `asx://schema/srp.directive.v1` |
-| `srp.delta.v1.json` | `asx://schema/srp.delta.v1` |
-| `srp.projection.v1.json` | `asx://schema/srp.projection.v1` |
+| File | $id | Role |
+|------|-----|------|
+| `schemas/SRP_PACK_v1.json` | `asx://fold/srp.pack.v1` | **Single canonical fold** |
+
+**All SRP schemas are embedded in `SRP_PACK_v1.json`:**
+
+- `asx://schema/srp.class.v1`
+- `asx://schema/srp.event.v1`
+- `asx://schema/srp.directive.v1`
+- `asx://schema/srp.delta.v1`
+- `asx://schema/srp.projection.v1`
+
+**No individual schema files.** The pack is the law.
 
 ### 9.2 Progress Tracking Schemas
 
