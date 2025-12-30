@@ -1,0 +1,80 @@
+{
+  "@type": "asx.manifest",
+  "@version": "1.0.0",
+  "name": "SRP Kernel Demo",
+  "description": "Demonstrates the SRP (System Runtime Preprocessor) three-file rule",
+
+  "srp": {
+    "classes": [
+      {
+        "@type": "srp.class",
+        "@id": "asx://srp/class/demo",
+        "@version": "1.0.0",
+        "name": "demo",
+        "description": "Simple toggle demo showing submit → tick → collapse → project",
+
+        "state": {
+          "active": false,
+          "tickCount": 0
+        },
+
+        "reducers": [
+          {
+            "@type": "srp.directive",
+            "when": { "event": "ui.submit" },
+            "do": [
+              {
+                "op": "delta.emit",
+                "delta": {
+                  "@type": "srp.delta",
+                  "ops": [
+                    { "op": "toggle", "path": "active" },
+                    { "op": "inc", "path": "tickCount" }
+                  ]
+                }
+              }
+            ],
+            "meta": {
+              "description": "Toggle active state and increment tick count on ui.submit"
+            }
+          }
+        ],
+
+        "projector": {
+          "@type": "srp.projection",
+          "targets": [
+            {
+              "selector": "#status",
+              "set": { "text": "derived_at_runtime" }
+            },
+            {
+              "selector": "#tick-count",
+              "set": { "text": "derived_at_runtime" }
+            },
+            {
+              "selector": ".card",
+              "set": {
+                "classes": { "add": [], "remove": [] }
+              }
+            }
+          ],
+          "meta": {
+            "note": "Actual projection is computed by SRP kernel based on state"
+          }
+        },
+
+        "allow": {
+          "event_types": ["ui.submit", "ui.click", "system.init"]
+        }
+      }
+    ]
+  },
+
+  "@axioms": {
+    "A1": "SRP is active whenever the runtime exists (boot → shutdown)",
+    "A2": "Execution consumes structured directives, not text scripts",
+    "A3": "Only declared transitions are allowed",
+    "A4": "Given same input state + event, SRP produces same next state",
+    "A5": "UI is a projection of state"
+  }
+}

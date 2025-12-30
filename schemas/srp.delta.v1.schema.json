@@ -1,0 +1,67 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "asx://schema/srp.delta.v1",
+  "$comment": "SRP Delta Schema (Sealed) - The atomic state change unit",
+  "title": "SRP Delta Schema v1",
+  "description": "A delta is the atomic state change unit (your 'setState'), but structured and replayable. No imperative mutation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "ops"],
+
+  "properties": {
+    "@type": { "const": "srp.delta" },
+
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered list of state operations",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["op", "path"],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["set", "merge", "toggle", "inc", "dec", "push", "remove"],
+            "description": "Operation type"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Dot-path to state property"
+          },
+          "value": {
+            "description": "Value for set/merge/push operations"
+          }
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional metadata (e.g., source directive, trace id)"
+    }
+  },
+
+  "@operations": {
+    "set": "Replace value at path",
+    "merge": "Shallow merge object at path",
+    "toggle": "Invert boolean at path",
+    "inc": "Increment number at path (by value or 1)",
+    "dec": "Decrement number at path (by value or 1)",
+    "push": "Append value to array at path",
+    "remove": "Remove value from array at path"
+  },
+
+  "@examples": [
+    {
+      "@type": "srp.delta",
+      "ops": [
+        { "op": "set", "path": "ui.state", "value": "active" },
+        { "op": "inc", "path": "counter" },
+        { "op": "toggle", "path": "sidebar.open" }
+      ]
+    }
+  ]
+}

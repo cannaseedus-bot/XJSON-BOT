@@ -1,0 +1,71 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "asx://schema/srp.event.v1",
+  "$comment": "SRP Event Schema (Sealed) - External trigger for state transitions",
+  "title": "SRP Event Schema v1",
+  "description": "An SRP event is an external trigger (UI/IO/network/timer) that enters the SRP queue for processing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "@id", "@ts", "event", "payload", "source"],
+
+  "properties": {
+    "@type": { "const": "srp.event" },
+    "@id": {
+      "type": "string",
+      "pattern": "^asx://srp/event/[a-zA-Z0-9._:-]+$",
+      "description": "Unique event identifier"
+    },
+    "@ts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Timestamp (ms since epoch)"
+    },
+
+    "event": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Event type name (e.g., 'ui.submit', 'network.response', 'timer.tick')"
+    },
+
+    "payload": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Event data payload"
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "description": "Event origin metadata",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["ui", "system", "network", "timer", "kernel"],
+          "description": "Source category"
+        },
+        "origin": {
+          "type": "string",
+          "description": "Specific origin identifier (e.g., 'index.html', 'sw.js')"
+        }
+      }
+    },
+
+    "trace": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional replay/proof metadata for deterministic verification"
+    }
+  },
+
+  "@examples": [
+    {
+      "@type": "srp.event",
+      "@id": "asx://srp/event/ui.click.123",
+      "@ts": 1704067200000,
+      "event": "ui.click",
+      "payload": { "target": "btn:save" },
+      "source": { "kind": "ui", "origin": "index.html" }
+    }
+  ]
+}

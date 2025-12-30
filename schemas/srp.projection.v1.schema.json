@@ -1,0 +1,112 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "asx://schema/srp.projection.v1",
+  "$comment": "SRP Projection Schema (Sealed) - UI is a projection of state",
+  "title": "SRP Projection Schema v1",
+  "description": "Projection describes what the UI should look like, not how to mutate it. State → Projection; never Projection → State.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "targets"],
+
+  "properties": {
+    "@type": { "const": "srp.projection" },
+
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "List of DOM targets and their derived values",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["selector", "set"],
+        "properties": {
+          "selector": {
+            "type": "string",
+            "minLength": 1,
+            "description": "CSS selector for target element(s)"
+          },
+
+          "set": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Properties to project onto the target",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Set textContent"
+              },
+              "html": {
+                "type": "string",
+                "description": "Set innerHTML (use with caution)"
+              },
+              "attrs": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Set attributes"
+              },
+              "classes": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Add/remove CSS classes",
+                "properties": {
+                  "add": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Classes to add"
+                  },
+                  "remove": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Classes to remove"
+                  }
+                }
+              },
+              "css_vars": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Set CSS custom properties (--var-name)"
+              },
+              "style": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Set inline styles"
+              },
+              "data": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "Set data-* attributes"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional metadata"
+    }
+  },
+
+  "@law": "UI is a projection of state. SRP does not mutate DOM; it changes state and the UI follows.",
+
+  "@examples": [
+    {
+      "@type": "srp.projection",
+      "targets": [
+        {
+          "selector": "#status",
+          "set": { "text": "active" }
+        },
+        {
+          "selector": ".card",
+          "set": {
+            "classes": { "add": ["active"], "remove": ["inactive"] },
+            "css_vars": { "--state-color": "#2ef" }
+          }
+        }
+      ]
+    }
+  ]
+}

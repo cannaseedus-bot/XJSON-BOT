@@ -1,0 +1,108 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "asx://schema/srp.directive.v1",
+  "$comment": "SRP Directive Schema (Sealed) - The lawful replacement for imperative handlers",
+  "title": "SRP Directive Schema v1",
+  "description": "A directive is the schema equivalent of a 'function', but lawful: it has a selector + a deterministic action. Replaces closures, callbacks, and imperative handlers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "when", "do"],
+
+  "properties": {
+    "@type": { "const": "srp.directive" },
+
+    "when": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event"],
+      "description": "Trigger condition",
+      "properties": {
+        "event": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Event type to match"
+        },
+
+        "if": {
+          "type": "object",
+          "description": "Predicate over current state + event payload (declarative, no code). Optional guard condition.",
+          "additionalProperties": true
+        }
+      }
+    },
+
+    "do": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Actions to execute when event matches",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["op"],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["delta.emit", "state.set", "state.merge", "state.toggle", "queue.event"],
+            "description": "Operation type"
+          },
+
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Dot-path to state property (for state.* ops)"
+          },
+          "value": {
+            "description": "Value to set/merge (for state.set, state.merge)"
+          },
+
+          "delta": {
+            "$ref": "asx://schema/srp.delta.v1",
+            "description": "Delta to emit (for delta.emit op)"
+          },
+
+          "enqueue": {
+            "$ref": "asx://schema/srp.event.v1",
+            "description": "Event to enqueue (for queue.event op)"
+          }
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional metadata"
+    }
+  },
+
+  "@examples": [
+    {
+      "@type": "srp.directive",
+      "when": { "event": "ui.submit" },
+      "do": [
+        {
+          "op": "delta.emit",
+          "delta": {
+            "@type": "srp.delta",
+            "ops": [{ "op": "toggle", "path": "active" }]
+          }
+        }
+      ]
+    },
+    {
+      "@type": "srp.directive",
+      "when": {
+        "event": "ui.click",
+        "if": { "path": "ui.state", "eq": "inactive" }
+      },
+      "do": [
+        { "op": "state.set", "path": "ui.state", "value": "active" }
+      ]
+    }
+  ],
+
+  "@why_not_functions": {
+    "problem": "JS frameworks encode control logic in nested functions, lambdas, closures capturing stale state, dependency arrays, callback identity problems",
+    "solution": "SRP uses serializable directives - the 'program' is data: replayable, compressible (SCXQ2), auditable"
+  }
+}
