@@ -1,0 +1,13 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/law_id.v1",
+  "$comment": "XCFE Law ID v1 (Sealed) - Authoritative law identity",
+  "title": "XCFE Law ID v1",
+  "type": "string",
+  "pattern": "^[a-z][a-z0-9_\\-\\.]{2,128}$",
+  "examples": [
+    "law.pi_xcfe.core.v1",
+    "law.pi_xcfe.holotape_ui.v1",
+    "law.pi_xcfe.native_verify.v1"
+  ]
+}

@@ -963,6 +963,331 @@ When upgrading between versions:
 
 ---
 
+# Part II: π⊗XCFE Unified Control Field (v3)
+
+> **Status:** 🔒 Sealed
+> **Law:** Deterministic, phase-gated, replay-verifiable, capability-governed
+
+---
+
+## 15. π⊗XCFE — Unified Control Field (Authoritative)
+
+> **π defines what *can* happen.**
+> **XCFE defines what is *allowed* to happen, when, and in what order.**
+
+### 15.0 Canonical Stack (Final)
+
+```
+XCFE (Control-Flow Enforcement Law)
+  └── π (State Physics + Invariants)
+        └── SCXQ2 (Compressed Symbolic Intent)
+              └── XJSON (Structural Memory + Folds)
+                    └── ASX-R Runtime (Execution)
+                          └── Projection (DOM / IO / GPU / Network)
+```
+
+**Hard rule:** Nothing executes unless XCFE allows the π transition.
+
+### 15.1 What XCFE Actually Is (Formalized)
+
+XCFE is **not syntax** and **not logic**.
+
+XCFE is a **deterministic control lattice** that governs:
+
+* phase order
+* allowed transitions
+* side-effect permissions
+* reentrancy
+* concurrency limits
+* failure behavior
+
+XCFE answers **before π acts**:
+
+> "Is this transition legal *right now*?"
+
+---
+
+## 16. XCFE Control Vectors
+
+XCFE introduces **control vectors** that π must obey.
+
+### 16.1 Core XCFE Vectors
+
+| Vector | Type | Description |
+|--------|------|-------------|
+| `@law` | `xcfe://schema/law_id.v1` | Authoritative law identity |
+| `@phase` | `pi://schema/phase_id.v3` | Current execution phase |
+| `@allow` | `xcfe://schema/capability_id.v1[]` | Permitted operations |
+| `@deny` | `xcfe://schema/capability_id.v1[]` | Forbidden operations |
+| `@barrier` | `xcfe://schema/barrier_state.v1` | Synchronization locks |
+| `@scope` | `string` | Authority domain |
+| `@entropy` | `xcfe://schema/entropy_mode.v1` | Alias/cipher allowance |
+| `@runtime` | `xcfe://schema/runtime_lane.v1` | CPU/GPU/TPU/IO lanes |
+| `@limits` | `object` | Resource bounds |
+| `@audit` | `object` | Audit configuration |
+
+These vectors live in **XJSON**, not code.
+
+### 16.2 XCFE Law Envelope
+
+```json
+{
+  "@xcfe": {
+    "@law": "law.pi_xcfe.holotape_ui.v1",
+    "@phase": "pi_act",
+    "@allow": ["dom", "ui", "svg", "audit", "effect"],
+    "@deny": ["network", "crypto", "resource", "cluster"],
+    "@scope": "ui:holotape",
+    "@barrier": "idle",
+    "@entropy": "static",
+    "@runtime": "browser_cpu",
+    "@audit": { "enabled": true, "mode": "full" }
+  }
+}
+```
+
+**Rule:** `@xcfe.@law` is the **authoritative law identity**. No `@law` ⇒ no lawful execution.
+
+---
+
+## 17. π Phases (XCFE-Governed)
+
+π phases are now **XCFE-enforced and non-skippable**.
+
+| Phase | ID | XCFE Gate | Allowed |
+|-------|-------|-----------|---------|
+| Perceive | `pi_perceive` | `@allow.read` | observe only |
+| Decode | `pi_decode` | `@allow.decode` | SCXQ2 → tokens |
+| Verify | `pi_verify` | `@allow.verify` | invariant checks |
+| Decide | `pi_decide` | `@allow.branch` | `(?) (∴) (¬)` |
+| Act | `pi_act` | `@allow.effect` | IO / DOM / net |
+| Collapse | `pi_collapse` | `@allow.seal` | commit + seal |
+
+**Invariant XCFE-1:** No operation may occur outside its allowed phase.
+
+---
+
+## 18. π Operations (v3)
+
+### 18.1 Decode + Parse
+
+| Opcode | Phase | Description |
+|--------|-------|-------------|
+| `pi_decode` | `pi_decode` | SCXQ2 alias→token decode |
+| `pi_tokenize` | `pi_decode` | Tokenization into atomic units |
+
+### 18.2 Verification + Policy
+
+| Opcode | Phase | Description |
+|--------|-------|-------------|
+| `pi_verify` | `pi_verify` | Invariants + policy checks |
+| `pi_match` | `pi_verify` | Pattern match (structural) |
+| `pi_branch` | `pi_decide` | Conditional decision plan |
+| `pi_commit` | `pi_decide` | Commit branch choice |
+| `pi_alternate` | `pi_decide` | Else branch plan |
+
+### 18.3 Async + Concurrency
+
+| Opcode | Phase | Description |
+|--------|-------|-------------|
+| `pi_spawn` | `pi_act` | Create task |
+| `pi_await` | `pi_act` | Await task |
+| `pi_all` | `pi_act` | Await all |
+| `pi_race` | `pi_act` | Await first |
+| `pi_timeout` | `pi_act` | Time bound |
+| `pi_stream` | `pi_act` | Create/transform stream |
+
+### 18.4 Data (Immutable)
+
+| Opcode | Phase | Description |
+|--------|-------|-------------|
+| `pi_record` | `pi_perceive` | Construct record |
+| `pi_tuple` | `pi_perceive` | Construct tuple |
+| `pi_with` | `pi_act` | Functional update |
+| `pi_merge` | `pi_act` | Deterministic merge |
+| `pi_set_*` | `pi_act` | Set operations |
+
+### 18.5 Projection (DOM/BOM/UI)
+
+| Opcode | Phase | Requires | Description |
+|--------|-------|----------|-------------|
+| `pi_dom_patch` | `pi_act` | `dom` | JSON patch to DOM region |
+| `pi_dom_mount` | `pi_act` | `dom` | Mount atomic block binding |
+| `pi_bom_nav` | `pi_act` | `bom` | Safe navigation intent |
+| `pi_ui_emit` | `pi_act` | `ui` | UI event emit |
+| `pi_svg_vector` | `pi_act` | `svg` | Vector op |
+| `pi_canvas_tick` | `pi_act` | `canvas` | Game loop tick binding |
+
+### 18.6 Resources (Explicit Management)
+
+| Opcode | Phase | Requires | Description |
+|--------|-------|----------|-------------|
+| `pi_open` | `pi_act` | `resource` | Open resource |
+| `pi_using` | `pi_act` | `resource` | Scoped usage |
+| `pi_close` | `pi_act` | `resource` | Close resource |
+| `pi_defer` | `pi_act` | `resource` | Deterministic cleanup |
+
+### 18.7 Crypto / Sealing
+
+| Opcode | Phase | Requires | Description |
+|--------|-------|----------|-------------|
+| `pi_crypto_seal` | `pi_act` | `crypto` | Encrypt/seal payload |
+| `pi_crypto_unseal` | `pi_act` | `crypto` | Decrypt/unseal payload |
+
+### 18.8 Cluster Runtime
+
+| Opcode | Phase | Requires | Description |
+|--------|-------|----------|-------------|
+| `pi_cluster_spawn` | `pi_act` | `cluster` | Spawn cluster task |
+| `pi_cluster_map` | `pi_act` | `cluster` | Map over cluster |
+| `pi_cluster_reduce` | `pi_act` | `cluster` | Reduce cluster results |
+| `pi_cluster_balance` | `pi_act` | `cluster` | Load balancing |
+
+### 18.9 Finalization
+
+| Opcode | Phase | Description |
+|--------|-------|-------------|
+| `pi_collapse` | `pi_collapse` | Seal end-of-tick, emit proofs/audit |
+
+---
+
+## 19. SCXQ2 → π Lowering (Deterministic)
+
+### 19.1 Canonical Token Map
+
+| SCX Token | π Op | Requires | Phase |
+|-----------|------|----------|-------|
+| `(?)` | `pi_branch` | `branch` | `pi_decide` |
+| `(∴)` | `pi_commit` | `branch` | `pi_decide` |
+| `(¬)` | `pi_alternate` | `branch` | `pi_decide` |
+| `(∞)` | `pi_stream` | `loop` | `pi_decide` |
+| `(⛔)` | `pi_collapse` | `seal` | `pi_collapse` |
+| `(💬)` | `pi_ui_emit` | `ui`, `dom` | `pi_act` |
+| `(💬>)` | `pi_ui_emit` | `ui`, `dom` | `pi_act` |
+| `(🔍)` | `pi_match` | `verify` | `pi_verify` |
+| `(⊕)` | `pi_open` | `resource` | `pi_act` |
+| `(⊗)` | `pi_close` | `resource` | `pi_act` |
+| `(📡)` | `pi_open` | `network` | `pi_act` |
+| `(🔐)` | `pi_crypto_seal` | `crypto` | `pi_act` |
+| `(🔓)` | `pi_crypto_unseal` | `crypto` | `pi_act` |
+| `(%)` | `pi_merge` | `storage` | `pi_act` |
+| `(⟳)` | `pi_dom_patch` | `dom` | `pi_act` |
+| `(🧠)` | `pi_cluster_map` | `cluster` | `pi_act` |
+| `(🚀)` | `pi_open` | `network` | `pi_act` |
+
+### 19.2 Lowering Algorithm (Deterministic Order)
+
+1. **Decode stage** — if `@mode == scxq2_alias`, emit `pi_decode`
+2. **Tokenize stage** — emit `pi_tokenize`
+3. **Verify stage** — emit `pi_verify` (checks XCFE gates)
+4. **Decision stage** — parse control skeleton, emit `pi_branch`/`pi_commit`
+5. **Act stage** — emit effect ops (left-to-right, stable order)
+6. **Collapse stage** — emit `pi_collapse`
+
+**Hard rule:** Decoded SCXQ2 text is **never executable**. Only lowered π ops dispatch.
+
+---
+
+## 20. XCFE Invariants (Normative)
+
+### 20.1 XCFE-1: Phase Legality
+
+> No operation may occur outside its allowed phase.
+
+### 20.2 XCFE-2: Scope Isolation
+
+> No cluster may mutate state outside its assigned scope.
+
+### 20.3 XCFE-3: Symbolic Non-Execution
+
+> Tokens are data. Only π under XCFE may act.
+
+### 20.4 Forbidden Behaviors (Hard Fail)
+
+* Executing decoded strings
+* eval-like behavior
+* Side effects outside `pi_act`
+* Resource leaks past `pi_collapse`
+* Non-deterministic lowering ordering
+
+---
+
+## 21. π⊗XCFE Schema Files
+
+### 21.1 XCFE Schemas
+
+| File | $id | Purpose |
+|------|-----|---------|
+| `xcfe.law-id.v1.schema.json` | `xcfe://schema/law_id.v1` | Law identity |
+| `xcfe.capability-id.v1.schema.json` | `xcfe://schema/capability_id.v1` | Capability enums |
+| `xcfe.runtime-lane.v1.schema.json` | `xcfe://schema/runtime_lane.v1` | Runtime lanes |
+| `xcfe.barrier-state.v1.schema.json` | `xcfe://schema/barrier_state.v1` | Barrier states |
+| `xcfe.entropy-mode.v1.schema.json` | `xcfe://schema/entropy_mode.v1` | Entropy modes |
+| `xcfe.control-vectors.v1.schema.json` | `xcfe://schema/control_vectors.v1` | Control vectors |
+| `xcfe.law-envelope.v1.schema.json` | `xcfe://schema/law_envelope.v1` | Law envelope |
+
+### 21.2 π Schemas
+
+| File | $id | Purpose |
+|------|-----|---------|
+| `pi.phase-id.v3.schema.json` | `pi://schema/phase_id.v3` | Phase IDs |
+| `pi.opcode-id.v3.schema.json` | `pi://schema/opcode_id.v3` | Opcode IDs |
+| `pi.fold-ref.v3.schema.json` | `pi://schema/fold_ref.v3` | Fold references |
+| `pi.proof.v3.schema.json` | `pi://schema/proof.v3` | Proof blocks |
+| `pi.op-block.v3.schema.json` | `pi://schema/op_block.v3` | Operation blocks |
+| `pi.op-list.v3.schema.json` | `pi://schema/op_list.v3` | Operation lists |
+| `pi.token-stream.v3.schema.json` | `pi://schema/token_stream.v3` | Token streams |
+| `pi.tick-envelope.v3.schema.json` | `pi://schema/tick_envelope.v3` | Tick envelopes |
+
+### 21.3 Lowering & Conformance
+
+| File | $id | Purpose |
+|------|-----|---------|
+| `scxq2.token-stream.v3.schema.json` | `scxq2://schema/token_stream.v3` | SCXQ2 tokens |
+| `scxq2.lowering-map.pi-xcfe.v3.schema.json` | `scxq2://schema/lowering_map.pi_xcfe.v3` | Lowering map |
+| `asx-r.conformance.pi-xcfe.v3.schema.json` | `asx-r://schema/conformance.pi_xcfe.v3` | Conformance tests |
+
+---
+
+## 22. Law Bundles
+
+### 22.1 Core OS Law
+
+`law.pi_xcfe.core.v1` — All capabilities enabled, full OS access.
+
+### 22.2 Holotape UI Law
+
+`law.pi_xcfe.holotape_ui.v1` — UI-safe, no network/crypto/storage/cluster.
+
+### 22.3 Native Verify Law
+
+`law.pi_xcfe.native_verify.v1` — Verifier-safe, read/decode/verify only, no effects.
+
+---
+
+## 23. π⊗XCFE Conformance Vectors
+
+### 23.1 Pass Vectors
+
+| ID | Description | Expected |
+|----|-------------|----------|
+| `pass-ui-emit` | UI emit with dom/ui allowed | `@ok=true` |
+| `pass-branch-dom` | Branch + DOM with both allowed | `@ok=true` |
+| `pass-verify-native-read` | Read in verify-only law | `@ok=true` |
+
+### 23.2 Failure Vectors (Golden)
+
+| ID | Description | Failure | Capability |
+|----|-------------|---------|------------|
+| `fail-network-denied` | Network op when denied | `capability_denied` | `network` |
+| `fail-crypto-denied` | Crypto seal when denied | `capability_denied` | `crypto` |
+| `fail-storage-denied` | Storage save when denied | `capability_denied` | `storage` |
+| `fail-cluster-denied` | Cluster op when denied | `capability_denied` | `cluster` |
+| `fail-phase-violation` | Effect in verify phase | `phase_violation` | — |
+| `fail-verify-native-effect` | Effect in verify-only law | `capability_denied` | `effect` |
+
+---
+
 ## Appendix A: JSON Schema Files
 
 All schema files are located in `/schemas/` using **ASX canonical headers** (`asx://schema/`):

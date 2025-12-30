@@ -1,0 +1,227 @@
+{
+  "@law": "law.pi_xcfe.holotape_ui.v1",
+  "@xcfe": {
+    "@law": "law.pi_xcfe.holotape_ui.v1",
+    "@phase": "pi_act",
+    "@allow": ["read", "decode", "verify", "branch", "loop", "effect", "seal", "dom", "ui", "svg", "canvas", "tape", "audit"],
+    "@deny": ["network", "crypto", "resource", "cluster", "storage", "idb", "mesh", "bom"],
+    "@scope": "ui:holotape",
+    "@barrier": "idle",
+    "@entropy": "static",
+    "@runtime": "browser_cpu"
+  },
+  "@tests": [
+    {
+      "id": "pass-ui-emit",
+      "description": "UI emit should pass - dom/ui allowed",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(💬>) 'Hello world!'"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_ui_emit",
+            "@phase": "pi_act",
+            "@args": { "kind": "message", "text": "Hello world!" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": true
+      }
+    },
+    {
+      "id": "pass-branch-dom",
+      "description": "Branch + DOM should pass - both allowed",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(?) user.active (∴) (💬>) 'Welcome!' (¬) (💬>) 'Goodbye!'"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_branch",
+            "@phase": "pi_decide",
+            "@args": {
+              "cond": { "ref": "user.active" },
+              "then": [{ "@op": "pi_ui_emit", "@phase": "pi_act" }],
+              "else": [{ "@op": "pi_ui_emit", "@phase": "pi_act" }]
+            }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": true
+      }
+    },
+    {
+      "id": "fail-network-denied",
+      "description": "Network operation should fail - network denied",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(⊕) @api.example.com"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_open",
+            "@phase": "pi_act",
+            "@args": { "kind": "network", "target": "@api.example.com" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_phase": "pi_verify",
+        "@failure_capability": "network"
+      }
+    },
+    {
+      "id": "fail-crypto-denied",
+      "description": "Crypto seal should fail - crypto denied",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(🔐) secret_data"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_crypto_seal",
+            "@phase": "pi_act",
+            "@args": { "data": "secret_data" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_phase": "pi_verify",
+        "@failure_capability": "crypto"
+      }
+    },
+    {
+      "id": "fail-storage-denied",
+      "description": "Storage save should fail - storage denied",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(%) user_data"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_merge",
+            "@phase": "pi_act",
+            "@args": { "table": "users", "data": "user_data" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_phase": "pi_verify",
+        "@failure_capability": "storage"
+      }
+    },
+    {
+      "id": "fail-cluster-denied",
+      "description": "Cluster operation should fail - cluster denied",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(🧠) model_weights"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_cluster_map",
+            "@phase": "pi_act",
+            "@args": { "model": "model_weights" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_phase": "pi_verify",
+        "@failure_capability": "cluster"
+      }
+    },
+    {
+      "id": "fail-phase-violation",
+      "description": "Effect in verify phase should fail - phase violation",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(💬>) 'test'"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_ui_emit",
+            "@phase": "pi_verify",
+            "@args": { "text": "test" }
+          }
+        ]
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "phase_violation",
+        "@failure_phase": "pi_verify"
+      }
+    },
+    {
+      "id": "pass-verify-native-read",
+      "description": "Read in verify-only law should pass",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(!) invariant_check"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_verify",
+            "@phase": "pi_verify",
+            "@args": { "invariant": "invariant_check" }
+          }
+        ],
+        "override_law": "law.pi_xcfe.native_verify.v1"
+      },
+      "expect": {
+        "@ok": true
+      }
+    },
+    {
+      "id": "fail-verify-native-effect",
+      "description": "Effect in verify-only law should fail",
+      "given": {
+        "scxq2": {
+          "@scxq2": "v3",
+          "@mode": "scx",
+          "@text": "(💬>) 'test'"
+        },
+        "pi_ops": [
+          {
+            "@op": "pi_ui_emit",
+            "@phase": "pi_act",
+            "@args": { "text": "test" }
+          }
+        ],
+        "override_law": "law.pi_xcfe.native_verify.v1"
+      },
+      "expect": {
+        "@ok": false,
+        "@failure": "capability_denied",
+        "@failure_phase": "pi_verify",
+        "@failure_capability": "effect"
+      }
+    }
+  ]
+}

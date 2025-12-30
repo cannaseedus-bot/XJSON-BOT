@@ -1,0 +1,16 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/runtime_lane.v1",
+  "$comment": "XCFE Runtime Lane v1 (Sealed) - Execution environment lanes",
+  "title": "XCFE Runtime Lane v1",
+  "type": "string",
+  "enum": [
+    "browser_cpu",
+    "browser_gpu",
+    "browser_io",
+    "server_cpu",
+    "server_io",
+    "tpu_node",
+    "sandbox"
+  ]
+}

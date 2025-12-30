@@ -1,0 +1,15 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/barrier_state.v1",
+  "$comment": "XCFE Barrier State v1 (Sealed) - Synchronization lock states",
+  "title": "XCFE Barrier State v1",
+  "type": "string",
+  "enum": [
+    "idle",
+    "locked",
+    "awaiting",
+    "ready",
+    "released",
+    "failed"
+  ]
+}

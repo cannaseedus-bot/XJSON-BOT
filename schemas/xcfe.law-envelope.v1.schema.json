@@ -1,0 +1,13 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/law_envelope.v1",
+  "$comment": "XCFE Law Envelope v1 (Sealed) - Silent law carrier for OS config",
+  "title": "XCFE Law Envelope v1",
+  "description": "The @xcfe envelope is how law is slipped into OS config. The authoritative identity is @xcfe.@law.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@xcfe"],
+  "properties": {
+    "@xcfe": { "$ref": "xcfe://schema/control_vectors.v1" }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/op_block.v3",
+  "$comment": "π Operation Block v3 (Sealed) - Single operation unit",
+  "title": "π Operation Block v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@op", "@phase"],
+  "properties": {
+    "@op": { "$ref": "pi://schema/opcode_id.v3" },
+    "@phase": { "$ref": "pi://schema/phase_id.v3" },
+    "@args": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "@refs": {
+      "type": "array",
+      "items": { "$ref": "pi://schema/fold_ref.v3" }
+    },
+    "@proof": { "$ref": "pi://schema/proof.v3" }
+  }
+}

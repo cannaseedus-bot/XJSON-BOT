@@ -1,0 +1,14 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/fold_ref.v3",
+  "$comment": "π Fold Reference v3 (Sealed) - Stable fold references",
+  "title": "π Fold Reference v3",
+  "type": "string",
+  "pattern": "^(fold|asx|pi|xcfe)://.+$",
+  "examples": [
+    "fold://effects/level-check",
+    "fold://ui/holotape/runtime",
+    "asx://block/chat-view",
+    "pi://op/branch"
+  ]
+}

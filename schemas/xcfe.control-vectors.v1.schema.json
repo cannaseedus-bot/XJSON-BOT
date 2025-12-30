@@ -1,0 +1,60 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/control_vectors.v1",
+  "$comment": "XCFE Control Vectors v1 (Sealed) - π governance law carrier",
+  "title": "XCFE Control Vectors v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@law", "@phase", "@allow", "@deny", "@scope", "@barrier", "@entropy", "@runtime"],
+  "properties": {
+    "@law": { "$ref": "xcfe://schema/law_id.v1" },
+
+    "@phase": { "$ref": "pi://schema/phase_id.v3" },
+
+    "@allow": {
+      "type": "array",
+      "items": { "$ref": "xcfe://schema/capability_id.v1" },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+
+    "@deny": {
+      "type": "array",
+      "items": { "$ref": "xcfe://schema/capability_id.v1" },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+
+    "@scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "examples": ["os:prime", "ui:holotape", "verify:native", "mesh:contract"]
+    },
+
+    "@barrier": { "$ref": "xcfe://schema/barrier_state.v1" },
+
+    "@entropy": { "$ref": "xcfe://schema/entropy_mode.v1" },
+
+    "@runtime": { "$ref": "xcfe://schema/runtime_lane.v1" },
+
+    "@limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_clusters": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "max_effects_per_tick": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "max_decode_bytes": { "type": "integer", "minimum": 0, "maximum": 100000000 }
+      }
+    },
+
+    "@audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": { "type": "string", "enum": ["none", "hash_only", "full"] }
+      }
+    }
+  }
+}
