@@ -1,0 +1,74 @@
+{
+  "$id": "asx://schema/kql.model.v1",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "KQL Model Definition Schema — Inference endpoint registry",
+  "type": "object",
+  "required": ["@type", "@id", "name", "endpoint", "provider"],
+  "properties": {
+    "@type": { "const": "kql.model.v1" },
+    "@id": {
+      "type": "string",
+      "pattern": "^asx://model/[a-z0-9-]+\\.v[0-9]+$",
+      "description": "Canonical model identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable model name"
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "Inference endpoint URL or path"
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["local", "ollama", "huggingface", "openai", "anthropic", "deepseek", "custom"],
+      "description": "Model provider type"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["chat", "code", "reasoning", "vision", "image-gen", "embedding", "function-call"]
+      },
+      "default": ["chat"]
+    },
+    "context_window": {
+      "type": "integer",
+      "minimum": 512,
+      "maximum": 2000000,
+      "default": 4096
+    },
+    "quantization": {
+      "type": "string",
+      "enum": ["f32", "f16", "bf16", "q8_0", "q6_k", "q5_k_m", "q4_k_m", "q4_0", "q3_k_m", "q2_k", "gguf", "awq", "gptq"],
+      "description": "Model quantization format"
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "temperature": { "type": "number", "minimum": 0, "maximum": 2, "default": 0.7 },
+        "top_p": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.9 },
+        "top_k": { "type": "integer", "minimum": 1, "maximum": 100, "default": 40 },
+        "max_tokens": { "type": "integer", "minimum": 1, "maximum": 100000, "default": 2048 },
+        "stop": { "type": "array", "items": { "type": "string" } },
+        "repeat_penalty": { "type": "number", "minimum": 0, "maximum": 2, "default": 1.1 }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["none", "bearer", "api-key", "basic"] },
+        "header": { "type": "string" },
+        "env_var": { "type": "string", "description": "Environment variable name for token" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "disabled", "pending", "error"],
+      "default": "active"
+    },
+    "icon": { "type": "string" },
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+  },
+  "additionalProperties": false
+}

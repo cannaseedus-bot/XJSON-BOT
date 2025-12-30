@@ -1,0 +1,36 @@
+{
+  "$id": "asx://schema/image.inference.proof.v1",
+  "title": "Image Inference Proof v1",
+  "type": "object",
+  "required": [
+    "@type",
+    "@context_hash",
+    "@image_hash",
+    "@plan_hash",
+    "@output_hash",
+    "@model_hash"
+  ],
+  "properties": {
+    "@type": { "const": "image.inference.proof.v1" },
+    "@id": { "type": "string" },
+
+    "@context_hash": { "type": "string", "minLength": 8 },
+    "@image_hash": { "type": "string", "minLength": 8 },
+    "@plan_hash": { "type": "string", "minLength": 8 },
+    "@output_hash": { "type": "string", "minLength": 8 },
+
+    "@model_hash": { "type": "string", "minLength": 8 },
+    "@prompt_hash": { "type": "string" },
+
+    "@metrics": {
+      "type": "object",
+      "properties": {
+        "@bytes_in": { "type": "integer", "minimum": 0 },
+        "@pixels": { "type": "integer", "minimum": 0 },
+        "@tokens_out": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

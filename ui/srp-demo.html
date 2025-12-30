@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SRP Demo — Slider → CSS → GPU → MeshChain</title>
+  <style>
+    :root {
+      --srp_slider: 0.25;
+      --srp_tick: 0;
+      --srp_minted: 0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0e14;
+      color: #e0e6ed;
+      min-height: 100vh;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 20px; color: #4ecdc4; }
+    .srp-demo { max-width: 500px; }
+    .srp-status {
+      background: #1a1f2e;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-family: 'SF Mono', Consolas, monospace;
+      font-size: 13px;
+    }
+    .srp-status span { color: #4ecdc4; }
+    .cube-demo {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .cube {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #4ecdc4 0%, #2a9d8f 100%);
+      border-radius: 8px;
+      transform: rotate(calc(var(--srp_slider) * 360deg)) scale(calc(0.5 + var(--srp_slider) * 0.5));
+      transition: transform 0.1s ease-out;
+    }
+    .mint-counter {
+      background: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .mint-counter::before { content: 'Minted: '; opacity: 0.8; }
+    .mint-counter::after { content: attr(data-minted); }
+  </style>
+</head>
+<body>
+  <div class="srp-demo">
+    <h1>SRP Demo — Slider → CSS → GPU → MeshChain</h1>
+
+    <div class="srp-status">
+      <div>--srp_slider: <span id="css_slider">0.25</span></div>
+      <div>--srp_tick: <span id="css_tick">0</span></div>
+      <div>--srp_minted: <span id="css_minted">0</span></div>
+    </div>
+
+    <div class="cube-demo">
+      <div class="cube"></div>
+    </div>
+
+    <div class="mint-counter" data-minted="0" id="mint_display"></div>
+  </div>
+
+  <script src="../core/SRP_KERNEL_MIN.js"></script>
+  <script>
+    // Demo class from SRP_PACK_v1
+    const demoClass = {
+      "@id": "asx://srp/class/demo.slider_cube_mint.v1",
+      "@type": "srp.class",
+      "@version": "1.0.0",
+      "state0": {
+        "slider": 0.25,
+        "active": false,
+        "tick": 0,
+        "minted": 0,
+        "mint_armed": true
+      },
+      "projection": {
+        "css_root": {
+          "vars": {
+            "--srp_slider": "/slider",
+            "--srp_tick": "/tick",
+            "--srp_minted": "/minted"
+          }
+        },
+        "gpu_bridge": { "mode": "webgl_min", "inputs": { "angle": "/slider" } },
+        "meshchain_hooks": { "mint_route": "/mesh/contract/execute", "rules": [] }
+      }
+    };
+
+    // Update CSS display
+    function updateDisplay() {
+      document.getElementById('css_slider').textContent = SRP.state.slider.toFixed(2);
+      document.getElementById('css_tick').textContent = SRP.state.tick;
+      document.getElementById('css_minted').textContent = SRP.state.minted;
+      document.getElementById('mint_display').dataset.minted = SRP.state.minted;
+    }
+
+    // Mount and run
+    SRP.mountDemo(demoClass).then(() => {
+      // Hook into state changes
+      const origProject = SRP.project.bind(SRP);
+      SRP.project = async function() {
+        const r = await origProject();
+        updateDisplay();
+        return r;
+      };
+      updateDisplay();
+    });
+  </script>
+</body>
+</html>

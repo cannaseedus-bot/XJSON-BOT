@@ -1,0 +1,13 @@
+{
+  "$id": "asx://schema/image.inference.bounds.v1",
+  "title": "Image Inference Bounds v1",
+  "type": "object",
+  "required": ["@max_steps", "@max_bytes", "@max_pixels", "@max_tokens"],
+  "properties": {
+    "@max_steps": { "type": "integer", "minimum": 1, "maximum": 256 },
+    "@max_bytes": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+    "@max_pixels": { "type": "integer", "minimum": 1, "maximum": 16777216 },
+    "@max_tokens": { "type": "integer", "minimum": 0, "maximum": 8192 }
+  },
+  "additionalProperties": false
+}

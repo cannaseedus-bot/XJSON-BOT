@@ -1,0 +1,18 @@
+{
+  "$id": "asx://schema/image.plan.v1",
+  "title": "Image Inference Plan v1",
+  "type": "object",
+  "required": ["@type", "@steps", "@bounds"],
+  "properties": {
+    "@type": { "const": "image.plan.v1" },
+    "@id": { "type": "string" },
+    "@bounds": { "$ref": "asx://schema/image.inference.bounds.v1" },
+    "@steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": { "$ref": "asx://schema/image.plan.step.v1" }
+    }
+  },
+  "additionalProperties": false
+}

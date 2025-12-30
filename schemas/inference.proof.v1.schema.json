@@ -1,0 +1,20 @@
+{
+  "$id": "asx://schema/inference.proof.v1",
+  "$comment": "ASX-R Inference Proof Block (Frozen)",
+  "type": "object",
+  "required": [
+    "@type",
+    "@plan_hash",
+    "@context_hash",
+    "@model_hash",
+    "@output_hash"
+  ],
+  "properties": {
+    "@type": { "const": "inference.proof.v1" },
+    "@plan_hash": { "type": "string" },
+    "@context_hash": { "type": "string" },
+    "@model_hash": { "type": "string" },
+    "@output_hash": { "type": "string" }
+  },
+  "additionalProperties": false
+}

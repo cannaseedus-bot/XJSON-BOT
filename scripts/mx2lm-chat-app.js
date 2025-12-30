@@ -81,7 +81,10 @@ const SCXQ2 = {
       props: {
         user: User.current,
         models: ModelManager.getAll(),
-        huggingfaceToken: Settings.get('huggingfaceToken')
+        huggingfaceToken: Settings.get('huggingfaceToken'),
+        openaiApiKey: Settings.get('openaiApiKey'),
+        anthropicApiKey: Settings.get('anthropicApiKey'),
+        ollamaUrl: Settings.get('ollamaUrl')
       }
     }];
   },
@@ -192,9 +195,18 @@ const ASX = {
     // Chat Input Component
     this.registerComponent("ChatInput", (props) => `
       <div col gap="2">
-        <div row gap="2">
+        <div row gap="2" align-center>
           <input x input flex-1 id="chat-input" placeholder="Type your message..."
                  ${props.disabled ? 'disabled' : ''} />
+          <button x btn class="voice-btn" id="btn-voice" title="Voice input"
+                  onclick="App.toggleVoice()" ${props.disabled ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
           <button x btn btn-accent id="btn-send" ${props.disabled ? 'disabled' : ''}>
             <xt>Send</xt>
           </button>
@@ -202,12 +214,24 @@ const ASX = {
         <div row gap="2" align-center>
           <select x input style="flex: 1;" id="model-select">
             ${ModelManager.getAll().map(model => `
-              <option value="${model.id}">${model.name}</option>
+              <option value="${model.id}">${model.name} ${model.provider ? '(' + model.provider + ')' : ''}</option>
             `).join('')}
           </select>
-          <button x btn onclick="App.showView('settings')">
-            <xt>Add Model</xt>
+          <button x btn onclick="App.toggleAgentTeam()" id="btn-agent-team" title="Multi-agent mode">
+            <xt>👥 Team</xt>
           </button>
+          <button x btn onclick="App.showView('settings')">
+            <xt>⚙️</xt>
+          </button>
+        </div>
+        <div id="voice-status" style="display: none; font-size: 12px; color: var(--accent);">
+          🎤 Listening...
+        </div>
+        <div id="agent-team-status" style="display: none;">
+          <div class="agent-team-badge">
+            <span class="agent-dot"></span>
+            Multi-agent mode active
+          </div>
         </div>
       </div>
     `);
@@ -221,6 +245,79 @@ const ASX = {
         </div>
 
         <div class="settings-section">
+          <div h2>AI Providers</div>
+          <div label style="margin-bottom: var(--s-2);">Configure your AI providers. At least one is required for real AI responses.</div>
+
+          <!-- OpenAI -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>OpenAI</div>
+              <span class="provider-status" id="openai-status">Not configured</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="openai-key" type="password"
+                     placeholder="sk-..." value="${props.openaiApiKey ? '••••••••' : ''}" />
+              <div row gap="2">
+                <select x input id="openai-model" style="flex: 1;">
+                  <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
+                  <option value="gpt-4o">GPT-4o (Best)</option>
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('openai')">Save</button>
+                <button x btn onclick="Settings.testProvider('openai')">Test</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Anthropic -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>Anthropic</div>
+              <span class="provider-status" id="anthropic-status">Not configured</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="anthropic-key" type="password"
+                     placeholder="sk-ant-..." value="${props.anthropicApiKey ? '••••••••' : ''}" />
+              <div row gap="2">
+                <select x input id="anthropic-model" style="flex: 1;">
+                  <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                  <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Fast)</option>
+                  <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('anthropic')">Save</button>
+                <button x btn onclick="Settings.testProvider('anthropic')">Test</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ollama (Local) -->
+          <div class="provider-card" style="margin-bottom: var(--s-3);">
+            <div row spread align-center>
+              <div h3>Ollama (Local)</div>
+              <span class="provider-status" id="ollama-status">Checking...</span>
+            </div>
+            <div col gap="2" style="margin-top: var(--s-2);">
+              <input x input w-full id="ollama-url"
+                     placeholder="http://localhost:11434" value="${props.ollamaUrl || 'http://localhost:11434'}" />
+              <div row gap="2">
+                <select x input id="ollama-model" style="flex: 1;">
+                  <option value="llama3.2">Llama 3.2</option>
+                  <option value="llama3.1">Llama 3.1</option>
+                  <option value="mistral">Mistral</option>
+                  <option value="codellama">CodeLlama</option>
+                  <option value="phi3">Phi-3</option>
+                  <option value="gemma2">Gemma 2</option>
+                </select>
+                <button x btn onclick="Settings.saveProvider('ollama')">Save</button>
+                <button x btn onclick="Settings.testProvider('ollama')">Test</button>
+              </div>
+              <div label>Run locally with: <code>ollama serve</code></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
           <div h2>HuggingFace Integration</div>
           <div col gap="2">
             <input x input w-full id="hf-token" placeholder="HuggingFace Token"
@@ -230,33 +327,34 @@ const ASX = {
         </div>
 
         <div class="settings-section">
-          <div h2>Local Models</div>
+          <div h2>Configured Models</div>
           <div col gap="2">
             ${(props.models || []).map(model => `
               <div class="model-item">
                 <div row spread>
                   <div h3>${model.name}</div>
-                  <button x btn onclick="ModelManager.remove('${model.id}')">Remove</button>
+                  <div row gap="2">
+                    <span class="badge">${model.provider || 'local'}</span>
+                    <button x btn onclick="ModelManager.remove('${model.id}')">Remove</button>
+                  </div>
                 </div>
-                <div label>ID: ${model.id} | URL: ${model.url}</div>
+                <div label>${model.llmModel || model.url || 'Default model'}</div>
               </div>
             `).join('')}
           </div>
 
           <div col gap="2" style="margin-top: var(--s-3);">
-            <input x input id="model-name" placeholder="Model Name" />
-            <input x input id="model-url" placeholder="Model URL (HuggingFace or local)" />
-            <button x btn onclick="ModelManager.add()">Add Model</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <div h2>Local REST API</div>
-          <div col gap="2">
+            <div h3>Add Custom Model</div>
+            <input x input id="model-name" placeholder="Display Name" />
             <div row gap="2">
-              <input x input flex-1 id="api-url" placeholder="http://localhost:11434" value="http://localhost:11434" />
-              <button x btn id="btn-test-api">Test Connection</button>
+              <select x input id="model-provider" style="flex: 1;">
+                <option value="ollama">Ollama (Local)</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+              <input x input id="model-id" placeholder="Model ID (e.g., gpt-4o)" style="flex: 2;" />
             </div>
+            <button x btn onclick="ModelManager.addWithProvider()">Add Model</button>
           </div>
         </div>
       </div>
@@ -307,11 +405,79 @@ const ASX = {
    ============================================================ */
 const App = {
   currentView: 'chat',
+  voiceEnabled: false,
+  agentTeamEnabled: false,
 
   init() {
     ASX.initComponents();
     this.checkAuth();
     this.setupEventListeners();
+    this.initVoice();
+  },
+
+  // Initialize voice interface
+  initVoice() {
+    if (typeof Voice !== 'undefined' && Voice.isSupported()) {
+      Voice.init();
+
+      // Set up voice input handler
+      VoiceInput.onResult = (result) => {
+        if (result.isFinal) {
+          const input = document.getElementById('chat-input');
+          if (input) {
+            input.value = result.transcript;
+          }
+          // Auto-send if confidence is high
+          if (result.confidence > 0.8) {
+            this.sendMessage();
+          }
+        }
+      };
+
+      VoiceInput.onStart = () => {
+        const btn = document.getElementById('btn-voice');
+        const status = document.getElementById('voice-status');
+        if (btn) btn.classList.add('listening');
+        if (status) status.style.display = 'block';
+      };
+
+      VoiceInput.onEnd = () => {
+        const btn = document.getElementById('btn-voice');
+        const status = document.getElementById('voice-status');
+        if (btn) btn.classList.remove('listening');
+        if (status) status.style.display = 'none';
+      };
+
+      console.log('Voice interface initialized');
+    }
+  },
+
+  // Toggle voice input
+  toggleVoice() {
+    if (typeof Voice === 'undefined') {
+      alert('Voice input is not supported in this browser');
+      return;
+    }
+
+    this.voiceEnabled = Voice.toggle();
+    return this.voiceEnabled;
+  },
+
+  // Toggle agent team mode
+  toggleAgentTeam() {
+    this.agentTeamEnabled = !this.agentTeamEnabled;
+
+    const status = document.getElementById('agent-team-status');
+    const btn = document.getElementById('btn-agent-team');
+
+    if (status) {
+      status.style.display = this.agentTeamEnabled ? 'block' : 'none';
+    }
+    if (btn) {
+      btn.style.background = this.agentTeamEnabled ? 'var(--accent)' : '';
+    }
+
+    return this.agentTeamEnabled;
   },
 
   checkAuth() {
@@ -408,9 +574,33 @@ const App = {
     input.value = '';
     this.render();
 
-    // Generate AI response using K'UHUL
     try {
-      const response = await AI.generateResponse(message, modelId);
+      let response;
+
+      // Check if agent team mode is enabled
+      if (this.agentTeamEnabled && typeof AgentFusion !== 'undefined') {
+        // Use multi-agent fusion
+        const result = await AgentFusion.quickTeam(
+          ['assistant', 'analyst', 'coder'],
+          message,
+          { strategy: 'weighted' }
+        );
+        response = result.content;
+
+        // Optionally speak the response
+        if (this.voiceEnabled && typeof VoiceOutput !== 'undefined') {
+          VoiceOutput.speak(response.substring(0, 500)); // Limit speech length
+        }
+      } else {
+        // Single agent response
+        response = await AI.generateResponse(message, modelId);
+
+        // Optionally speak the response
+        if (this.voiceEnabled && typeof VoiceOutput !== 'undefined') {
+          VoiceOutput.speak(response.substring(0, 500));
+        }
+      }
+
       ChatHistory.addMessage('assistant', response, modelId);
     } catch (error) {
       ChatHistory.addMessage('system', `Error: ${error.message}`);
@@ -515,16 +705,14 @@ const User = {
 };
 
 /* ============================================================
-   CHAT HISTORY MANAGEMENT
+   CHAT HISTORY MANAGEMENT - KQL Integrated
    ============================================================ */
 const ChatHistory = {
   chats: [],
   activeChatId: null,
+  loaded: false,
 
   getAll() {
-    if (this.chats.length === 0) {
-      this.loadFromStorage();
-    }
     return this.chats;
   },
 
@@ -545,6 +733,7 @@ const ChatHistory = {
       id: 'chat_' + Date.now(),
       title: 'New Chat',
       messages: [],
+      userId: User.current?.id || 'local',
       created: new Date().toISOString(),
       updated: new Date().toISOString()
     };
@@ -552,14 +741,20 @@ const ChatHistory = {
     this.chats.unshift(chat);
     this.activeChatId = chat.id;
     this.saveToStorage();
+
+    // Log event
+    Storage.logEvent('chat_created', { chatId: chat.id });
+
     return chat;
   },
 
-  addMessage(role, content, model = null) {
+  async addMessage(role, content, model = null) {
     const chat = this.getActive();
     if (!chat) return;
 
     const message = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      chatId: chat.id,
       role,
       content,
       model,
@@ -574,84 +769,278 @@ const ChatHistory = {
       chat.title = content.substring(0, 30) + (content.length > 30 ? '...' : '');
     }
 
-    this.saveToStorage();
+    // Save to storage
+    await this.saveToStorage();
+
+    // Save message separately for KQL
+    if (Storage.useKQL) {
+      await Storage.saveMessage(message);
+    }
+
+    // Store RLHF data for learning
+    if (role === 'assistant' && Storage.useKQL) {
+      await Storage.storeRLHF('response', {
+        prompt: chat.messages[chat.messages.length - 2]?.content,
+        response: content,
+        model
+      }, 0); // Rating 0 = unrated, can be updated later
+    }
   },
 
-  loadFromStorage() {
+  async loadFromStorage() {
+    if (this.loaded) return;
+
     try {
-      const saved = localStorage.getItem('mx2lm_chat_history');
-      if (saved) {
-        const data = JSON.parse(saved);
-        this.chats = data.chats || [];
-        this.activeChatId = data.activeChatId;
+      if (Storage.useKQL) {
+        // Load from KQL
+        const chats = await Storage.getChats(User.current?.id);
+        if (chats && chats.length > 0) {
+          this.chats = chats;
+          // Load messages for each chat
+          for (const chat of this.chats) {
+            if (!chat.messages || chat.messages.length === 0) {
+              chat.messages = await Storage.getMessages(chat.id);
+            }
+          }
+        }
+        this.activeChatId = await Storage.getSetting('active_chat_id');
+      } else {
+        // localStorage fallback
+        const saved = localStorage.getItem('mx2lm_chat_history');
+        if (saved) {
+          const data = JSON.parse(saved);
+          this.chats = data.chats || [];
+          this.activeChatId = data.activeChatId;
+        }
       }
 
       if (this.chats.length === 0) {
         this.createNew();
       }
-    } catch {
+
+      this.loaded = true;
+    } catch (error) {
+      console.warn('ChatHistory: Load error:', error);
       this.createNew();
+      this.loaded = true;
     }
   },
 
-  saveToStorage() {
-    const data = {
-      chats: this.chats,
-      activeChatId: this.activeChatId
-    };
-    localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+  async saveToStorage() {
+    try {
+      if (Storage.useKQL) {
+        // Save active chat to KQL
+        const activeChat = this.getActive();
+        if (activeChat) {
+          await Storage.saveChat(activeChat);
+        }
+        await Storage.setSetting('active_chat_id', this.activeChatId);
+      } else {
+        // localStorage fallback
+        const data = {
+          chats: this.chats,
+          activeChatId: this.activeChatId
+        };
+        localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+      }
+    } catch (error) {
+      console.warn('ChatHistory: Save error:', error);
+      // Always fallback to localStorage
+      const data = { chats: this.chats, activeChatId: this.activeChatId };
+      localStorage.setItem('mx2lm_chat_history', JSON.stringify(data));
+    }
   }
 };
 
 /* ============================================================
-   AI SERVICE INTEGRATION
+   AI SERVICE INTEGRATION - Multi-Provider LLM Support
    ============================================================ */
 const AI = {
   isGenerating: false,
+  streamingContent: '',
+  initialized: false,
 
-  async generateResponse(message, modelId = null) {
+  // Initialize LLM providers from settings
+  async init() {
+    if (this.initialized) return;
+
+    try {
+      // Auto-configure from saved settings
+      if (typeof LLM !== 'undefined') {
+        await LLM.autoConfig();
+        this.initialized = true;
+        console.log('AI: Providers initialized:', LLM.getAvailableProviders());
+      }
+    } catch (error) {
+      console.warn('AI: Provider initialization warning:', error.message);
+    }
+  },
+
+  // Get current conversation context
+  getConversationContext() {
+    const chat = ChatHistory.getActive();
+    if (!chat || !chat.messages) return [];
+
+    // Convert to LLM format, limit to last 10 messages for context
+    return chat.messages.slice(-10).map(msg => ({
+      role: msg.role === 'system' ? 'system' : msg.role,
+      content: msg.content
+    }));
+  },
+
+  // Main response generation
+  async generateResponse(message, modelId = null, options = {}) {
     this.isGenerating = true;
+    this.streamingContent = '';
     App.render();
 
     try {
       const model = ModelManager.get(modelId) || ModelManager.getAll()[0];
 
-      if (!model) {
-        throw new Error('No models available');
+      // Check if LLM is available
+      if (typeof LLM === 'undefined' || LLM.getAvailableProviders().length === 0) {
+        // Fallback to simulated response if no providers configured
+        return await this.simulatedResponse(message);
       }
 
-      // Use K'UHUL agent spawning for AI response
-      const agent = await Ω.spawn('chat', {topic: 'conversation'});
+      // Determine provider from model
+      const providerType = model?.provider || LLM.activeProvider || 'ollama';
 
-      // Simulate AI response
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-
-      const responses = [
-        "I understand your question. Based on my knowledge, this is a complex subject that requires careful consideration of multiple factors.",
-        "That's an interesting point! From my perspective, there are several approaches we could take.",
-        "I appreciate you sharing this with me. Let me provide some insights that might help clarify the situation.",
-        "Based on the information you've provided, I can offer the following analysis and recommendations.",
-        "This is a common question. The solution typically involves considering these key aspects..."
+      // Build messages with context
+      const context = this.getConversationContext();
+      const messages = [
+        ...context,
+        { role: 'user', content: message }
       ];
 
-      return responses[Math.floor(Math.random() * responses.length)];
+      // Use streaming if enabled
+      if (options.stream !== false) {
+        return await this.streamResponse(messages, {
+          provider: providerType,
+          model: model?.llmModel || model?.name,
+          conversationId: ChatHistory.getActive()?.id
+        });
+      } else {
+        const response = await LLM.chat(messages, {
+          provider: providerType,
+          model: model?.llmModel || model?.name,
+          conversationId: ChatHistory.getActive()?.id
+        });
+        return response.content;
+      }
 
+    } catch (error) {
+      console.error('AI: Generation error:', error);
+
+      // Provide helpful error message
+      if (error.status === 401) {
+        throw new Error('Invalid API key. Please check your settings.');
+      } else if (error.message?.includes('fetch')) {
+        throw new Error('Cannot connect to AI service. Check your connection or API endpoint.');
+      } else {
+        throw new Error(error.message || 'Failed to generate response');
+      }
     } finally {
       this.isGenerating = false;
+    }
+  },
+
+  // Streaming response with live updates
+  async streamResponse(messages, options) {
+    return new Promise((resolve, reject) => {
+      LLM.chatStream(messages, options, (chunk, fullContent) => {
+        this.streamingContent = fullContent;
+        // Update UI with streaming content
+        this.updateStreamingUI(fullContent);
+      })
+      .then(response => resolve(response.content))
+      .catch(reject);
+    });
+  },
+
+  // Update UI during streaming
+  updateStreamingUI(content) {
+    const chatArea = document.getElementById('chat-area');
+    if (!chatArea) return;
+
+    // Find or create streaming message element
+    let streamingEl = chatArea.querySelector('.message-streaming');
+    if (!streamingEl) {
+      streamingEl = document.createElement('div');
+      streamingEl.className = 'message message-assistant message-streaming';
+      streamingEl.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">
+          <span class="streaming-indicator"></span> Assistant
+        </div>
+        <div class="streaming-content"></div>
+      `;
+      chatArea.appendChild(streamingEl);
+    }
+
+    const contentEl = streamingEl.querySelector('.streaming-content');
+    if (contentEl) {
+      contentEl.textContent = content;
+    }
+
+    // Auto-scroll
+    chatArea.scrollTop = chatArea.scrollHeight;
+  },
+
+  // Fallback simulated response when no providers available
+  async simulatedResponse(message) {
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+
+    const responses = [
+      "I understand your question. To connect to a real AI, please configure your API keys in Settings.",
+      "This is a simulated response. Add your OpenAI, Anthropic, or start Ollama locally for real AI conversations.",
+      "To enable AI responses, go to Settings and add your API key, or run Ollama locally on port 11434.",
+      "Configure an AI provider in Settings to get real responses. Supports OpenAI, Anthropic, and local Ollama.",
+      "No AI provider configured. Visit Settings to add your API key or connect to a local model."
+    ];
+
+    return responses[Math.floor(Math.random() * responses.length)];
+  },
+
+  // Test provider connection
+  async testProvider(providerType) {
+    if (typeof LLM === 'undefined') {
+      return { success: false, error: 'LLM module not loaded' };
+    }
+
+    const provider = LLM.getProvider(providerType);
+    if (!provider) {
+      return { success: false, error: 'Provider not initialized' };
+    }
+
+    return await provider.testConnection();
+  },
+
+  // Configure a specific provider
+  configureProvider(providerType, config) {
+    if (typeof LLM === 'undefined') {
+      console.error('LLM module not loaded');
+      return false;
+    }
+
+    try {
+      LLM.init(providerType, config);
+      this.initialized = true;
+      return true;
+    } catch (error) {
+      console.error('Failed to configure provider:', error);
+      return false;
     }
   }
 };
 
 /* ============================================================
-   MODEL MANAGEMENT
+   MODEL MANAGEMENT - KQL Integrated
    ============================================================ */
 const ModelManager = {
   models: [],
+  loaded: false,
 
   getAll() {
-    if (this.models.length === 0) {
-      this.loadFromStorage();
-    }
     return this.models;
   },
 
@@ -659,7 +1048,7 @@ const ModelManager = {
     return this.models.find(model => model.id === id);
   },
 
-  add() {
+  async add() {
     const name = document.getElementById('model-name')?.value;
     const url = document.getElementById('model-url')?.value;
 
@@ -677,24 +1066,80 @@ const ModelManager = {
     };
 
     this.models.push(model);
-    this.saveToStorage();
+    await this.saveToStorage();
     App.render();
 
     document.getElementById('model-name').value = '';
     document.getElementById('model-url').value = '';
+
+    // Log event
+    Storage.logEvent('model_added', { modelId: model.id, name: model.name });
   },
 
-  remove(id) {
-    this.models = this.models.filter(model => model.id !== id);
-    this.saveToStorage();
+  // Add model with provider support
+  async addWithProvider() {
+    const name = document.getElementById('model-name')?.value;
+    const provider = document.getElementById('model-provider')?.value;
+    const llmModel = document.getElementById('model-id')?.value;
+
+    if (!name) {
+      alert('Please provide a display name');
+      return;
+    }
+
+    const model = {
+      id: 'model_' + Date.now(),
+      name,
+      provider,
+      llmModel: llmModel || this.getDefaultModel(provider),
+      added: new Date().toISOString()
+    };
+
+    this.models.push(model);
+    await this.saveToStorage();
     App.render();
+
+    // Clear inputs
+    document.getElementById('model-name').value = '';
+    document.getElementById('model-id').value = '';
+
+    // Log event
+    Storage.logEvent('model_added', { modelId: model.id, provider, llmModel: model.llmModel });
   },
 
-  loadFromStorage() {
+  // Get default model for provider
+  getDefaultModel(provider) {
+    const defaults = {
+      openai: 'gpt-4o-mini',
+      anthropic: 'claude-3-5-sonnet-20241022',
+      ollama: 'llama3.2'
+    };
+    return defaults[provider] || 'default';
+  },
+
+  async remove(id) {
+    this.models = this.models.filter(model => model.id !== id);
+    await this.saveToStorage();
+    App.render();
+
+    // Log event
+    Storage.logEvent('model_removed', { modelId: id });
+  },
+
+  async loadFromStorage() {
+    if (this.loaded) return;
+
     try {
-      const saved = localStorage.getItem('mx2lm_models');
-      if (saved) {
-        this.models = JSON.parse(saved);
+      if (Storage.useKQL) {
+        const models = await Storage.getModels();
+        if (models && models.length > 0) {
+          this.models = models;
+        }
+      } else {
+        const saved = localStorage.getItem('mx2lm_models');
+        if (saved) {
+          this.models = JSON.parse(saved);
+        }
       }
 
       if (this.models.length === 0) {
@@ -702,17 +1147,40 @@ const ModelManager = {
           id: 'default_model',
           name: 'Local AI',
           url: 'http://localhost:11434',
+          provider: 'ollama',
+          llmModel: 'llama3.2',
           type: 'local',
           added: new Date().toISOString()
         });
       }
-    } catch {
-      this.models = [];
+
+      this.loaded = true;
+    } catch (error) {
+      console.warn('ModelManager: Load error:', error);
+      this.models = [{
+        id: 'default_model',
+        name: 'Local AI',
+        provider: 'ollama',
+        llmModel: 'llama3.2',
+        added: new Date().toISOString()
+      }];
+      this.loaded = true;
     }
   },
 
-  saveToStorage() {
-    localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+  async saveToStorage() {
+    try {
+      if (Storage.useKQL) {
+        for (const model of this.models) {
+          await Storage.saveModel(model);
+        }
+      } else {
+        localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+      }
+    } catch (error) {
+      console.warn('ModelManager: Save error:', error);
+      localStorage.setItem('mx2lm_models', JSON.stringify(this.models));
+    }
   }
 };
 
@@ -740,34 +1208,383 @@ const Settings = {
     }
   },
 
+  getAll() {
+    try {
+      return JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    } catch {
+      return {};
+    }
+  },
+
   saveHuggingFaceToken() {
     const token = document.getElementById('hf-token')?.value;
     if (token) {
       this.set('huggingfaceToken', token);
       alert('Token saved successfully!');
     }
+  },
+
+  // Save provider configuration
+  async saveProvider(provider) {
+    let success = false;
+
+    switch (provider) {
+      case 'openai': {
+        const keyInput = document.getElementById('openai-key');
+        const key = keyInput?.value;
+        // Only save if it's a new key (not masked)
+        if (key && !key.includes('••')) {
+          this.set('openaiApiKey', key);
+          const model = document.getElementById('openai-model')?.value;
+          this.set('openaiModel', model);
+
+          // Initialize provider
+          if (typeof LLM !== 'undefined') {
+            LLM.init('openai', { apiKey: key, model });
+            success = true;
+          }
+        } else if (this.get('openaiApiKey')) {
+          success = true; // Already configured
+        }
+        break;
+      }
+
+      case 'anthropic': {
+        const keyInput = document.getElementById('anthropic-key');
+        const key = keyInput?.value;
+        if (key && !key.includes('••')) {
+          this.set('anthropicApiKey', key);
+          const model = document.getElementById('anthropic-model')?.value;
+          this.set('anthropicModel', model);
+
+          if (typeof LLM !== 'undefined') {
+            LLM.init('anthropic', { apiKey: key, model });
+            success = true;
+          }
+        } else if (this.get('anthropicApiKey')) {
+          success = true;
+        }
+        break;
+      }
+
+      case 'ollama': {
+        const url = document.getElementById('ollama-url')?.value || 'http://localhost:11434';
+        this.set('ollamaUrl', url);
+        const model = document.getElementById('ollama-model')?.value;
+        this.set('ollamaModel', model);
+
+        if (typeof LLM !== 'undefined') {
+          LLM.init('ollama', { baseUrl: url, model });
+          success = true;
+        }
+        break;
+      }
+    }
+
+    if (success) {
+      this.updateProviderStatus(provider, 'Configured', 'success');
+      alert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} provider saved!`);
+    } else {
+      alert('Please enter a valid API key');
+    }
+
+    return success;
+  },
+
+  // Test provider connection
+  async testProvider(provider) {
+    this.updateProviderStatus(provider, 'Testing...', 'testing');
+
+    // First save the provider if needed
+    await this.saveProvider(provider);
+
+    const result = await AI.testProvider(provider);
+
+    if (result.success) {
+      this.updateProviderStatus(provider, 'Connected', 'success');
+      alert(`${provider} connection successful!`);
+    } else {
+      this.updateProviderStatus(provider, 'Failed', 'error');
+      alert(`${provider} connection failed: ${result.error}`);
+    }
+
+    return result;
+  },
+
+  // Update provider status in UI
+  updateProviderStatus(provider, status, state) {
+    const statusEl = document.getElementById(`${provider}-status`);
+    if (statusEl) {
+      statusEl.textContent = status;
+      statusEl.className = `provider-status provider-${state}`;
+    }
+  },
+
+  // Check all provider statuses on load
+  async checkProviderStatuses() {
+    // Check OpenAI
+    if (this.get('openaiApiKey')) {
+      this.updateProviderStatus('openai', 'Configured', 'success');
+    }
+
+    // Check Anthropic
+    if (this.get('anthropicApiKey')) {
+      this.updateProviderStatus('anthropic', 'Configured', 'success');
+    }
+
+    // Check Ollama (always try to connect)
+    try {
+      const response = await fetch(`${this.get('ollamaUrl') || 'http://localhost:11434'}/api/tags`);
+      if (response.ok) {
+        this.updateProviderStatus('ollama', 'Running', 'success');
+      } else {
+        this.updateProviderStatus('ollama', 'Not running', 'warning');
+      }
+    } catch {
+      this.updateProviderStatus('ollama', 'Not running', 'warning');
+    }
+  }
+};
+
+/* ============================================================
+   KQL STORAGE LAYER - Backend Integration
+   ============================================================ */
+const Storage = {
+  useKQL: false,
+  initialized: false,
+
+  // Initialize KQL backend
+  async init() {
+    if (this.initialized) return;
+
+    try {
+      if (typeof KQL !== 'undefined') {
+        await KQL.init();
+        this.useKQL = true;
+        console.log('Storage: KQL backend initialized');
+
+        // Migrate localStorage to KQL if needed
+        await this.migrateFromLocalStorage();
+      }
+    } catch (error) {
+      console.warn('Storage: KQL init failed, using localStorage fallback:', error);
+      this.useKQL = false;
+    }
+
+    this.initialized = true;
+  },
+
+  // Migrate existing localStorage data to KQL
+  async migrateFromLocalStorage() {
+    if (!this.useKQL) return;
+
+    try {
+      // Check if migration already done
+      const migrated = await KQL.getSetting('localStorage_migrated');
+      if (migrated) return;
+
+      console.log('Storage: Migrating localStorage to KQL...');
+
+      // Migrate user
+      const savedUser = localStorage.getItem('mx2lm_current_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        await KQL.insert('settings', { key: 'current_user', value: user, updated: Date.now() });
+      }
+
+      // Migrate chat history
+      const chatData = localStorage.getItem('mx2lm_chat_history');
+      if (chatData) {
+        const data = JSON.parse(chatData);
+        for (const chat of (data.chats || [])) {
+          await KQL.saveChat(chat);
+          for (const msg of (chat.messages || [])) {
+            await KQL.saveMessage({ ...msg, chatId: chat.id });
+          }
+        }
+        if (data.activeChatId) {
+          await KQL.setSetting('active_chat_id', data.activeChatId);
+        }
+      }
+
+      // Migrate models
+      const modelsData = localStorage.getItem('mx2lm_models');
+      if (modelsData) {
+        const models = JSON.parse(modelsData);
+        for (const model of models) {
+          await KQL.saveModel(model);
+        }
+      }
+
+      // Migrate settings
+      const settings = localStorage.getItem('mx2lm_settings');
+      if (settings) {
+        const settingsObj = JSON.parse(settings);
+        for (const [key, value] of Object.entries(settingsObj)) {
+          await KQL.setSetting(key, value);
+        }
+      }
+
+      // Mark migration complete
+      await KQL.setSetting('localStorage_migrated', true);
+      console.log('Storage: Migration complete');
+
+      // Log event
+      await KQL.logEvent('migration', { from: 'localStorage', to: 'KQL' }, 'system');
+    } catch (error) {
+      console.warn('Storage: Migration warning:', error);
+    }
+  },
+
+  // Generic get
+  async get(store, key) {
+    if (this.useKQL) {
+      return KQL.get(store, key);
+    }
+    // localStorage fallback
+    const data = localStorage.getItem(`mx2lm_${store}`);
+    return data ? JSON.parse(data) : null;
+  },
+
+  // Generic set
+  async set(store, key, value) {
+    if (this.useKQL) {
+      return KQL.insert(store, { key, value, updated: Date.now() });
+    }
+    // localStorage fallback
+    localStorage.setItem(`mx2lm_${store}`, JSON.stringify(value));
+  },
+
+  // Settings helpers
+  async getSetting(key) {
+    if (this.useKQL) {
+      return KQL.getSetting(key);
+    }
+    const settings = JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    return settings[key];
+  },
+
+  async setSetting(key, value) {
+    if (this.useKQL) {
+      return KQL.setSetting(key, value);
+    }
+    const settings = JSON.parse(localStorage.getItem('mx2lm_settings') || '{}');
+    settings[key] = value;
+    localStorage.setItem('mx2lm_settings', JSON.stringify(settings));
+  },
+
+  // Chat helpers
+  async getChats(userId) {
+    if (this.useKQL) {
+      return KQL.getChats(userId);
+    }
+    const data = JSON.parse(localStorage.getItem('mx2lm_chat_history') || '{}');
+    return data.chats || [];
+  },
+
+  async saveChat(chat) {
+    if (this.useKQL) {
+      return KQL.saveChat(chat);
+    }
+    // localStorage handled by ChatHistory.saveToStorage()
+  },
+
+  async getMessages(chatId) {
+    if (this.useKQL) {
+      return KQL.getMessages(chatId);
+    }
+    // For localStorage, messages are embedded in chat
+    return [];
+  },
+
+  async saveMessage(message) {
+    if (this.useKQL) {
+      return KQL.saveMessage(message);
+    }
+    // localStorage handled by ChatHistory.saveToStorage()
+  },
+
+  // Model helpers
+  async getModels() {
+    if (this.useKQL) {
+      return KQL.getModels();
+    }
+    return JSON.parse(localStorage.getItem('mx2lm_models') || '[]');
+  },
+
+  async saveModel(model) {
+    if (this.useKQL) {
+      return KQL.saveModel(model);
+    }
+    // localStorage handled by ModelManager.saveToStorage()
+  },
+
+  // Log event
+  async logEvent(type, data, source = 'user') {
+    if (this.useKQL) {
+      return KQL.logEvent(type, data, source);
+    }
+    // localStorage fallback - just console log
+    console.log(`[Event] ${type}:`, data);
+  },
+
+  // Memory operations (KQL-only features)
+  async remember(key, value, category = 'general', confidence = 1.0) {
+    if (this.useKQL) {
+      return KQL.remember(key, value, category, confidence);
+    }
+    // No localStorage fallback for memory
+    console.log('Memory: KQL required for memory operations');
+  },
+
+  async recall(key) {
+    if (this.useKQL) {
+      return KQL.recall(key);
+    }
+    return null;
+  },
+
+  // RLHF (KQL-only)
+  async storeRLHF(type, data, rating) {
+    if (this.useKQL) {
+      return KQL.storeRLHF(type, data, rating);
+    }
+    console.log('RLHF: KQL required for RLHF operations');
   }
 };
 
 /* ============================================================
    INITIALIZATION
    ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize KQL storage backend first
+  await Storage.init();
+
   // Check for existing user session
   try {
-    const savedUser = localStorage.getItem('mx2lm_current_user');
-    if (savedUser) {
-      User.current = JSON.parse(savedUser);
+    if (Storage.useKQL) {
+      const savedUser = await Storage.getSetting('current_user');
+      if (savedUser) {
+        User.current = savedUser;
+      }
+    } else {
+      const savedUser = localStorage.getItem('mx2lm_current_user');
+      if (savedUser) {
+        User.current = JSON.parse(savedUser);
+      }
     }
   } catch (e) {
     console.log('No existing user session');
   }
 
   // Initialize chat history
-  ChatHistory.loadFromStorage();
+  await ChatHistory.loadFromStorage();
 
   // Initialize models
-  ModelManager.loadFromStorage();
+  await ModelManager.loadFromStorage();
+
+  // Initialize AI providers
+  await AI.init();
 
   // Setup auth event listeners
   document.getElementById('btn-google-auth')?.addEventListener('click', () => {
@@ -787,6 +1604,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the application
   App.init();
+
+  // Check provider statuses after a brief delay
+  setTimeout(() => Settings.checkProviderStatuses(), 500);
+
+  // Log app start event
+  await Storage.logEvent('app_start', { version: '2.0', backend: Storage.useKQL ? 'KQL' : 'localStorage' });
 });
 
 console.log('MX2LM CHAT APPLICATION - READY');
+console.log('Multi-Provider LLM Support: OpenAI, Anthropic, Ollama');
+console.log('Backend: KQL v1.0 (IndexedDB + optional MySQL)');

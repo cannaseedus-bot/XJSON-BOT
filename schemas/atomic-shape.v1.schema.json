@@ -1,0 +1,94 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-shape://schema/v1",
+  "$comment": "Structural Type System (Sealed) - Runtime shape guarantees",
+  "title": "atomic-shape",
+  "description": "Structural type/shape system for state, inputs, and effects. Not OOP - pure structural contracts.",
+  "type": "object",
+  "required": ["@shape"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@shape": {
+      "type": "object",
+      "required": ["@id", "@type"],
+      "additionalProperties": false,
+      "properties": {
+        "@id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_\\.]+$",
+          "description": "Shape identifier (e.g., 'state.score', 'input.message')"
+        },
+        "@type": {
+          "type": "string",
+          "enum": ["int", "float", "string", "bool", "array", "record", "tuple", "set", "stream", "any"],
+          "description": "Base structural type"
+        },
+        "@items": {
+          "$ref": "#",
+          "description": "Item shape for arrays/sets/streams"
+        },
+        "@fields": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#" },
+          "description": "Field shapes for records"
+        },
+        "@elements": {
+          "type": "array",
+          "items": { "$ref": "#" },
+          "description": "Element shapes for tuples (positional)"
+        }
+      }
+    },
+
+    "@constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "minLength": { "type": "integer", "minimum": 0 },
+        "maxLength": { "type": "integer", "minimum": 0 },
+        "pattern": { "type": "string" },
+        "enum": { "type": "array" },
+        "monotonic": {
+          "type": "string",
+          "enum": ["increasing", "decreasing", "non_decreasing", "non_increasing"],
+          "description": "Monotonicity constraint for numeric values"
+        },
+        "immutable": { "type": "boolean" },
+        "nullable": { "type": "boolean" },
+        "default": { "description": "Default value if not provided" }
+      }
+    },
+
+    "@evolution": {
+      "type": "object",
+      "description": "How this shape can evolve over time",
+      "additionalProperties": false,
+      "properties": {
+        "append_only": { "type": "boolean" },
+        "version_tracked": { "type": "boolean" },
+        "delta_compressible": { "type": "boolean" }
+      }
+    },
+
+    "@projection": {
+      "type": "object",
+      "description": "How this shape projects to surfaces",
+      "additionalProperties": false,
+      "properties": {
+        "dom_binding": { "type": "string" },
+        "css_class": { "type": "string" },
+        "serialization": { "type": "string", "enum": ["json", "scxq2", "binary", "none"] }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Shapes are structural, not nominal",
+    "Shape violations fail at verify phase",
+    "Monotonic constraints enforced across ticks",
+    "Evolution rules govern state persistence"
+  ]
+}

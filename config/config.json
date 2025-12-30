@@ -1,0 +1,71 @@
+{
+  "app": {
+    "name": "XJSON-BOT",
+    "version": "2.0.0",
+    "debug": false,
+    "env": "production"
+  },
+
+  "kql": {
+    "backend": "idb",
+    "mysqlEndpoint": null,
+    "syncInterval": 30000,
+    "compression": true,
+    "compressionThreshold": 1024,
+    "dbName": "kuhul_db",
+    "dbVersion": 1
+  },
+
+  "llm": {
+    "defaultProvider": "ollama",
+    "streamingEnabled": true,
+    "maxTokens": 4096,
+    "temperature": 0.7,
+    "topP": 0.9,
+    "ollamaUrl": "http://localhost:11434",
+    "proxyEndpoint": null,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  },
+
+  "agents": {
+    "teamEnabled": false,
+    "defaultTeam": ["assistant", "analyst", "coder"],
+    "synthesisStrategy": "weighted",
+    "maxConcurrent": 3,
+    "personalityPersistence": true
+  },
+
+  "voice": {
+    "enabled": true,
+    "language": "en-US",
+    "continuous": false,
+    "autoSend": true,
+    "confidenceThreshold": 0.8,
+    "speechRate": 1.0,
+    "speechPitch": 1.0
+  },
+
+  "ui": {
+    "theme": "dark",
+    "language": "en",
+    "messagesPerPage": 50,
+    "showTimestamps": true,
+    "showModelBadge": true,
+    "animationsEnabled": true
+  },
+
+  "storage": {
+    "autoMigrate": true,
+    "maxChatHistory": 100,
+    "maxMessagesPerChat": 1000,
+    "eventLogRetention": 30,
+    "rlhfEnabled": true
+  },
+
+  "security": {
+    "apiKeyStorage": "localStorage",
+    "sessionTimeout": 86400000,
+    "csrfEnabled": true
+  }
+}

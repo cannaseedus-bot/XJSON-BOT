@@ -1,0 +1,615 @@
+# XJSON-BOT - Master Todo List
+
+> **Last Updated:** December 29, 2025
+> **Current Phase:** Phase 2.5 Multi-Model Integration (In Progress)
+> **Next Milestone:** Python Backbone + Cline Merge
+
+---
+
+## Quick Status
+
+| Phase | Status | Progress |
+|-------|--------|----------|
+| Phase 1: Foundation | Complete | 100% |
+| Phase 2: Enhancement | Complete | 100% |
+| **Phase 2.5: Multi-Model** | **In Progress** | **15%** |
+| Phase 3: Deployment | Not Started | 0% |
+| Phase 4: Distribution | Not Started | 0% |
+| Phase 5: Education | Not Started | 0% |
+| Phase 6: Advanced | Not Started | 0% |
+| Phase 7: Research | Not Started | 0% |
+| Phase 8: Global Scale | Not Started | 0% |
+| Phase 9: Business Model | Partial | 10% |
+| Phase 10: Evolution | Not Started | 0% |
+
+---
+
+## Priority Legend
+
+- **P0** - Critical / Blocking
+- **P1** - High Priority / Next Sprint
+- **P2** - Medium Priority / This Quarter
+- **P3** - Low Priority / Backlog
+- **P4** - Future / Nice to Have
+
+---
+
+## Phase 2: Enhancement - COMPLETE
+
+### P0 - Critical - ALL COMPLETE
+
+#### Real AI Model Integration - COMPLETE
+- [x] Connect agent responses to actual LLM APIs (OpenAI, Anthropic, local models)
+- [x] Implement model API abstraction layer for provider switching
+- [x] Add streaming response support for real-time message display
+- [x] Handle API errors gracefully with user-friendly messages
+- [x] Add API rate limiting and retry logic
+
+#### Agent Intelligence - COMPLETE
+- [x] Implement agent conversation memory (context window management)
+- [x] Add multi-agent fusion system for collaborative responses
+- [x] Enable agent learning from user interactions (feedback loop)
+- [x] Build cross-agent knowledge sharing mechanism
+- [x] Create agent personality persistence
+
+#### Voice Interface - COMPLETE
+- [x] Implement Web Speech API for voice input
+- [x] Add text-to-speech for responses
+- [x] Voice command recognition
+- [x] Continuous listening mode
+
+#### Testing Infrastructure - COMPLETE
+- [x] Create browser-based test framework
+- [x] Write tests for K'UHUL engine core
+- [x] Write tests for SVG compression
+- [x] Write tests for agent orchestration
+
+#### KQL v1.0 Backend - COMPLETE
+- [x] Implement KQL query language (lexer, parser, executor)
+- [x] IndexedDB integration (IDB-API)
+- [x] SCXQ2 compression at rest
+- [x] MySQL backend support with REST API
+- [x] Hybrid mode (IDB cache + MySQL sync)
+- [x] Storage layer integration with chat system
+- [x] Memory system for agent learning
+- [x] RLHF data storage for feedback loops
+- [x] Event logging for analytics
+
+---
+
+## Phase 2.5: Multi-Model Integration - CURRENT PHASE
+
+> **Goal:** Create Python backbone for multi-brain models (like Llama), integrate DeepSeek R1, Janus, and merge Cline features.
+
+### P0 - Critical
+
+#### Python Backbone Infrastructure
+- [ ] Create `/python/` directory for Python model server
+- [ ] Implement `model_server.py` - FastAPI/Flask unified inference server
+- [ ] Create `models/base.py` - Base model class (multi-brain architecture)
+- [ ] Add `models/deepseek_r1.py` - DeepSeek R1 reasoning model wrapper
+- [ ] Add `models/janus.py` - Janus multimodal (text + image) wrapper
+- [ ] Add `models/janus_flow.py` - JanusFlow rectified flow wrapper
+- [ ] Create `requirements.txt` with all dependencies
+- [ ] Add Dockerfile for Python server
+
+#### DeepSeek R1 Integration
+- [ ] Add DeepSeek R1 to model registry (reasoning-focused)
+- [ ] Implement Chain-of-Thought (CoT) support for R1
+- [ ] Add reasoning trace UI display in chat
+- [ ] Configure API endpoints (api.deepseek.com)
+- [ ] Add R1 to provider configuration
+
+#### Janus Multimodal Integration
+- [ ] Port Janus inference code to unified server
+- [ ] Implement text-to-image generation endpoint
+- [ ] Add image understanding (vision) endpoint
+- [ ] Create image upload component in UI
+- [ ] Add generated image display in chat
+- [ ] Support Janus-Pro-7B, Janus-1.3B, JanusFlow-1.3B
+
+### P1 - High Priority
+
+#### Cline App Merge
+- [ ] Extract Cline webview-ui components
+- [ ] Port Cline gRPC/protobuf communication patterns
+- [ ] Add Cline tool system (file ops, browser, commands)
+- [ ] Integrate Cline MCP (Model Context Protocol) support
+- [ ] Port Cline slash commands system
+- [ ] Add Cline task management UI
+- [ ] Merge Cline CLI capabilities
+
+#### Multi-Brain Architecture
+- [ ] Create model composition system (like Llama multi-brain)
+- [ ] Implement model routing (text→LLM, image→Janus, reasoning→R1)
+- [ ] Add model ensemble for complex queries
+- [ ] Create unified response aggregator
+- [ ] Implement fallback chains
+
+#### Model Registry Updates
+- [ ] Add DeepSeek R1 variants (R1, R1-0528, R1-Lite)
+- [ ] Add Janus variants (1.3B, Pro-7B, Flow-1.3B)
+- [ ] Add model capability tags (text, image, reasoning, code)
+- [ ] Create model comparison UI
+- [ ] Add model size/speed indicators
+
+### P2 - Medium Priority
+
+#### Python Server Features
+- [ ] Add WebSocket support for streaming
+- [ ] Implement batch inference
+- [ ] Add model caching/preloading
+- [ ] Create health check endpoints
+- [ ] Add GPU memory management
+- [ ] Implement model hot-swapping
+
+#### Image Generation UI
+- [ ] Create image generation panel
+- [ ] Add prompt templates for image gen
+- [ ] Implement image history gallery
+- [ ] Add image editing controls (CFG, steps, size)
+- [ ] Create image-to-image support
+
+#### Cline Advanced Features
+- [ ] Port browser automation (Playwright)
+- [ ] Add terminal integration
+- [ ] Implement project understanding
+- [ ] Port context-aware assistance
+- [ ] Add Cline rules system (.clinerules)
+
+### P3 - Future
+
+#### Research Models
+- [ ] Add support for custom HuggingFace models
+- [ ] Implement LoRA adapter loading
+- [ ] Add model quantization options (4-bit, 8-bit)
+- [ ] Create model fine-tuning interface
+- [ ] Support GGUF/ONNX formats
+
+---
+
+## Phase 3: Deployment - NEXT PHASE
+
+### P0 - Critical for Launch
+
+#### Static Hosting Setup
+- [ ] Configure Cloudflare Pages deployment
+- [ ] Set up GitHub Actions for CI/CD
+- [ ] Create production build script (minify, bundle)
+- [ ] Configure custom domain (if available)
+- [ ] Set up staging environment
+
+#### Security Hardening
+- [ ] Implement Content Security Policy (CSP)
+- [ ] Configure CORS headers properly
+- [ ] Add XSS prevention measures
+- [ ] Sanitize all user inputs
+- [ ] Implement rate limiting on forms
+
+### P1 - High Priority
+
+#### Performance Optimization
+- [ ] Minify CSS and JavaScript for production
+- [ ] Implement image optimization pipeline
+- [ ] Add font subsetting for faster loads
+- [ ] Enable Brotli/gzip compression
+- [ ] Set up proper cache headers
+
+#### Monitoring & Analytics
+- [ ] Integrate Sentry for error tracking
+- [ ] Add privacy-respecting analytics (Plausible/Fathom)
+- [ ] Set up uptime monitoring
+- [ ] Create performance dashboards
+- [ ] Implement user feedback collection
+
+### P2 - Medium Priority
+
+#### Alternative Deployments
+- [ ] Document GitHub Pages deployment
+- [ ] Document Vercel deployment
+- [ ] Document Netlify deployment
+- [ ] Create one-click deploy buttons
+
+---
+
+## Phase 4: Distribution
+
+### P1 - High Priority
+
+#### NPM Packages
+- [ ] Extract K'UHUL engine as `@xjson-bot/kuhul-engine`
+- [ ] Extract Agent Factory as `@xjson-bot/agent-factory`
+- [ ] Extract Atomic CSS as `@xjson-bot/atomic-css`
+- [ ] Create CLI tool `@xjson-bot/cli`
+- [ ] Write package documentation
+
+#### PWA Optimization
+- [ ] Improve mobile touch gestures
+- [ ] Optimize for iOS Safari quirks
+- [ ] Add install prompts
+- [ ] Improve offline mode UX
+- [ ] Test on various devices
+
+### P2 - Medium Priority
+
+#### Browser Extensions
+- [ ] Create Chrome extension manifest V3
+- [ ] Build Firefox add-on
+- [ ] Port to Edge extension
+- [ ] (Future) Safari extension
+
+#### Desktop Application
+- [ ] Set up Electron wrapper
+- [ ] Configure auto-update system
+- [ ] Add native file system access
+- [ ] Implement system tray integration
+- [ ] Create installer packages (Windows, macOS, Linux)
+
+### P3 - Low Priority
+
+#### Docker Containers
+- [ ] Create development Dockerfile
+- [ ] Create production Dockerfile
+- [ ] Write docker-compose.yml
+- [ ] Create Kubernetes manifests
+- [ ] Document container usage
+
+---
+
+## Phase 5: Education & Documentation
+
+### P1 - High Priority
+
+#### API Documentation
+- [ ] Document K'UHUL engine API
+- [ ] Document SCXQ2 compression API
+- [ ] Document ASX Block component API
+- [ ] Document Agent Factory API
+- [ ] Create interactive API playground
+
+#### Getting Started Guides
+- [ ] Write quick start tutorial
+- [ ] Create video walkthrough (setup to first chat)
+- [ ] Write agent customization guide
+- [ ] Create model integration guide
+- [ ] Write Colab training tutorial
+
+### P2 - Medium Priority
+
+#### Community Infrastructure
+- [ ] Set up GitHub Discussions
+- [ ] Create Discord server
+- [ ] Write CONTRIBUTING.md
+- [ ] Create issue templates
+- [ ] Write CODE_OF_CONDUCT.md
+
+#### Advanced Documentation
+- [ ] Write architecture deep-dive
+- [ ] Create troubleshooting guide
+- [ ] Document performance optimization
+- [ ] Write security best practices
+- [ ] Create plugin development guide
+
+---
+
+## Phase 6: Advanced Features
+
+### P2 - Medium Priority
+
+#### Model Marketplace
+- [ ] Design marketplace UI
+- [ ] Implement model upload system
+- [ ] Add rating/review system
+- [ ] Create model versioning
+- [ ] Build model discovery (search, filters)
+
+#### Collaboration
+- [ ] Real-time cursor sharing
+- [ ] Team workspaces
+- [ ] Shared chat sessions
+- [ ] Comment annotations
+- [ ] Project sharing
+
+### P3 - Low Priority
+
+#### IDE Integrations
+- [ ] VS Code extension
+- [ ] JetBrains plugin
+- [ ] Cursor integration
+- [ ] Zed plugin
+
+#### Enterprise Features
+- [ ] SSO authentication (SAML, OIDC)
+- [ ] Role-based access control
+- [ ] Audit logging
+- [ ] Usage quotas
+
+---
+
+## Phase 7: Research & Innovation
+
+### P3 - Low Priority (Future)
+
+#### Advanced Compression
+- [ ] Research neural compression techniques
+- [ ] Implement adaptive SCXQ2
+- [ ] Explore WebGPU acceleration
+- [ ] Investigate lossless weight compression
+
+#### SVG Neural Networks
+- [ ] Visual weight editing via SVG paths
+- [ ] Real-time weight manipulation
+- [ ] SVG shader integration
+- [ ] Browser-native inference optimization
+
+#### Agent Evolution
+- [ ] Reinforcement learning for agents
+- [ ] Meta-learning capabilities
+- [ ] Self-improving agent systems
+- [ ] Emergent behavior research
+
+---
+
+## Phase 8: Global Scale
+
+### P4 - Future
+
+#### Internationalization
+- [ ] Extract strings for i18n
+- [ ] Add language selector
+- [ ] Translate to Spanish, French, German, Chinese, Japanese
+- [ ] Support RTL languages (Arabic, Hebrew)
+
+#### Accessibility
+- [ ] WCAG 2.1 AA audit
+- [ ] Screen reader optimization
+- [ ] Keyboard navigation complete
+- [ ] High contrast mode
+- [ ] Reduce motion option
+
+---
+
+## SaaS AI Stack Gap Analysis
+
+> **Comparison:** What XJSON-BOT needs to match commercial SaaS AI platforms (OpenAI, Anthropic Console, Vercel AI, etc.)
+
+### ✅ Already Have
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Chat Interface | ✅ | MX2LM chat with streaming |
+| Multi-Model Support | ✅ | OpenAI, Anthropic, Ollama |
+| Local Storage | ✅ | KQL + IndexedDB |
+| PWA/Offline | ✅ | Service worker |
+| Basic Auth | ✅ | Google OAuth + local |
+| Agent System | ✅ | 50+ agents, fusion |
+| Voice I/O | ✅ | Web Speech API |
+
+### 🔴 Critical Missing (P0)
+
+#### Billing & Monetization
+- [ ] Stripe/Paddle payment integration
+- [ ] Usage-based billing (tokens/requests)
+- [ ] Subscription tiers (Free/Pro/Team/Enterprise)
+- [ ] Credit/token wallet system
+- [ ] Invoice generation
+- [ ] Usage alerts and limits
+
+#### API Gateway
+- [ ] Public REST API with versioning (`/v1/chat`, `/v1/images`)
+- [ ] API key management (create, revoke, rotate)
+- [ ] OpenAPI/Swagger documentation
+- [ ] Rate limiting per API key
+- [ ] Request/response logging
+- [ ] SDK generation (Python, JS, Go)
+
+#### Usage Tracking & Quotas
+- [ ] Token counting per request
+- [ ] Monthly usage dashboards
+- [ ] Cost tracking per user/team
+- [ ] Quota enforcement
+- [ ] Overage handling
+- [ ] Usage export (CSV/JSON)
+
+### 🟡 Important Missing (P1)
+
+#### Admin Dashboard
+- [ ] User management panel
+- [ ] System health monitoring
+- [ ] Model performance metrics
+- [ ] Error rate tracking
+- [ ] Revenue/usage analytics
+- [ ] Feature flags management
+
+#### Multi-Tenancy
+- [ ] Workspace/Organization support
+- [ ] Team member invitations
+- [ ] Role-based access (Admin, Member, Viewer)
+- [ ] Data isolation per workspace
+- [ ] Custom branding per org
+- [ ] Shared prompt libraries
+
+#### Content Safety
+- [ ] Input/output content filtering
+- [ ] PII detection and redaction
+- [ ] Prompt injection detection
+- [ ] Safety guardrails (configurable)
+- [ ] Moderation API integration
+- [ ] Abuse detection
+
+### 🟢 Nice to Have (P2)
+
+#### Enterprise Features
+- [ ] SSO (SAML 2.0, OIDC)
+- [ ] SCIM user provisioning
+- [ ] Dedicated instances option
+- [ ] VPC/private deployment
+- [ ] Custom SLA contracts
+- [ ] Priority support tiers
+
+#### Developer Experience
+- [ ] Interactive API playground
+- [ ] Code snippets in multiple languages
+- [ ] Postman collection
+- [ ] CLI tool (`xjson-cli`)
+- [ ] Webhook management
+- [ ] Event streaming (SSE/WebSocket)
+
+#### Compliance & Security
+- [ ] SOC 2 Type II readiness
+- [ ] GDPR compliance tools
+- [ ] Data retention policies
+- [ ] Audit logging
+- [ ] Encryption at rest (AES-256)
+- [ ] Penetration testing
+
+#### Model Management
+- [ ] Model versioning
+- [ ] A/B testing for prompts
+- [ ] Canary deployments
+- [ ] Model performance comparison
+- [ ] Custom fine-tune uploads
+- [ ] Prompt template library
+
+#### Observability
+- [ ] Structured logging (JSON)
+- [ ] Metrics collection (Prometheus)
+- [ ] Distributed tracing (OpenTelemetry)
+- [ ] Error tracking (Sentry)
+- [ ] Performance APM
+- [ ] Alerting rules
+
+### 📊 SaaS Readiness Score
+
+| Category | Current | Target | Gap |
+|----------|---------|--------|-----|
+| Core Features | 85% | 100% | 15% |
+| Authentication | 40% | 100% | 60% |
+| Billing | 0% | 100% | 100% |
+| API Gateway | 10% | 100% | 90% |
+| Multi-Tenancy | 20% | 100% | 80% |
+| Compliance | 10% | 100% | 90% |
+| Observability | 20% | 100% | 80% |
+| **Overall** | **26%** | **100%** | **74%** |
+
+---
+
+## Infrastructure Tasks (Cross-Phase)
+
+### P0 - Critical
+
+#### Development Infrastructure
+- [ ] Set up build pipeline (Vite or esbuild)
+- [ ] Configure ESLint and Prettier
+- [ ] Add pre-commit hooks (Husky)
+- [ ] Set up GitHub Actions CI
+
+### P1 - High Priority
+
+#### Code Quality
+- [ ] Add TypeScript declarations (.d.ts)
+- [ ] Improve code documentation
+- [ ] Refactor for better testability
+- [ ] Remove dead code
+
+#### Data Persistence
+- [ ] Migrate from localStorage to IndexedDB for large data
+- [ ] Implement data export/import
+- [ ] Add backup mechanism
+- [ ] Create data migration scripts
+
+---
+
+## Bug Fixes & Tech Debt
+
+### Known Issues
+
+- [ ] Fix: Chat history doesn't persist model context
+- [ ] Fix: Settings panel closes unexpectedly on mobile
+- [ ] Fix: SVG visualization performance on large models
+- [ ] Fix: Agent registry JSON should be dynamically loadable
+- [ ] Fix: Service worker cache invalidation issues
+
+### Tech Debt
+
+- [ ] Consolidate duplicate CSS utilities
+- [ ] Remove unused agent definitions
+- [ ] Optimize Three.js particle count for mobile
+- [ ] Clean up console.log statements
+- [ ] Standardize error handling patterns
+
+---
+
+## Quick Wins (Can be done in <1 hour)
+
+- [ ] Add favicon to all HTML pages
+- [ ] Fix broken links in README
+- [ ] Add meta descriptions for SEO
+- [ ] Improve loading state UX
+- [ ] Add keyboard shortcuts documentation
+- [ ] Update copyright year to 2025
+- [ ] Add version number to UI footer
+- [ ] Improve error messages for failed model connections
+- [ ] Add "Copy code" button to code blocks in chat
+- [ ] Implement "Clear chat" confirmation dialog
+
+---
+
+## Completed Tasks (Reference)
+
+### Phase 1 - Foundation (100%)
+- [x] K'UHUL execution engine with glyph runtime
+- [x] Weight management (store, load, quantize)
+- [x] SVG Weight Geometry engine
+- [x] QLoRA 8-bit compression
+- [x] SCXQ2 symbolic compression
+- [x] Multi-hive KLH router
+- [x] MX2LM chat interface
+- [x] Chat history management
+- [x] Model management system
+- [x] User authentication (OAuth + local)
+- [x] 600+ Atomic CSS utilities
+- [x] Agent registry (50+ specialists)
+- [x] Agent factory and spawning
+- [x] Team collaboration features
+- [x] Knowledge base system
+
+### Phase 2 - Enhancement (80%)
+- [x] TPU-OS training dashboard
+- [x] Real-time loss/accuracy visualization
+- [x] Gradient visualization heatmap
+- [x] Dataset browser interface
+- [x] Training job manager
+- [x] Colab bridge implementation
+- [x] Remote training submission
+- [x] GPU resource monitoring
+- [x] 3D weight visualization (Three.js)
+- [x] Service worker with offline support
+- [x] Mobile-optimized PWA
+- [x] Performance optimization
+- [x] ASXR PRIME 1.0 subproject
+
+---
+
+## Notes
+
+### Dependencies for Phase 3
+- Phase 2 completion (real AI integration)
+- Domain name decision
+- Hosting account setup
+
+### Risks
+- Real AI model integration complexity
+- API cost management
+- Browser compatibility edge cases
+- Mobile performance on low-end devices
+
+### Resources Needed
+- API keys for LLM providers
+- Hosting credits (Cloudflare free tier)
+- Domain registration (optional)
+- Analytics service selection
+
+---
+
+**Maintained by the XJSON-BOT development team**

@@ -1,0 +1,21 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/token_stream.v3",
+  "$comment": "π Token Stream v3 (Sealed) - SCX/SCXQ2 input stream",
+  "title": "π Token Stream v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@mode", "@text"],
+  "properties": {
+    "@mode": {
+      "type": "string",
+      "enum": ["scx", "scxq2_alias"]
+    },
+    "@text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "@key_hint": { "type": "string" },
+    "@rotation": { "type": "boolean" }
+  }
+}

@@ -1,0 +1,376 @@
+{
+  "$id": "asx://schema/progress-phases.v1",
+  "$comment": "ASX-R Progress Phases Tracking Schema",
+  "title": "Progress Phases Tracker",
+  "description": "Track XCFE phase progression, milestones, and recap systems matrix",
+  "type": "object",
+  "required": ["tracker_id", "name", "phases", "status"],
+  "properties": {
+    "tracker_id": {
+      "type": "string",
+      "pattern": "^tracker_[a-z0-9_]+_[0-9]+$",
+      "description": "Unique tracker identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable tracker name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "default": "1.0.0",
+      "description": "Tracker version (semver)"
+    },
+    "created_at": {
+      "type": "integer",
+      "description": "Unix timestamp when tracker was created"
+    },
+    "updated_at": {
+      "type": "integer",
+      "description": "Unix timestamp of last update"
+    },
+    "phases": {
+      "type": "object",
+      "required": ["pop", "wo", "sek", "collapse"],
+      "properties": {
+        "pop": {
+          "$ref": "#/$defs/phase",
+          "description": "@Pop - Populate phase: Load data, initialize state"
+        },
+        "wo": {
+          "$ref": "#/$defs/phase",
+          "description": "@Wo - Work phase: Transform, compute, process"
+        },
+        "sek": {
+          "$ref": "#/$defs/phase",
+          "description": "@Sek - Seek phase: Query, filter, search"
+        },
+        "collapse": {
+          "$ref": "#/$defs/phase",
+          "description": "@Collapse - Collapse phase: Finalize, commit, output"
+        }
+      },
+      "description": "XCFE execution phases with progress tracking"
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/milestone"
+      },
+      "description": "Key milestones for the tracked work"
+    },
+    "todos": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/todo"
+      },
+      "description": "Todo items organized by priority"
+    },
+    "recap": {
+      "$ref": "#/$defs/recap",
+      "description": "Recap systems matrix for progress summary"
+    },
+    "status": {
+      "enum": ["pending", "in_progress", "blocked", "completed", "archived"],
+      "description": "Overall tracker status"
+    },
+    "progress_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Calculated overall progress percentage"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": {"type": "string"},
+        "branch": {"type": "string"},
+        "session_id": {"type": "string"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "phase": {
+      "type": "object",
+      "required": ["glyph", "status", "progress_pct"],
+      "properties": {
+        "glyph": {
+          "enum": ["⟁Pop⟁", "⟁Wo⟁", "⟁Sek⟁", "⟁Collapse⟁"],
+          "description": "K'UHUL glyph for this phase"
+        },
+        "status": {
+          "enum": ["pending", "active", "completed", "skipped", "blocked"],
+          "description": "Current phase status"
+        },
+        "progress_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Phase progress percentage"
+        },
+        "started_at": {
+          "type": "integer",
+          "description": "When phase started"
+        },
+        "completed_at": {
+          "type": "integer",
+          "description": "When phase completed"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total duration in milliseconds"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/task"},
+          "description": "Tasks within this phase"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Current blockers if any"
+        },
+        "outputs": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Phase outputs/deliverables"
+        }
+      }
+    },
+    "task": {
+      "type": "object",
+      "required": ["id", "content", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^task_[a-z0-9_]+$"
+        },
+        "content": {
+          "type": "string",
+          "description": "Task description"
+        },
+        "status": {
+          "enum": ["pending", "in_progress", "completed", "blocked", "cancelled"]
+        },
+        "priority": {
+          "enum": ["P0", "P1", "P2", "P3", "P4"],
+          "description": "Priority level"
+        },
+        "assigned_to": {
+          "type": "string"
+        },
+        "due_at": {
+          "type": "integer"
+        },
+        "completed_at": {
+          "type": "integer"
+        }
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "required": ["id", "name", "target_phase"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^ms_[a-z0-9_]+$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "target_phase": {
+          "enum": ["pop", "wo", "sek", "collapse"]
+        },
+        "status": {
+          "enum": ["pending", "reached", "missed"]
+        },
+        "target_date": {
+          "type": "integer"
+        },
+        "reached_at": {
+          "type": "integer"
+        },
+        "deliverables": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "todo": {
+      "type": "object",
+      "required": ["id", "content", "status", "priority"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^todo_[0-9]+$"
+        },
+        "content": {
+          "type": "string",
+          "description": "Todo description"
+        },
+        "status": {
+          "enum": ["pending", "in_progress", "completed", "blocked"]
+        },
+        "priority": {
+          "enum": ["P0", "P1", "P2", "P3", "P4"]
+        },
+        "phase": {
+          "enum": ["pop", "wo", "sek", "collapse", "cross_phase"]
+        },
+        "category": {
+          "type": "string",
+          "description": "Todo category/module"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "IDs of dependent todos"
+        },
+        "created_at": {"type": "integer"},
+        "completed_at": {"type": "integer"}
+      }
+    },
+    "recap": {
+      "type": "object",
+      "required": ["summary", "metrics", "systems_matrix"],
+      "properties": {
+        "summary": {
+          "type": "object",
+          "properties": {
+            "title": {"type": "string"},
+            "description": {"type": "string"},
+            "key_achievements": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "blockers": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "next_steps": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "tasks_completed": {"type": "integer"},
+            "tasks_total": {"type": "integer"},
+            "lines_of_code": {"type": "integer"},
+            "files_created": {"type": "integer"},
+            "files_modified": {"type": "integer"},
+            "commits": {"type": "integer"},
+            "duration_hours": {"type": "number"}
+          }
+        },
+        "systems_matrix": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/system_entry"},
+          "description": "Systems status matrix for tracking components"
+        }
+      }
+    },
+    "system_entry": {
+      "type": "object",
+      "required": ["system", "category", "status"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "System/component name"
+        },
+        "category": {
+          "enum": ["core", "ui", "api", "data", "infra", "docs"],
+          "description": "System category"
+        },
+        "status": {
+          "enum": ["not_started", "in_progress", "completed", "needs_review", "blocked"],
+          "description": "Current status"
+        },
+        "health": {
+          "enum": ["healthy", "degraded", "critical", "unknown"],
+          "description": "System health indicator"
+        },
+        "progress_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "owner": {"type": "string"},
+        "notes": {"type": "string"},
+        "dependencies": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "tracker_id": "tracker_phase2_enhancement_1703980800000",
+      "name": "Phase 2 Enhancement",
+      "version": "1.0.0",
+      "created_at": 1703980800000,
+      "updated_at": 1704067200000,
+      "phases": {
+        "pop": {
+          "glyph": "⟁Pop⟁",
+          "status": "completed",
+          "progress_pct": 100,
+          "tasks": [
+            {"id": "task_load_deps", "content": "Load dependencies", "status": "completed", "priority": "P0"}
+          ],
+          "outputs": ["Dependencies loaded", "State initialized"]
+        },
+        "wo": {
+          "glyph": "⟁Wo⟁",
+          "status": "active",
+          "progress_pct": 75,
+          "tasks": [
+            {"id": "task_implement_feature", "content": "Implement core feature", "status": "in_progress", "priority": "P0"}
+          ]
+        },
+        "sek": {
+          "glyph": "⟁Sek⟁",
+          "status": "pending",
+          "progress_pct": 0
+        },
+        "collapse": {
+          "glyph": "⟁Collapse⟁",
+          "status": "pending",
+          "progress_pct": 0
+        }
+      },
+      "status": "in_progress",
+      "progress_pct": 43.75,
+      "recap": {
+        "summary": {
+          "title": "Phase 2 Enhancement Progress",
+          "key_achievements": ["Training dashboard complete", "Colab bridge implemented"],
+          "next_steps": ["Complete AI integration", "Add voice interface"]
+        },
+        "metrics": {
+          "tasks_completed": 15,
+          "tasks_total": 25,
+          "lines_of_code": 3500,
+          "files_created": 8
+        },
+        "systems_matrix": [
+          {"system": "K'UHUL Engine", "category": "core", "status": "completed", "health": "healthy", "progress_pct": 100},
+          {"system": "Training Dashboard", "category": "ui", "status": "completed", "health": "healthy", "progress_pct": 100},
+          {"system": "AI Integration", "category": "api", "status": "in_progress", "health": "healthy", "progress_pct": 60}
+        ]
+      }
+    }
+  ]
+}

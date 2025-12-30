@@ -1,0 +1,84 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-bind://schema/v1",
+  "$comment": "Binder/Linker (Sealed) - Resolves atomic-scripts to surfaces",
+  "title": "atomic-bind",
+  "description": "Formal binding layer that resolves atomic-scripts to atomic blocks, surfaces, and laws. This is resolution, not execution.",
+  "type": "object",
+  "required": ["@bind", "@law"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@bind": {
+      "type": "object",
+      "required": ["@version", "@bindings"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": { "const": "v1" },
+        "@scope": {
+          "type": "string",
+          "description": "Binding scope (e.g., 'app:main', 'view:holotape')"
+        }
+      }
+    },
+
+    "@law": {
+      "type": "string",
+      "pattern": "^law\\.[a-zA-Z0-9_\\.\\-]+\\.v[0-9]+$",
+      "description": "Default law for all bindings in this scope"
+    },
+
+    "@bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/binding" },
+      "description": "List of surface → script bindings"
+    }
+  },
+
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "required": ["@surface", "@script"],
+      "additionalProperties": false,
+      "properties": {
+        "@surface": {
+          "type": "string",
+          "pattern": "^(ui|dom|css|canvas|svg|event|state):[a-zA-Z0-9_\\-#\\.]+$",
+          "description": "Target surface (e.g., 'ui:#btn-add', 'css:.hover-add', 'canvas:tick')"
+        },
+        "@script": {
+          "type": "string",
+          "pattern": "^atomic-script://[a-zA-Z0-9_\\-\\.]+$",
+          "description": "Script reference (e.g., 'atomic-script://ui.score.increment')"
+        },
+        "@trigger": {
+          "type": "string",
+          "enum": ["click", "hover", "focus", "blur", "tick", "mount", "unmount", "change", "input", "submit"],
+          "description": "Event trigger for this binding"
+        },
+        "@law_override": {
+          "type": "string",
+          "description": "Override default law for this specific binding"
+        },
+        "@priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 100,
+          "description": "Binding priority for conflict resolution"
+        },
+        "@guard": {
+          "type": "string",
+          "description": "Optional guard condition (evaluated before script invocation)"
+        }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Binding is resolution, not execution",
+    "Multiple scripts may bind to same surface with priority ordering",
+    "Law override must be compatible with default law",
+    "Guards are evaluated under verify phase only"
+  ]
+}

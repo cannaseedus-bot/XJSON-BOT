@@ -30,6 +30,7 @@
 ├── manifest.json                 # PWA manifest with K'UHUL capabilities
 ├── README.md                     # User-facing documentation
 ├── CLAUDE.md                     # This file - AI assistant guide
+├── ASX-R_SPEC.md                # ASX-R Runtime Language Specification (🔒 Frozen)
 │
 ├── core/                         # Core engine files
 │   └── kuhul-engine.js          # K'UHUL runtime kernel (16KB)
@@ -39,6 +40,30 @@
 │
 ├── ui/                          # User interface HTML files
 │   └── mx2lm-chat.html          # Main chat interface (8KB)
+│
+├── api/                         # Multi-backend API options
+│   ├── backend-adapter.js       # Unified frontend client
+│   ├── php/                     # PHP backend (cPanel-friendly)
+│   │   └── index.php           # REST API with K'UHUL
+│   └── gas/                     # Google Apps Script (free serverless)
+│       └── Code.gs             # GAS API implementation
+│
+├── python/                      # Python FastAPI backend
+│   ├── main.py                  # FastAPI entry point
+│   ├── core/                    # K'UHUL + SCXQ2 engine
+│   │   ├── kuhul.py            # Python K'UHUL implementation
+│   │   └── scxq2.py            # SCXQ2 compression
+│   └── models/                  # Multi-brain model router
+│       ├── router.py           # Task-based routing
+│       ├── deepseek_r1.py      # DeepSeek R1 with CoT
+│       └── janus.py            # Janus multimodal
+│
+├── schemas/                     # ASX-R JSON schema files
+│   ├── asx-block.schema.json   # Core block validation
+│   ├── asx-inference.schema.json
+│   ├── asx-image-inference.schema.json
+│   ├── scxq2-packet.schema.json
+│   └── execution-trace.schema.json
 │
 ├── docs/                        # Documentation
 │   └── multi-hive-stack.html    # Architecture documentation (10KB)
@@ -198,6 +223,78 @@ const compressed = await svgCompressor.compressQLoRAToSVG(
 - Path-based weight compression
 - Interactive layer exploration
 - SCXQ2 encoding for storage
+
+### 6. ASX-R Runtime Language
+
+ASX-R is the deterministic runtime language specification (see `ASX-R_SPEC.md`):
+
+**XCFE Execution Phases**:
+| Phase | Glyph | Purpose |
+|-------|-------|---------|
+| @Pop | `⟁Pop⟁` | Populate - Load data, initialize state |
+| @Wo | `⟁Wo⟁` | Work - Transform, compute, process |
+| @Sek | `⟁Sek⟁` | Seek - Query, filter, search |
+| @Collapse | `⟁Collapse⟁` | Collapse - Finalize, commit, output |
+
+**Key Properties**:
+- **Deterministic**: Same input → same output, always
+- **Phase-Gated**: Execution flows through XCFE phases
+- **Replay-Verifiable**: Any execution can be replayed and verified
+- **Symbolic**: Uses glyphs for operation delimiting
+
+**Inference Plane v1**:
+```javascript
+// Inference request
+{
+  "type": "asx-inference",
+  "id": "infer_1704067200000",
+  "model": "gpt-4o-mini",
+  "messages": [
+    { "role": "user", "content": "Hello!" }
+  ],
+  "trace": true
+}
+```
+
+**Image Inference Plane v1**:
+```javascript
+// Image generation request
+{
+  "type": "asx-image-inference",
+  "id": "img_gen_1704067200000",
+  "task": "generate",
+  "model": "janus-pro-7b",
+  "input": { "prompt": "A mountain landscape" }
+}
+```
+
+**JSON Schemas** (in `/schemas/`):
+- `asx-block.schema.json` - Core block validation
+- `asx-inference.schema.json` - Text inference requests
+- `asx-image-inference.schema.json` - Image inference requests
+- `execution-trace.schema.json` - Execution traces
+- `scxq2-packet.schema.json` - SCXQ2 packet format
+
+### 7. Multi-Backend API
+
+The system supports three backend options:
+
+| Backend | Best For | K'UHUL Support |
+|---------|----------|----------------|
+| Python (FastAPI) | Power users, local models | Full |
+| PHP | cPanel/shared hosting | Basic |
+| GAS (Google Apps Script) | Free, zero-config | Basic |
+
+```javascript
+// Unified frontend client
+const api = new XJSONBackend('gas', 'https://script.google.com/.../exec');
+const response = await api.chat('Hello!');
+
+// Multi-brain routing
+const api = new XJSONBackend('python', 'http://localhost:8000');
+await api.chat('Explain quantum physics', { model: 'deepseek-r1' });
+await api.generateImage('A sunset', { model: 'janus-pro-7b' });
+```
 
 ---
 

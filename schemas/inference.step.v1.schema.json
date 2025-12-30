@@ -1,0 +1,16 @@
+{
+  "$id": "asx://schema/inference.step.v1",
+  "$comment": "ASX-R Inference Step (Frozen)",
+  "type": "object",
+  "required": ["@op"],
+  "properties": {
+    "@op": { "type": "string" },
+    "@into": { "type": "string" },
+    "@from": { "type": "string" },
+    "@text": { "type": "string" },
+    "@kql": { "type": "string" },
+    "@max_tokens": { "type": "integer" },
+    "@temperature": { "type": "number" }
+  },
+  "additionalProperties": false
+}

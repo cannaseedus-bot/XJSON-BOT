@@ -1,0 +1,17 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "pi://schema/op_list.v3",
+  "$comment": "π Operation List v3 (Sealed) - Ordered operation sequence",
+  "title": "π Operation List v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@pi", "@ops"],
+  "properties": {
+    "@pi": { "const": "v3" },
+    "@ops": {
+      "type": "array",
+      "items": { "$ref": "pi://schema/op_block.v3" }
+    },
+    "@proof": { "$ref": "pi://schema/proof.v3" }
+  }
+}

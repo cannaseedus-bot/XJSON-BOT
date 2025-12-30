@@ -1,0 +1,212 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "atomic-time://schema/v1",
+  "$comment": "Temporal Model (Sealed) - Ticks, frames, and causal ordering",
+  "title": "atomic-time",
+  "description": "Formal time model for atomic-script execution. Defines tick semantics, frame boundaries, and causal ordering.",
+  "type": "object",
+  "required": ["@time"],
+  "additionalProperties": false,
+
+  "properties": {
+    "@time": {
+      "type": "object",
+      "required": ["@version", "@model"],
+      "additionalProperties": false,
+      "properties": {
+        "@version": { "const": "v1" },
+        "@model": {
+          "type": "string",
+          "enum": ["logical", "wall", "hybrid"],
+          "description": "Time model: logical (ticks), wall (real-time), hybrid (both)"
+        }
+      }
+    },
+
+    "@tick": {
+      "type": "object",
+      "description": "Logical tick (discrete, monotonic)",
+      "additionalProperties": false,
+      "properties": {
+        "@id": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Monotonically increasing tick counter"
+        },
+        "@parent": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Parent tick (for nested/forked execution)"
+        },
+        "@phase": {
+          "type": "string",
+          "enum": ["pi_perceive", "pi_decode", "pi_verify", "pi_decide", "pi_act", "pi_collapse"],
+          "description": "Current execution phase within this tick"
+        },
+        "@depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "description": "Nesting depth (for recursive invocation)"
+        }
+      }
+    },
+
+    "@frame": {
+      "type": "object",
+      "description": "Animation frame (visual sync boundary)",
+      "additionalProperties": false,
+      "properties": {
+        "@id": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Frame counter (typically 60fps)"
+        },
+        "@budget_ms": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 16.67,
+          "description": "Frame time budget in milliseconds"
+        },
+        "@ticks_this_frame": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of logical ticks executed this frame"
+        },
+        "@deadline": {
+          "type": "number",
+          "description": "Wall-clock deadline for this frame (performance.now())"
+        }
+      }
+    },
+
+    "@wall": {
+      "type": "object",
+      "description": "Wall-clock time (real-world sync)",
+      "additionalProperties": false,
+      "properties": {
+        "@epoch_ms": {
+          "type": "integer",
+          "description": "Milliseconds since Unix epoch"
+        },
+        "@monotonic_ms": {
+          "type": "number",
+          "description": "High-resolution monotonic time (performance.now())"
+        },
+        "@timezone": {
+          "type": "string",
+          "description": "IANA timezone identifier"
+        },
+        "@drift_tolerance_ms": {
+          "type": "number",
+          "minimum": 0,
+          "default": 100,
+          "description": "Acceptable clock drift for distributed sync"
+        }
+      }
+    },
+
+    "@causal": {
+      "type": "object",
+      "description": "Causal ordering (happens-before relation)",
+      "additionalProperties": false,
+      "properties": {
+        "@vector_clock": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 },
+          "description": "Vector clock for distributed ordering"
+        },
+        "@lamport": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Lamport timestamp"
+        },
+        "@happens_before": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event IDs that causally precede this event"
+        },
+        "@concurrent_with": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Event IDs concurrent (no causal relation)"
+        }
+      }
+    },
+
+    "@schedule": {
+      "type": "object",
+      "description": "Scheduled execution",
+      "additionalProperties": false,
+      "properties": {
+        "@defer_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Defer execution by N ticks"
+        },
+        "@defer_frames": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Defer execution by N frames"
+        },
+        "@defer_ms": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Defer execution by N milliseconds"
+        },
+        "@priority": {
+          "type": "string",
+          "enum": ["immediate", "high", "normal", "low", "idle"],
+          "default": "normal",
+          "description": "Scheduling priority"
+        },
+        "@cancelable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this scheduled task can be cancelled"
+        }
+      }
+    },
+
+    "@bounds": {
+      "type": "object",
+      "description": "Time bounds and limits",
+      "additionalProperties": false,
+      "properties": {
+        "@max_tick_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 64,
+          "description": "Maximum tick nesting depth"
+        },
+        "@max_ticks_per_frame": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1000,
+          "description": "Maximum ticks allowed per frame"
+        },
+        "@max_wall_ms": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum wall-clock time for execution"
+        },
+        "@timeout_behavior": {
+          "type": "string",
+          "enum": ["abort", "suspend", "warn"],
+          "default": "abort",
+          "description": "What to do when time bounds exceeded"
+        }
+      }
+    }
+  },
+
+  "@invariants": [
+    "Ticks are strictly monotonic (never decrease)",
+    "Frame boundaries are sync points for visual effects",
+    "Causal order is transitive (a→b, b→c implies a→c)",
+    "Wall-clock is advisory (never used for correctness)",
+    "Logical time governs all state transitions",
+    "Time bounds violations detected at verify phase"
+  ]
+}

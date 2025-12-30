@@ -1,0 +1,85 @@
+<?php
+/**
+ * KQL API Configuration Template
+ * ==============================
+ *
+ * INSTALLATION:
+ * 1. Copy this file to a SECURE folder OUTSIDE public_html:
+ *    cp kql-api-config.php.template /home/yourusername/secure/kql-api-config.php
+ *
+ * 2. Edit with your actual credentials
+ *
+ * 3. Reference from your API:
+ *    $config = require '/home/yourusername/secure/kql-api-config.php';
+ *
+ * FOLDER STRUCTURE:
+ * /home/yourusername/
+ * ├── secure/                    <- NOT web accessible
+ * │   └── kql-api-config.php    <- This file with real credentials
+ * │
+ * └── public_html/              <- Web accessible
+ *     └── api/
+ *         └── kql/
+ *             └── index.php     <- API endpoint
+ */
+
+return [
+    // MySQL Database Configuration
+    'mysql' => [
+        'host'     => 'localhost',
+        'port'     => 3306,
+        'database' => 'kuhul_db',
+        'username' => 'YOUR_DATABASE_USER',
+        'password' => 'YOUR_SECURE_PASSWORD',
+        'charset'  => 'utf8mb4',
+        'options'  => [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
+    ],
+
+    // API Security
+    'api' => [
+        'key'            => 'GENERATE_A_STRONG_KEY_HERE',  // Use: bin2hex(random_bytes(32))
+        'rateLimit'      => 100,                           // Requests per minute
+        'rateLimitWindow'=> 60,                            // Window in seconds
+        'allowedOrigins' => [
+            'https://yourdomain.com',
+            'https://www.yourdomain.com',
+            // Add localhost for development:
+            // 'http://localhost:8000',
+            // 'http://127.0.0.1:8000',
+        ],
+        'debug'          => false,  // Set true only in development
+    ],
+
+    // LLM API Keys (for server-side proxy)
+    'llm' => [
+        'openai' => [
+            'key'   => 'sk-YOUR_OPENAI_API_KEY',
+            'model' => 'gpt-4o-mini'
+        ],
+        'anthropic' => [
+            'key'   => 'sk-ant-YOUR_ANTHROPIC_API_KEY',
+            'model' => 'claude-3-5-sonnet-20241022'
+        ]
+    ],
+
+    // Logging
+    'logging' => [
+        'enabled'  => true,
+        'path'     => '/home/yourusername/logs/kql-api.log',
+        'level'    => 'error',  // debug, info, warning, error
+        'maxSize'  => 10485760, // 10MB
+    ],
+
+    // Cache (optional Redis)
+    'cache' => [
+        'enabled' => false,
+        'driver'  => 'redis',  // or 'file'
+        'host'    => '127.0.0.1',
+        'port'    => 6379,
+        'ttl'     => 3600,
+    ]
+];

@@ -1,0 +1,75 @@
+{
+  "engine": "tyson-chomsky-v1",
+  "version": "1.0.0",
+  "modes": {
+    "tyson": {
+      "role": "empirical_evidence",
+      "description": "External knowledge retrieval and empirical validation",
+      "sources": {
+        "public_dbs": [
+          {
+            "name": "wikipedia",
+            "endpoint": "https://en.wikipedia.org/w/api.php",
+            "enabled": true,
+            "timeout_ms": 30000
+          },
+          {
+            "name": "openalex",
+            "endpoint": "https://api.openalex.org/works",
+            "enabled": true,
+            "timeout_ms": 30000
+          },
+          {
+            "name": "crossref",
+            "endpoint": "https://api.crossref.org/works",
+            "enabled": true,
+            "timeout_ms": 30000
+          }
+        ],
+        "gemini_like": {
+          "provider": "gemini_example",
+          "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
+          "api_key_env": "GEMINI_API_KEY",
+          "timeout_ms": 120000,
+          "enabled": false,
+          "dev_mode": true,
+          "model": "gemini-1.5-flash-latest"
+        }
+      }
+    },
+    "chomsky": {
+      "role": "symbolic_constraints",
+      "description": "Grammar-based symbolic validation and XJSON compliance",
+      "grammars": {
+        "xjson_ast": "xcfe://grammars/xjson_1_0",
+        "kuhul_glyphs": "xcfe://grammars/kuhul_core",
+        "scxq2": "xcfe://grammars/scxq2_symbolic"
+      },
+      "policies": {
+        "require_well_typed_xjson": true,
+        "forbid_side_effects": true,
+        "max_depth": 32,
+        "validate_schema": true,
+        "enforce_legal_constraints": true
+      }
+    }
+  },
+  "fusion": {
+    "strategy": "debate",
+    "max_rounds": 3,
+    "tie_breaker": "chomsky_must_approve",
+    "log_route": "/runtime/logs/tyson_chomsky.json",
+    "validation": {
+      "require_both_modes": false,
+      "allow_tyson_fallback": true,
+      "allow_chomsky_override": true
+    }
+  },
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "log_file": "/runtime/logs/tyson_chomsky.json",
+    "log_queries": true,
+    "log_responses": true
+  }
+}

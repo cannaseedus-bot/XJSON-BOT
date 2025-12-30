@@ -1,0 +1,16 @@
+{
+  "$id": "asx://schema/inference.result.v1",
+  "$comment": "ASX-R Inference Result (Frozen)",
+  "type": "object",
+  "required": ["@type", "@text"],
+  "properties": {
+    "@type": { "const": "inference.result.v1" },
+    "@text": { "type": "string" },
+    "@tokens_used": { "type": "integer" },
+    "@trace": {
+      "type": "array",
+      "items": { "$ref": "asx://schema/inference.step.v1" }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress Dashboard - K'UHUL XCFE Tracker</title>
+  <link rel="stylesheet" href="../assets/css/atomic-asx.css">
+  <style>
+    :root {
+      --bg-primary: #0a0a1a;
+      --bg-secondary: #12122a;
+      --bg-tertiary: #1a1a3a;
+      --accent-primary: #16f2aa;
+      --accent-secondary: #00d4ff;
+      --text-primary: #ffffff;
+      --text-secondary: #888899;
+      --border-color: #2a2a4a;
+      --success: #22cc88;
+      --warning: #ffcc00;
+      --error: #ff4466;
+      --info: #4488ff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      padding: 20px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .nav-section {
+      margin-bottom: 24px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .nav-item.active {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    .nav-item-icon {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(22, 242, 170, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    /* Progress Overview */
+    .progress-overview {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .progress-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .progress-percentage {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .progress-bar-container {
+      background: var(--bg-tertiary);
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+
+    /* XCFE Phases */
+    .phases-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .phase-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s;
+    }
+
+    .phase-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-primary);
+    }
+
+    .phase-card.active {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 20px rgba(22, 242, 170, 0.2);
+    }
+
+    .phase-card.completed {
+      border-color: var(--success);
+    }
+
+    .phase-glyph {
+      font-size: 24px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      color: var(--accent-secondary);
+    }
+
+    .phase-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .phase-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .phase-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .phase-progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .phase-progress-fill {
+      height: 100%;
+      background: var(--accent-primary);
+      transition: width 0.3s;
+    }
+
+    .phase-progress-text {
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .phase-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    .status-pending { background: var(--bg-tertiary); }
+    .status-active { background: var(--info); color: white; }
+    .status-completed { background: var(--success); color: white; }
+    .status-blocked { background: var(--error); color: white; }
+
+    /* Content Grid */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* Todos Section */
+    .section-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-badge {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .todo-list {
+      list-style: none;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+
+    .todo-item:hover {
+      transform: translateX(4px);
+    }
+
+    .todo-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .todo-checkbox.checked {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    .todo-checkbox.checked::after {
+      content: '\u2713';
+      color: white;
+      font-size: 12px;
+    }
+
+    .todo-content {
+      flex: 1;
+    }
+
+    .todo-text {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .todo-text.completed {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    .todo-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .todo-priority {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .priority-P0 { background: #ff4444; color: white; }
+    .priority-P1 { background: #ff8800; color: white; }
+    .priority-P2 { background: #ffcc00; color: black; }
+    .priority-P3 { background: #44cc44; color: white; }
+    .priority-P4 { background: #888888; color: white; }
+
+    .todo-phase {
+      color: var(--text-secondary);
+    }
+
+    /* Systems Matrix */
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .matrix-table th,
+    .matrix-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .matrix-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .system-name {
+      font-weight: 600;
+    }
+
+    .system-category {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .health-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .health-healthy { background: var(--success); }
+    .health-degraded { background: var(--warning); }
+    .health-critical { background: var(--error); }
+    .health-unknown { background: var(--text-secondary); }
+
+    /* Milestones */
+    .milestone-list {
+      list-style: none;
+    }
+
+    .milestone-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .milestone-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .milestone-reached {
+      background: var(--success);
+    }
+
+    .milestone-pending {
+      background: var(--bg-secondary);
+      border: 2px dashed var(--border-color);
+    }
+
+    .milestone-content {
+      flex: 1;
+    }
+
+    .milestone-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .milestone-phase {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Recap Section */
+    .recap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .recap-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .recap-card h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: var(--text-secondary);
+    }
+
+    .recap-list {
+      list-style: none;
+    }
+
+    .recap-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+
+    .recap-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .phases-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .phases-grid {
+        grid-template-columns: 1fr;
+      }
+      .recap-grid {
+        grid-template-columns: 1fr;
+      }
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">&#x2699;</div>
+        <div class="logo-text">K'UHUL Progress</div>
+      </div>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Tracking</div>
+        <div class="nav-item active" data-view="overview">
+          <span class="nav-item-icon">&#x1F4CA;</span>
+          <span>Overview</span>
+        </div>
+        <div class="nav-item" data-view="phases">
+          <span class="nav-item-icon">&#x26A1;</span>
+          <span>XCFE Phases</span>
+        </div>
+        <div class="nav-item" data-view="todos">
+          <span class="nav-item-icon">&#x2705;</span>
+          <span>Todo List</span>
+        </div>
+        <div class="nav-item" data-view="milestones">
+          <span class="nav-item-icon">&#x1F3C6;</span>
+          <span>Milestones</span>
+        </div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Analysis</div>
+        <div class="nav-item" data-view="matrix">
+          <span class="nav-item-icon">&#x1F4CB;</span>
+          <span>Systems Matrix</span>
+        </div>
+        <div class="nav-item" data-view="recap">
+          <span class="nav-item-icon">&#x1F4DD;</span>
+          <span>Recap</span>
+        </div>
+        <div class="nav-item" data-view="report">
+          <span class="nav-item-icon">&#x1F4C4;</span>
+          <span>Generate Report</span>
+        </div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Actions</div>
+        <div class="nav-item" onclick="openNewTrackerModal()">
+          <span class="nav-item-icon">&#x2795;</span>
+          <span>New Tracker</span>
+        </div>
+        <div class="nav-item" onclick="exportTracker()">
+          <span class="nav-item-icon">&#x1F4E4;</span>
+          <span>Export</span>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="header">
+        <h1 id="tracker-name">Progress Dashboard</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="openAddTodoModal()">Add Todo</button>
+          <button class="btn btn-primary" onclick="openAddMilestoneModal()">Add Milestone</button>
+        </div>
+      </header>
+
+      <!-- Progress Overview -->
+      <section class="progress-overview">
+        <div class="progress-header">
+          <div class="progress-title">Overall Progress</div>
+          <div class="progress-percentage" id="overall-progress">0%</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="overall-progress-bar" style="width: 0%"></div>
+        </div>
+        <div id="progress-status" style="font-size: 14px; color: var(--text-secondary);">
+          Status: Pending
+        </div>
+      </section>
+
+      <!-- XCFE Phases Grid -->
+      <section class="phases-grid" id="phases-grid">
+        <!-- Phases will be rendered here -->
+      </section>
+
+      <!-- Content Grid -->
+      <div class="content-grid">
+        <!-- Todos Section -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-title">Todo List</div>
+            <span class="section-badge" id="todo-count">0</span>
+          </div>
+          <ul class="todo-list" id="todo-list">
+            <!-- Todos will be rendered here -->
+          </ul>
+        </section>
+
+        <!-- Systems Matrix -->
+        <section class="section-card">
+          <div class="section-header">
+            <div class="section-title">Systems Matrix</div>
+          </div>
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>System</th>
+                <th>Status</th>
+                <th>Health</th>
+                <th>Progress</th>
+              </tr>
+            </thead>
+            <tbody id="matrix-body">
+              <!-- Systems will be rendered here -->
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- Milestones -->
+      <section class="section-card" style="margin-top: 24px;">
+        <div class="section-header">
+          <div class="section-title">Milestones</div>
+        </div>
+        <ul class="milestone-list" id="milestone-list">
+          <!-- Milestones will be rendered here -->
+        </ul>
+      </section>
+
+      <!-- Metrics Grid -->
+      <div class="metrics-grid" id="metrics-grid">
+        <!-- Metrics will be rendered here -->
+      </div>
+
+      <!-- Recap Section -->
+      <div class="recap-grid" id="recap-grid">
+        <!-- Recap sections will be rendered here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- New Tracker Modal -->
+  <div class="modal-overlay" id="new-tracker-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Create New Tracker</div>
+        <button class="modal-close" onclick="closeModal('new-tracker-modal')">&times;</button>
+      </div>
+      <form onsubmit="createTracker(event)">
+        <div class="form-group">
+          <label class="form-label">Tracker Name</label>
+          <input type="text" class="form-input" id="tracker-name-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="tracker-description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch</label>
+          <input type="text" class="form-input" id="tracker-branch">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Tracker</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Todo Modal -->
+  <div class="modal-overlay" id="add-todo-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add Todo</div>
+        <button class="modal-close" onclick="closeModal('add-todo-modal')">&times;</button>
+      </div>
+      <form onsubmit="addTodo(event)">
+        <div class="form-group">
+          <label class="form-label">Todo Content</label>
+          <input type="text" class="form-input" id="todo-content-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="todo-priority">
+            <option value="P0">P0 - Critical</option>
+            <option value="P1">P1 - High</option>
+            <option value="P2" selected>P2 - Medium</option>
+            <option value="P3">P3 - Low</option>
+            <option value="P4">P4 - Future</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phase</label>
+          <select class="form-select" id="todo-phase">
+            <option value="cross_phase">Cross Phase</option>
+            <option value="pop">@Pop</option>
+            <option value="wo">@Wo</option>
+            <option value="sek">@Sek</option>
+            <option value="collapse">@Collapse</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Add Todo</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Milestone Modal -->
+  <div class="modal-overlay" id="add-milestone-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add Milestone</div>
+        <button class="modal-close" onclick="closeModal('add-milestone-modal')">&times;</button>
+      </div>
+      <form onsubmit="addMilestone(event)">
+        <div class="form-group">
+          <label class="form-label">Milestone Name</label>
+          <input type="text" class="form-input" id="milestone-name-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" id="milestone-description"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Phase</label>
+          <select class="form-select" id="milestone-phase">
+            <option value="pop">@Pop</option>
+            <option value="wo">@Wo</option>
+            <option value="sek">@Sek</option>
+            <option value="collapse" selected>@Collapse</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Add Milestone</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../core/kuhul-engine.js"></script>
+  <script src="../core/progress-tracker.js"></script>
+  <script>
+    // Dashboard state
+    let currentTracker = null;
+
+    // Initialize dashboard
+    function init() {
+      // Check for existing trackers
+      const trackers = ProgressTracker.getAll();
+
+      if (trackers.length === 0) {
+        // Create demo tracker
+        currentTracker = ProgressTracker.create('XJSON-BOT Development', {
+          description: 'K\'UHUL Multi-Hive Stack Development',
+          branch: 'claude/progress-phases-tracking'
+        });
+
+        // Add demo data
+        setupDemoData();
+      } else {
+        currentTracker = trackers[trackers.length - 1];
+      }
+
+      renderDashboard();
+
+      // Listen for updates
+      ProgressTracker.on('tracker_created', renderDashboard);
+      ProgressTracker.on('phase_progress', renderDashboard);
+      ProgressTracker.on('todo_added', renderDashboard);
+      ProgressTracker.on('todo_updated', renderDashboard);
+      ProgressTracker.on('milestone_added', renderDashboard);
+      ProgressTracker.on('system_added', renderDashboard);
+    }
+
+    // Setup demo data
+    function setupDemoData() {
+      const trackerId = currentTracker.tracker_id;
+
+      // Add systems
+      ProgressTracker.addSystem(trackerId, {
+        system: 'K\'UHUL Engine',
+        category: 'core',
+        status: 'completed',
+        health: 'healthy',
+        progress_pct: 100
+      });
+
+      ProgressTracker.addSystem(trackerId, {
+        system: 'Progress Tracker',
+        category: 'core',
+        status: 'in_progress',
+        health: 'healthy',
+        progress_pct: 75
+      });
+
+      ProgressTracker.addSystem(trackerId, {
+        system: 'Chat Interface',
+        category: 'ui',
+        status: 'completed',
+        health: 'healthy',
+        progress_pct: 100
+      });
+
+      // Add todos
+      ProgressTracker.addTodo(trackerId, {
+        content: 'Implement XCFE phase tracking schema',
+        priority: 'P0',
+        phase: 'pop',
+        status: 'completed'
+      });
+
+      ProgressTracker.addTodo(trackerId, {
+        content: 'Build K\'UHUL progress tracker module',
+        priority: 'P0',
+        phase: 'wo',
+        status: 'completed'
+      });
+
+      ProgressTracker.addTodo(trackerId, {
+        content: 'Create progress dashboard UI',
+        priority: 'P1',
+        phase: 'wo',
+        status: 'in_progress'
+      });
+
+      // Add milestones
+      ProgressTracker.addMilestone(trackerId, {
+        name: 'Schema Definition',
+        description: 'Complete progress-phases schema',
+        target_phase: 'pop'
+      });
+
+      ProgressTracker.addMilestone(trackerId, {
+        name: 'Core Implementation',
+        description: 'Progress tracker module complete',
+        target_phase: 'wo'
+      });
+
+      // Update phase progress
+      ProgressTracker.updatePhaseProgress(trackerId, 'pop', 100);
+      ProgressTracker.completePhase(trackerId, 'pop', ['Schema created', 'Patterns defined']);
+      ProgressTracker.updatePhaseProgress(trackerId, 'wo', 75);
+
+      // Add achievements
+      ProgressTracker.addAchievement(trackerId, 'Created XCFE phase tracking schema');
+      ProgressTracker.addAchievement(trackerId, 'Implemented K\'UHUL progress tracker module');
+
+      // Update metrics
+      ProgressTracker.updateRecap(trackerId, {
+        metrics: {
+          tasks_completed: 2,
+          tasks_total: 3,
+          lines_of_code: 850,
+          files_created: 3,
+          files_modified: 1,
+          commits: 1
+        }
+      });
+    }
+
+    // Render dashboard
+    function renderDashboard() {
+      if (!currentTracker) return;
+
+      const tracker = ProgressTracker.get(currentTracker.tracker_id);
+      if (!tracker) return;
+
+      // Update header
+      document.getElementById('tracker-name').textContent = tracker.name;
+      document.getElementById('overall-progress').textContent = `${tracker.progress_pct.toFixed(1)}%`;
+      document.getElementById('overall-progress-bar').style.width = `${tracker.progress_pct}%`;
+      document.getElementById('progress-status').textContent = `Status: ${tracker.status.replace('_', ' ').toUpperCase()}`;
+
+      // Render phases
+      renderPhases(tracker);
+
+      // Render todos
+      renderTodos(tracker);
+
+      // Render systems matrix
+      renderMatrix(tracker);
+
+      // Render milestones
+      renderMilestones(tracker);
+
+      // Render metrics
+      renderMetrics(tracker);
+
+      // Render recap
+      renderRecap(tracker);
+    }
+
+    // Render phases
+    function renderPhases(tracker) {
+      const grid = document.getElementById('phases-grid');
+      const phaseOrder = ['pop', 'wo', 'sek', 'collapse'];
+      const phaseNames = {
+        pop: '@Pop',
+        wo: '@Wo',
+        sek: '@Sek',
+        collapse: '@Collapse'
+      };
+      const phaseDescriptions = {
+        pop: 'Populate - Load data, initialize state',
+        wo: 'Work - Transform, compute, process',
+        sek: 'Seek - Query, filter, search',
+        collapse: 'Collapse - Finalize, commit, output'
+      };
+
+      grid.innerHTML = phaseOrder.map(key => {
+        const phase = tracker.phases[key];
+        return `
+          <div class="phase-card ${phase.status}" onclick="updatePhaseUI('${key}')">
+            <div class="phase-glyph">${phase.glyph}</div>
+            <div class="phase-name">${phaseNames[key]}</div>
+            <div class="phase-description">${phaseDescriptions[key]}</div>
+            <div class="phase-progress">
+              <div class="phase-progress-bar">
+                <div class="phase-progress-fill" style="width: ${phase.progress_pct}%"></div>
+              </div>
+              <div class="phase-progress-text">${phase.progress_pct}%</div>
+            </div>
+            <span class="phase-status status-${phase.status}">${phase.status}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render todos
+    function renderTodos(tracker) {
+      const list = document.getElementById('todo-list');
+      const count = document.getElementById('todo-count');
+
+      count.textContent = tracker.todos.length;
+
+      list.innerHTML = tracker.todos.map(todo => `
+        <li class="todo-item">
+          <div class="todo-checkbox ${todo.status === 'completed' ? 'checked' : ''}"
+               onclick="toggleTodo('${todo.id}')"></div>
+          <div class="todo-content">
+            <div class="todo-text ${todo.status === 'completed' ? 'completed' : ''}">${todo.content}</div>
+            <div class="todo-meta">
+              <span class="todo-priority priority-${todo.priority}">${todo.priority}</span>
+              <span class="todo-phase">${todo.phase}</span>
+            </div>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    // Render systems matrix
+    function renderMatrix(tracker) {
+      const body = document.getElementById('matrix-body');
+
+      body.innerHTML = tracker.recap.systems_matrix.map(sys => `
+        <tr>
+          <td>
+            <div class="system-name">${sys.system}</div>
+            <div class="system-category">${sys.category}</div>
+          </td>
+          <td><span class="phase-status status-${sys.status.replace('_', '-')}">${sys.status}</span></td>
+          <td>
+            <div class="health-indicator">
+              <span class="health-dot health-${sys.health}"></span>
+              ${sys.health}
+            </div>
+          </td>
+          <td>${sys.progress_pct}%</td>
+        </tr>
+      `).join('');
+    }
+
+    // Render milestones
+    function renderMilestones(tracker) {
+      const list = document.getElementById('milestone-list');
+
+      list.innerHTML = tracker.milestones.map(ms => `
+        <li class="milestone-item" onclick="toggleMilestone('${ms.id}')">
+          <div class="milestone-icon ${ms.status === 'reached' ? 'milestone-reached' : 'milestone-pending'}">
+            ${ms.status === 'reached' ? '\u2713' : '\u25CB'}
+          </div>
+          <div class="milestone-content">
+            <div class="milestone-name">${ms.name}</div>
+            <div class="milestone-phase">Target: @${ms.target_phase.charAt(0).toUpperCase() + ms.target_phase.slice(1)}</div>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    // Render metrics
+    function renderMetrics(tracker) {
+      const grid = document.getElementById('metrics-grid');
+      const metrics = tracker.recap.metrics;
+
+      grid.innerHTML = `
+        <div class="metric-card">
+          <div class="metric-value">${metrics.tasks_completed}</div>
+          <div class="metric-label">Tasks Done</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${metrics.tasks_total}</div>
+          <div class="metric-label">Total Tasks</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${metrics.lines_of_code}</div>
+          <div class="metric-label">Lines of Code</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${metrics.files_created}</div>
+          <div class="metric-label">Files Created</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${metrics.files_modified}</div>
+          <div class="metric-label">Files Modified</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${metrics.commits}</div>
+          <div class="metric-label">Commits</div>
+        </div>
+      `;
+    }
+
+    // Render recap
+    function renderRecap(tracker) {
+      const grid = document.getElementById('recap-grid');
+      const summary = tracker.recap.summary;
+
+      grid.innerHTML = `
+        <div class="recap-card">
+          <h3>\u2705 Key Achievements</h3>
+          <ul class="recap-list">
+            ${summary.key_achievements.map(a => `<li>${a}</li>`).join('') || '<li>No achievements yet</li>'}
+          </ul>
+        </div>
+        <div class="recap-card">
+          <h3>\u1F6A7 Blockers</h3>
+          <ul class="recap-list">
+            ${summary.blockers.map(b => `<li>${b}</li>`).join('') || '<li>No blockers</li>'}
+          </ul>
+        </div>
+        <div class="recap-card">
+          <h3>\u27A1 Next Steps</h3>
+          <ul class="recap-list">
+            ${summary.next_steps.map(s => `<li>${s}</li>`).join('') || '<li>Plan next steps</li>'}
+          </ul>
+        </div>
+      `;
+    }
+
+    // Toggle todo status
+    function toggleTodo(todoId) {
+      const tracker = ProgressTracker.get(currentTracker.tracker_id);
+      const todo = tracker.todos.find(t => t.id === todoId);
+
+      if (todo) {
+        const newStatus = todo.status === 'completed' ? 'pending' : 'completed';
+        ProgressTracker.updateTodo(currentTracker.tracker_id, todoId, { status: newStatus });
+      }
+    }
+
+    // Toggle milestone
+    function toggleMilestone(milestoneId) {
+      const tracker = ProgressTracker.get(currentTracker.tracker_id);
+      const milestone = tracker.milestones.find(m => m.id === milestoneId);
+
+      if (milestone && milestone.status !== 'reached') {
+        ProgressTracker.reachMilestone(currentTracker.tracker_id, milestoneId);
+      }
+    }
+
+    // Update phase UI (for demo)
+    function updatePhaseUI(phaseName) {
+      const tracker = ProgressTracker.get(currentTracker.tracker_id);
+      const phase = tracker.phases[phaseName];
+
+      if (phase.progress_pct < 100) {
+        ProgressTracker.updatePhaseProgress(
+          currentTracker.tracker_id,
+          phaseName,
+          Math.min(100, phase.progress_pct + 25)
+        );
+      }
+    }
+
+    // Modal functions
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function openNewTrackerModal() {
+      openModal('new-tracker-modal');
+    }
+
+    function openAddTodoModal() {
+      openModal('add-todo-modal');
+    }
+
+    function openAddMilestoneModal() {
+      openModal('add-milestone-modal');
+    }
+
+    // Create tracker
+    function createTracker(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('tracker-name-input').value;
+      const description = document.getElementById('tracker-description').value;
+      const branch = document.getElementById('tracker-branch').value;
+
+      currentTracker = ProgressTracker.create(name, { description, branch });
+      closeModal('new-tracker-modal');
+      renderDashboard();
+    }
+
+    // Add todo
+    function addTodo(event) {
+      event.preventDefault();
+
+      const content = document.getElementById('todo-content-input').value;
+      const priority = document.getElementById('todo-priority').value;
+      const phase = document.getElementById('todo-phase').value;
+
+      ProgressTracker.addTodo(currentTracker.tracker_id, { content, priority, phase });
+      closeModal('add-todo-modal');
+      document.getElementById('todo-content-input').value = '';
+    }
+
+    // Add milestone
+    function addMilestone(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('milestone-name-input').value;
+      const description = document.getElementById('milestone-description').value;
+      const target_phase = document.getElementById('milestone-phase').value;
+
+      ProgressTracker.addMilestone(currentTracker.tracker_id, { name, description, target_phase });
+      closeModal('add-milestone-modal');
+      document.getElementById('milestone-name-input').value = '';
+      document.getElementById('milestone-description').value = '';
+    }
+
+    // Export tracker
+    function exportTracker() {
+      const report = ProgressTracker.generateMarkdownReport(currentTracker.tracker_id);
+      const blob = new Blob([report], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `progress-report-${Date.now()}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

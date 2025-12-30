@@ -1,0 +1,181 @@
+{
+  "$id": "asx://schema/execution-trace.v1",
+  "$comment": "ASX-R Execution Trace Schema (Frozen)",
+  "title": "Execution Trace",
+  "description": "ASX-R execution trace for replay verification",
+  "type": "object",
+  "required": ["trace_id", "phases", "status"],
+  "properties": {
+    "trace_id": {
+      "type": "string",
+      "pattern": "^trace_[a-z]+_[0-9]+(_[a-z0-9]+)?$",
+      "description": "Unique trace identifier"
+    },
+    "started_at": {
+      "type": "integer",
+      "description": "Unix timestamp in milliseconds when execution started"
+    },
+    "completed_at": {
+      "type": "integer",
+      "description": "Unix timestamp in milliseconds when execution completed"
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["phase", "duration_ms"],
+        "properties": {
+          "phase": {
+            "enum": ["@Pop", "@Wo", "@Sek", "@Collapse"],
+            "description": "XCFE phase name"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Phase duration in milliseconds"
+          },
+          "input_hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "SHA-256 hash of phase input"
+          },
+          "output_hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "SHA-256 hash of phase output"
+          },
+          "status": {
+            "enum": ["✓", "✗", "⏳"],
+            "description": "Phase completion status"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^E[0-9]{3}$"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "description": "Error details if phase failed"
+          }
+        }
+      },
+      "description": "Array of executed phases"
+    },
+    "final_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA-256 hash of final output"
+    },
+    "status": {
+      "enum": ["pending", "running", "completed", "failed", "verified", "mismatch"],
+      "description": "Overall trace status"
+    },
+    "replay": {
+      "type": "object",
+      "properties": {
+        "replayed_at": {
+          "type": "integer",
+          "description": "When replay was performed"
+        },
+        "matches": {
+          "type": "boolean",
+          "description": "Whether replay matched original"
+        },
+        "divergence_phase": {
+          "type": "string",
+          "description": "Phase where divergence occurred (if any)"
+        }
+      },
+      "description": "Replay verification results"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "type": "string",
+          "description": "K'UHUL operation that was traced"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model used (for inference traces)"
+        },
+        "block_id": {
+          "type": "string",
+          "description": "ASX block ID (for UI traces)"
+        },
+        "user_id": {
+          "type": "string",
+          "description": "User who initiated the operation"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "trace_id": "trace_infer_1704067200000",
+      "started_at": 1704067200000,
+      "completed_at": 1704067200158,
+      "phases": [
+        {
+          "phase": "@Pop",
+          "duration_ms": 5,
+          "input_hash": "sha256:abc123...",
+          "output_hash": "sha256:def456...",
+          "status": "✓"
+        },
+        {
+          "phase": "@Wo",
+          "duration_ms": 150,
+          "input_hash": "sha256:def456...",
+          "output_hash": "sha256:ghi789...",
+          "status": "✓"
+        },
+        {
+          "phase": "@Collapse",
+          "duration_ms": 3,
+          "input_hash": "sha256:ghi789...",
+          "output_hash": "sha256:jkl012...",
+          "status": "✓"
+        }
+      ],
+      "final_hash": "sha256:jkl012...",
+      "status": "verified",
+      "metadata": {
+        "operation": "⟁Inference⟁run⟁",
+        "model": "gpt-4o-mini"
+      }
+    },
+    {
+      "trace_id": "trace_img_1704067200000",
+      "started_at": 1704067200000,
+      "completed_at": 1704067202560,
+      "phases": [
+        {
+          "phase": "@Pop",
+          "duration_ms": 10,
+          "status": "✓"
+        },
+        {
+          "phase": "@Wo",
+          "duration_ms": 2500,
+          "status": "✓"
+        },
+        {
+          "phase": "@Collapse",
+          "duration_ms": 50,
+          "status": "✓"
+        }
+      ],
+      "status": "completed",
+      "metadata": {
+        "operation": "⟁Image⟁generate⟁",
+        "model": "janus-pro-7b"
+      }
+    }
+  ]
+}

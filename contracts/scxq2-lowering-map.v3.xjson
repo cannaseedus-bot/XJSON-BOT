@@ -1,0 +1,203 @@
+{
+  "@law": "law.pi_xcfe.core.v1",
+  "@scxq2": "v3",
+  "@comment": "Canonical SCXQ2 → π⊗XCFE Lowering Map (Authoritative)",
+  "@maps": [
+    {
+      "scx_token": "(?)",
+      "pi_op": "pi_branch",
+      "requires": ["branch"],
+      "phase": "pi_decide",
+      "description": "Conditional branch"
+    },
+    {
+      "scx_token": "(∴)",
+      "pi_op": "pi_commit",
+      "requires": ["branch"],
+      "phase": "pi_decide",
+      "description": "Commit branch choice (then)"
+    },
+    {
+      "scx_token": "(¬)",
+      "pi_op": "pi_alternate",
+      "requires": ["branch"],
+      "phase": "pi_decide",
+      "description": "Alternate branch (else)"
+    },
+    {
+      "scx_token": "(∞)",
+      "pi_op": "pi_stream",
+      "requires": ["loop"],
+      "phase": "pi_decide",
+      "description": "Loop/iterate"
+    },
+    {
+      "scx_token": "(⛔)",
+      "pi_op": "pi_collapse",
+      "requires": ["seal"],
+      "phase": "pi_collapse",
+      "description": "Halt with seal"
+    },
+    {
+      "scx_token": "(💬)",
+      "pi_op": "pi_ui_emit",
+      "requires": ["ui", "dom"],
+      "phase": "pi_act",
+      "description": "Emit message"
+    },
+    {
+      "scx_token": "(💬>)",
+      "pi_op": "pi_ui_emit",
+      "requires": ["ui", "dom"],
+      "phase": "pi_act",
+      "description": "Emit message (directional)"
+    },
+    {
+      "scx_token": "(🔍)",
+      "pi_op": "pi_match",
+      "requires": ["verify", "read"],
+      "phase": "pi_verify",
+      "description": "Search/pattern match"
+    },
+    {
+      "scx_token": "(⊕)",
+      "pi_op": "pi_open",
+      "requires": ["resource"],
+      "phase": "pi_act",
+      "description": "Connect/open resource"
+    },
+    {
+      "scx_token": "(⊗)",
+      "pi_op": "pi_close",
+      "requires": ["resource"],
+      "phase": "pi_act",
+      "description": "Disconnect/close resource"
+    },
+    {
+      "scx_token": "(📡)",
+      "pi_op": "pi_open",
+      "requires": ["network"],
+      "phase": "pi_act",
+      "description": "Transmit (network)"
+    },
+    {
+      "scx_token": "(🔐)",
+      "pi_op": "pi_crypto_seal",
+      "requires": ["crypto"],
+      "phase": "pi_act",
+      "description": "Encrypt/seal"
+    },
+    {
+      "scx_token": "(🔓)",
+      "pi_op": "pi_crypto_unseal",
+      "requires": ["crypto"],
+      "phase": "pi_act",
+      "description": "Decrypt/unseal"
+    },
+    {
+      "scx_token": "(%)",
+      "pi_op": "pi_merge",
+      "requires": ["storage", "resource"],
+      "phase": "pi_act",
+      "description": "Save/persist data"
+    },
+    {
+      "scx_token": "(⟳)",
+      "pi_op": "pi_dom_patch",
+      "requires": ["dom", "read"],
+      "phase": "pi_act",
+      "description": "Refresh/reload"
+    },
+    {
+      "scx_token": "(🧠)",
+      "pi_op": "pi_cluster_map",
+      "requires": ["cluster"],
+      "phase": "pi_act",
+      "description": "Learn/AI cluster operation"
+    },
+    {
+      "scx_token": "(🚀)",
+      "pi_op": "pi_open",
+      "requires": ["network", "resource"],
+      "phase": "pi_act",
+      "description": "Deploy (network)"
+    },
+    {
+      "scx_token": "(⏳)",
+      "pi_op": "pi_timeout",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Timeout/delay"
+    },
+    {
+      "scx_token": "(||)",
+      "pi_op": "pi_all",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Parallel await all"
+    },
+    {
+      "scx_token": "(~>)",
+      "pi_op": "pi_stream",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Stream transform"
+    },
+    {
+      "scx_token": "(^)",
+      "pi_op": "pi_spawn",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Spawn task"
+    },
+    {
+      "scx_token": "(@)",
+      "pi_op": "pi_open",
+      "requires": ["network"],
+      "phase": "pi_act",
+      "description": "Network/internet domain"
+    },
+    {
+      "scx_token": "(#)",
+      "pi_op": "pi_dom_patch",
+      "requires": ["dom"],
+      "phase": "pi_act",
+      "description": "DOM element reference"
+    },
+    {
+      "scx_token": "($)",
+      "pi_op": "pi_record",
+      "requires": ["read"],
+      "phase": "pi_perceive",
+      "description": "Value/state reference"
+    },
+    {
+      "scx_token": "(&)",
+      "pi_op": "pi_await",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Await task"
+    },
+    {
+      "scx_token": "(*)",
+      "pi_op": "pi_cluster_reduce",
+      "requires": ["cluster"],
+      "phase": "pi_act",
+      "description": "Reduce/aggregate"
+    },
+    {
+      "scx_token": "(~)",
+      "pi_op": "pi_with",
+      "requires": ["effect"],
+      "phase": "pi_act",
+      "description": "Transform/with"
+    },
+    {
+      "scx_token": "(!)",
+      "pi_op": "pi_verify",
+      "requires": ["verify"],
+      "phase": "pi_verify",
+      "description": "Assert/validate"
+    }
+  ]
+}

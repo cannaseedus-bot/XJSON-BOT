@@ -1,0 +1,30 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/capability_id.v1",
+  "$comment": "XCFE Capability ID v1 (Sealed) - Allowed/denied operation capabilities",
+  "title": "XCFE Capability ID v1",
+  "type": "string",
+  "enum": [
+    "read",
+    "decode",
+    "verify",
+    "branch",
+    "loop",
+    "effect",
+    "seal",
+    "dom",
+    "bom",
+    "network",
+    "crypto",
+    "resource",
+    "cluster",
+    "ui",
+    "svg",
+    "canvas",
+    "storage",
+    "idb",
+    "mesh",
+    "tape",
+    "audit"
+  ]
+}

@@ -1,0 +1,57 @@
+# XJSON-BOT .gitignore
+
+# Sensitive Configuration Files - NEVER COMMIT!
+config/.config.json
+config/config.local.json
+config/secrets.json
+config/*.local.json
+config/kql-api-config.php
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# PHP secure folder (should be outside repo anyway)
+secure/
+SECURE_FOLDER/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Dependencies (if added later)
+node_modules/
+vendor/
+
+# Build outputs (if added later)
+dist/
+build/
+.cache/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+temp/

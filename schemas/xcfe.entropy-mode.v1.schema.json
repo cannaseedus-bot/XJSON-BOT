@@ -1,0 +1,11 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "xcfe://schema/entropy_mode.v1",
+  "$comment": "XCFE Entropy Mode v1 (Sealed) - Alias/cipher key rotation mode",
+  "title": "XCFE Entropy Mode v1",
+  "type": "string",
+  "enum": [
+    "static",
+    "rotating"
+  ]
+}

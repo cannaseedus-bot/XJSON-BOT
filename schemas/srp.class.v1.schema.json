@@ -1,0 +1,80 @@
+{
+  "$schema": "xjson://schema/draft/2020-12",
+  "$id": "asx://schema/srp.class.v1",
+  "$comment": "SRP Class Schema (Sealed) - The always-callable runtime preprocessor class definition",
+  "title": "SRP Class Schema v1",
+  "description": "SRP (System Runtime Preprocessor) is an always-active runtime layer that preprocesses the system's next state continuously.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["@type", "@id", "@version", "name", "state", "reducers", "projector"],
+
+  "properties": {
+    "@type": { "const": "srp.class" },
+    "@id": {
+      "type": "string",
+      "pattern": "^asx://srp/class/[a-zA-Z0-9._:-]+$",
+      "description": "Canonical SRP class identifier"
+    },
+    "@version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version"
+    },
+
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable class name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Class documentation"
+    },
+
+    "state": {
+      "type": "object",
+      "description": "Initial state (authoritative baseline). This is the Wo-plane seed.",
+      "additionalProperties": true
+    },
+
+    "reducers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "asx://schema/srp.directive.v1" },
+      "description": "Directive list applied during collapse. Replaces imperative handlers."
+    },
+
+    "projector": {
+      "$ref": "asx://schema/srp.projection.v1",
+      "description": "Projection specification. UI is derived from state, never mutated directly."
+    },
+
+    "allow": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Capability constraints for this class",
+      "properties": {
+        "event_types": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "default": [],
+          "description": "Allowed event types that can trigger reducers"
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional metadata"
+    }
+  },
+
+  "@axioms": {
+    "A1_always_callable": "SRP is active whenever the runtime exists (boot → shutdown). No request-only activation.",
+    "A2_structure_first": "Execution consumes structured directives, not text scripts.",
+    "A3_no_implicit_effects": "Only declared transitions are allowed. Every effect is routed through a controlled surface.",
+    "A4_determinism": "Given the same input state + event, SRP produces the same next state.",
+    "A5_projection_law": "UI is a projection of state. SRP does not mutate DOM; it changes state and the UI follows."
+  }
+}

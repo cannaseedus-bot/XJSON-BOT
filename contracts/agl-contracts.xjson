@@ -1,0 +1,439 @@
+{
+  "@version": "1.0.0",
+  "@type": "agl.contract.registry",
+  "@status": "frozen",
+  "@comment": "AGL (Atomic Glyph Language) Contract Registry - K'UHUL + MATH + DOM + API",
+
+  "@meta": {
+    "@created": "2025-12-30T00:00:00Z",
+    "@spec": "ASX-R v1.0",
+    "@principle": "If [⟁⚡🌀🧬🎨] can traverse DOM ↔ API, then [∫∂∑∏√π] can too",
+    "@law": "JavaScript = Universal Executor"
+  },
+
+  "@glyph_classes": {
+    "kuhul": {
+      "@prefix": "⟁",
+      "@description": "K'UHUL execution glyphs",
+      "@phase_flow": ["@Pop", "@Wo", "@Sek", "@Collapse"]
+    },
+    "math": {
+      "@prefix": "∫∂∑∏√π",
+      "@description": "Mathematical operation glyphs",
+      "@executor": "kuhul-math.js"
+    },
+    "dom": {
+      "@prefix": "⚡",
+      "@description": "DOM manipulation glyphs",
+      "@executor": "native-dom"
+    },
+    "api": {
+      "@prefix": "🌀",
+      "@description": "API bridge glyphs",
+      "@executor": "fetch-adapter"
+    },
+    "data": {
+      "@prefix": "🧬",
+      "@description": "Data transformation glyphs",
+      "@executor": "scxq2"
+    },
+    "render": {
+      "@prefix": "🎨",
+      "@description": "Render/UI glyphs",
+      "@executor": "asx-blocks"
+    }
+  },
+
+  "@contracts": {
+    "kuhul": {
+      "⟁Pop⟁": {
+        "@op": "phase.populate",
+        "@phase": "@Pop",
+        "@description": "Load data, initialize state",
+        "@input": { "@type": "any" },
+        "@output": { "@type": "state" },
+        "@js": "K.phase.pop(input)"
+      },
+      "⟁Wo⟁": {
+        "@op": "phase.work",
+        "@phase": "@Wo",
+        "@description": "Transform, compute, process",
+        "@input": { "@type": "state" },
+        "@output": { "@type": "state" },
+        "@js": "K.phase.wo(state)"
+      },
+      "⟁Sek⟁": {
+        "@op": "phase.seek",
+        "@phase": "@Sek",
+        "@description": "Query, filter, search",
+        "@input": { "@type": "state", "@query": "string" },
+        "@output": { "@type": "result[]" },
+        "@js": "K.phase.sek(state, query)"
+      },
+      "⟁Collapse⟁": {
+        "@op": "phase.collapse",
+        "@phase": "@Collapse",
+        "@description": "Finalize, commit, output",
+        "@input": { "@type": "state" },
+        "@output": { "@type": "final" },
+        "@js": "K.phase.collapse(state)"
+      },
+      "⟁Inference⟁": {
+        "@op": "inference.run",
+        "@phase": "@Wo",
+        "@description": "Execute AI inference via Transformers.js",
+        "@input": { "@prompt": "string", "@options": "object" },
+        "@output": { "@type": "inference.response.v1" },
+        "@js": "K.inference.run(prompt, options)"
+      },
+      "⟁JavaBridge⟁": {
+        "@op": "bridge.java",
+        "@phase": "@Wo",
+        "@description": "Execute via Cline JVM bridge",
+        "@input": { "@operation": "string", "@data": "any" },
+        "@output": { "@type": "bridge.response" },
+        "@js": "K.bridge.java(operation, data)"
+      },
+      "⟁Store⟁": {
+        "@op": "storage.write",
+        "@phase": "@Collapse",
+        "@description": "Persist to IDB via KQL",
+        "@input": { "@table": "string", "@data": "any" },
+        "@output": { "@type": "storage.result" },
+        "@js": "K.storage.write(table, data)"
+      },
+      "⟁Load⟁": {
+        "@op": "storage.read",
+        "@phase": "@Pop",
+        "@description": "Load from IDB via KQL",
+        "@input": { "@table": "string", "@query": "string" },
+        "@output": { "@type": "any[]" },
+        "@js": "K.storage.read(table, query)"
+      }
+    },
+
+    "math": {
+      "∫": {
+        "@op": "math.integral",
+        "@glyph": "∫",
+        "@description": "Numerical integration (Simpson's Rule)",
+        "@input": { "@fn": "function", "@a": "number", "@b": "number", "@n": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.integral(fn, a, b, n)"
+      },
+      "∂": {
+        "@op": "math.derivative",
+        "@glyph": "∂",
+        "@description": "Numerical derivative",
+        "@input": { "@fn": "function", "@x": "number", "@h": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.derivative(fn, x, h)"
+      },
+      "∑": {
+        "@op": "math.sum",
+        "@glyph": "∑",
+        "@description": "Summation",
+        "@input": { "@fn": "function", "@start": "number", "@end": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.sum(fn, start, end)"
+      },
+      "∏": {
+        "@op": "math.product",
+        "@glyph": "∏",
+        "@description": "Product",
+        "@input": { "@fn": "function", "@start": "number", "@end": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.product(fn, start, end)"
+      },
+      "√": {
+        "@op": "math.sqrt",
+        "@glyph": "√",
+        "@description": "Square root",
+        "@input": { "@x": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.sqrt(x)"
+      },
+      "π": {
+        "@op": "math.pi",
+        "@glyph": "π",
+        "@description": "Pi constant",
+        "@input": {},
+        "@output": { "@type": "number", "@value": 3.141592653589793 },
+        "@js": "Math.PI"
+      },
+      "∇": {
+        "@op": "math.gradient",
+        "@glyph": "∇",
+        "@description": "Gradient vector",
+        "@input": { "@fn": "function", "@point": "number[]" },
+        "@output": { "@type": "number[]" },
+        "@js": "KMath.gradient(fn, point)"
+      },
+      "∆": {
+        "@op": "math.delta",
+        "@glyph": "∆",
+        "@description": "Finite difference",
+        "@input": { "@a": "number", "@b": "number" },
+        "@output": { "@type": "number" },
+        "@js": "KMath.delta(a, b)"
+      },
+      "∞": {
+        "@op": "math.infinity",
+        "@glyph": "∞",
+        "@description": "Infinity constant",
+        "@input": {},
+        "@output": { "@type": "number" },
+        "@js": "Infinity"
+      },
+      "≈": {
+        "@op": "math.approx",
+        "@glyph": "≈",
+        "@description": "Approximate equality check",
+        "@input": { "@a": "number", "@b": "number", "@epsilon": "number" },
+        "@output": { "@type": "boolean" },
+        "@js": "KMath.approx(a, b, epsilon)"
+      }
+    },
+
+    "dom": {
+      "⚡query": {
+        "@op": "dom.query",
+        "@glyph": "⚡",
+        "@description": "Query DOM elements",
+        "@input": { "@selector": "string" },
+        "@output": { "@type": "Element[]" },
+        "@js": "document.querySelectorAll(selector)"
+      },
+      "⚡create": {
+        "@op": "dom.create",
+        "@glyph": "⚡",
+        "@description": "Create DOM element",
+        "@input": { "@tag": "string", "@attrs": "object" },
+        "@output": { "@type": "Element" },
+        "@js": "KDOM.create(tag, attrs)"
+      },
+      "⚡mount": {
+        "@op": "dom.mount",
+        "@glyph": "⚡",
+        "@description": "Mount element to DOM",
+        "@input": { "@element": "Element", "@target": "string" },
+        "@output": { "@type": "void" },
+        "@js": "KDOM.mount(element, target)"
+      },
+      "⚡bind": {
+        "@op": "dom.bind",
+        "@glyph": "⚡",
+        "@description": "Bind event listener",
+        "@input": { "@element": "Element", "@event": "string", "@handler": "function" },
+        "@output": { "@type": "void" },
+        "@js": "KDOM.bind(element, event, handler)"
+      }
+    },
+
+    "api": {
+      "🌀fetch": {
+        "@op": "api.fetch",
+        "@glyph": "🌀",
+        "@description": "HTTP fetch request",
+        "@input": { "@url": "string", "@options": "object" },
+        "@output": { "@type": "Response" },
+        "@js": "KAPI.fetch(url, options)"
+      },
+      "🌀post": {
+        "@op": "api.post",
+        "@glyph": "🌀",
+        "@description": "HTTP POST request",
+        "@input": { "@url": "string", "@body": "any" },
+        "@output": { "@type": "Response" },
+        "@js": "KAPI.post(url, body)"
+      },
+      "🌀stream": {
+        "@op": "api.stream",
+        "@glyph": "🌀",
+        "@description": "Streaming response handler",
+        "@input": { "@url": "string", "@onChunk": "function" },
+        "@output": { "@type": "AsyncIterator" },
+        "@js": "KAPI.stream(url, onChunk)"
+      }
+    },
+
+    "data": {
+      "🧬encode": {
+        "@op": "data.encode",
+        "@glyph": "🧬",
+        "@description": "SCXQ2 encode data",
+        "@input": { "@data": "any" },
+        "@output": { "@type": "string" },
+        "@js": "SCXQ2.encode(data)"
+      },
+      "🧬decode": {
+        "@op": "data.decode",
+        "@glyph": "🧬",
+        "@description": "SCXQ2 decode data",
+        "@input": { "@encoded": "string" },
+        "@output": { "@type": "any" },
+        "@js": "SCXQ2.decode(encoded)"
+      },
+      "🧬transform": {
+        "@op": "data.transform",
+        "@glyph": "🧬",
+        "@description": "Data transformation pipeline",
+        "@input": { "@data": "any", "@pipeline": "function[]" },
+        "@output": { "@type": "any" },
+        "@js": "KData.transform(data, pipeline)"
+      },
+      "🧬validate": {
+        "@op": "data.validate",
+        "@glyph": "🧬",
+        "@description": "Schema validation",
+        "@input": { "@data": "any", "@schema": "string" },
+        "@output": { "@type": "boolean" },
+        "@js": "KData.validate(data, schema)"
+      }
+    },
+
+    "render": {
+      "🎨block": {
+        "@op": "render.block",
+        "@glyph": "🎨",
+        "@description": "Render ASX block",
+        "@input": { "@type": "asx-block", "@props": "object" },
+        "@output": { "@type": "Element" },
+        "@js": "ASX.render(block)"
+      },
+      "🎨update": {
+        "@op": "render.update",
+        "@glyph": "🎨",
+        "@description": "Update existing block",
+        "@input": { "@id": "string", "@props": "object" },
+        "@output": { "@type": "void" },
+        "@js": "ASX.update(id, props)"
+      },
+      "🎨svg": {
+        "@op": "render.svg",
+        "@glyph": "🎨",
+        "@description": "Render SVG weight geometry",
+        "@input": { "@weights": "number[]", "@config": "object" },
+        "@output": { "@type": "SVGElement" },
+        "@js": "KSVG.render(weights, config)"
+      }
+    },
+
+    "inference": {
+      "⟁chat.run": {
+        "@op": "chat.run",
+        "@phase": "@Wo",
+        "@description": "Execute chat inference",
+        "@input": { "@messages": "array", "@max_tokens": "number", "@temperature": "number" },
+        "@output": { "@type": "inference.response.v1" },
+        "@js": "K.inference.chat(messages, options)",
+        "@binding": "inference.plan.v1"
+      },
+      "⟁vision.run": {
+        "@op": "vision.run",
+        "@phase": "@Wo",
+        "@description": "Execute vision inference",
+        "@input": { "@image": "Blob|URL", "@task": "string" },
+        "@output": { "@type": "image.response.v1" },
+        "@js": "K.inference.vision(image, task)",
+        "@binding": "image.plan.v1"
+      },
+      "⟁embed.run": {
+        "@op": "embed.run",
+        "@phase": "@Wo",
+        "@description": "Generate embeddings",
+        "@input": { "@text": "string", "@model": "string" },
+        "@output": { "@type": "number[]" },
+        "@js": "K.inference.embed(text, model)"
+      }
+    },
+
+    "storage": {
+      "⟁idb.kql": {
+        "@op": "idb.kql",
+        "@phase": "@Pop|@Sek",
+        "@description": "Execute KQL query on IDB",
+        "@input": { "@kql": "string", "@into": "string" },
+        "@output": { "@type": "any" },
+        "@js": "K.idb.kql(query)",
+        "@binding": "inference.plan.step.v1"
+      },
+      "⟁idb.txn": {
+        "@op": "idb.txn",
+        "@phase": "@Collapse",
+        "@description": "Atomic IDB transaction",
+        "@input": { "@ops": "array" },
+        "@output": { "@type": "boolean" },
+        "@js": "K.idb.txn(ops)"
+      }
+    },
+
+    "scxq2": {
+      "⟁scxq2.encode": {
+        "@op": "scxq2.encode",
+        "@phase": "@Collapse",
+        "@description": "SCXQ2 hazard cipher encode",
+        "@input": { "@data": "any" },
+        "@output": { "@type": "string", "@prefix": "☣" },
+        "@js": "SCXQ2.encode(data)"
+      },
+      "⟁scxq2.decode": {
+        "@op": "scxq2.decode",
+        "@phase": "@Pop",
+        "@description": "SCXQ2 hazard cipher decode",
+        "@input": { "@encoded": "string" },
+        "@output": { "@type": "any" },
+        "@js": "SCXQ2.decode(encoded)"
+      }
+    }
+  },
+
+  "@execution_rules": {
+    "@phase_order": ["@Pop", "@Wo", "@Sek", "@Collapse"],
+    "@deterministic": true,
+    "@replay_verifiable": true,
+    "@allowlist": [
+      "sys.set",
+      "idb.kql",
+      "idb.txn",
+      "scxq2.decode",
+      "scxq2.encode",
+      "chat.run",
+      "vision.run",
+      "embed.run",
+      "return"
+    ],
+    "@bounds": {
+      "@max_steps": 64,
+      "@max_tokens": 4096,
+      "@max_bytes": 1048576
+    }
+  },
+
+  "@transformers_binding": {
+    "@library": "@xenova/transformers",
+    "@models": {
+      "qwen-asx": {
+        "@id": "Qwen/Qwen2.5-0.5B-Instruct",
+        "@task": "text-generation",
+        "@quantized": true
+      },
+      "janus-vision": {
+        "@id": "deepseek-ai/janus-pro-7b",
+        "@task": "image-text-to-text",
+        "@quantized": true
+      }
+    },
+    "@executor": "/core/transformers-adapter.js"
+  },
+
+  "@java_bridge": {
+    "@runtime": "cline",
+    "@endpoint": "https://mx2lm.app/cline-jar/lib/",
+    "@operations": [
+      "document.process",
+      "crypto.process",
+      "bridge.execute"
+    ]
+  }
+}

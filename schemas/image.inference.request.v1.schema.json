@@ -1,0 +1,36 @@
+{
+  "$id": "asx://schema/image.inference.request.v1",
+  "title": "Image Inference Request v1",
+  "type": "object",
+  "required": ["@type", "@image_ref"],
+  "properties": {
+    "@type": { "const": "image.inference.request.v1" },
+    "@id": { "type": "string" },
+    "@image_ref": {
+      "type": "object",
+      "required": ["@ref"],
+      "properties": {
+        "@ref": { "type": "string", "minLength": 1 },
+        "@mime": { "type": "string" },
+        "@hint": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "@task": {
+      "type": "string",
+      "enum": ["caption", "embed", "detect", "ocr-lite", "vqa", "caption+embed", "custom"]
+    },
+    "@prompt": { "type": "string" },
+    "@model_ref": {
+      "type": "object",
+      "required": ["@family", "@id"],
+      "properties": {
+        "@family": { "type": "string", "enum": ["janus", "qwen_vl", "mx2lm_vision"] },
+        "@id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "@bounds": { "$ref": "asx://schema/image.inference.bounds.v1" }
+  },
+  "additionalProperties": false
+}

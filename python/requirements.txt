@@ -1,0 +1,51 @@
+# XJSON-BOT Python API Server
+# FastAPI + K'UHUL + Multi-Model Backend
+
+# Core Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Async & HTTP
+httpx>=0.26.0
+aiohttp>=3.9.0
+websockets>=12.0
+sse-starlette>=1.8.0
+
+# Database
+sqlalchemy>=2.0.25
+aiosqlite>=0.19.0
+redis>=5.0.0
+
+# AI/ML Models
+torch>=2.1.0
+transformers>=4.36.0
+accelerate>=0.25.0
+bitsandbytes>=0.42.0
+sentencepiece>=0.1.99
+tiktoken>=0.5.2
+
+# Image Processing (Janus)
+Pillow>=10.2.0
+numpy>=1.26.0
+
+# DeepSeek API
+openai>=1.10.0
+
+# Compression
+lz4>=4.3.0
+zstandard>=0.22.0
+
+# Utilities
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+loguru>=0.7.2
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+black>=24.1.0
+ruff>=0.1.0

@@ -1,0 +1,50 @@
+{
+  "@xcfe": {
+    "@law": "law.pi_xcfe.holotape_ui.v1",
+    "@phase": "pi_act",
+    "@allow": [
+      "read",
+      "decode",
+      "verify",
+      "branch",
+      "loop",
+      "effect",
+      "seal",
+      "dom",
+      "ui",
+      "svg",
+      "canvas",
+      "tape",
+      "audit"
+    ],
+    "@deny": [
+      "network",
+      "crypto",
+      "resource",
+      "cluster",
+      "storage",
+      "idb",
+      "mesh",
+      "bom"
+    ],
+    "@scope": "ui:holotape",
+    "@barrier": "idle",
+    "@entropy": "static",
+    "@runtime": "browser_cpu",
+    "@limits": {
+      "max_clusters": 0,
+      "max_effects_per_tick": 1000,
+      "max_decode_bytes": 1048576
+    },
+    "@audit": {
+      "enabled": true,
+      "mode": "full"
+    }
+  },
+  "@meta": {
+    "@name": "Holotape UI Law",
+    "@version": "1.0.0",
+    "@description": "UI-safe law - no network, crypto, storage, or cluster access",
+    "@created": "2025-12-30T00:00:00Z"
+  }
+}

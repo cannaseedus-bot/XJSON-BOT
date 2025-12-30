@@ -1,0 +1,81 @@
+{
+  "_comment": "XJSON-BOT Configuration Template - Copy to config.json",
+
+  "app": {
+    "_comment": "Application settings",
+    "name": "XJSON-BOT",
+    "version": "2.0.0",
+    "debug": false,
+    "env": "production"
+  },
+
+  "kql": {
+    "_comment": "KQL Backend: 'idb' (local), 'mysql' (remote), 'hybrid' (both)",
+    "backend": "idb",
+    "mysqlEndpoint": "https://yourdomain.com/api/kql",
+    "syncInterval": 30000,
+    "compression": true,
+    "compressionThreshold": 1024,
+    "dbName": "kuhul_db",
+    "dbVersion": 1
+  },
+
+  "llm": {
+    "_comment": "LLM Provider: 'ollama', 'openai', 'anthropic'",
+    "defaultProvider": "ollama",
+    "streamingEnabled": true,
+    "maxTokens": 4096,
+    "temperature": 0.7,
+    "topP": 0.9,
+    "ollamaUrl": "http://localhost:11434",
+    "proxyEndpoint": null,
+    "retryAttempts": 3,
+    "retryDelay": 1000
+  },
+
+  "agents": {
+    "_comment": "Multi-agent collaboration settings",
+    "teamEnabled": false,
+    "defaultTeam": ["assistant", "analyst", "coder"],
+    "synthesisStrategy": "weighted",
+    "maxConcurrent": 3,
+    "personalityPersistence": true
+  },
+
+  "voice": {
+    "_comment": "Web Speech API settings",
+    "enabled": true,
+    "language": "en-US",
+    "continuous": false,
+    "autoSend": true,
+    "confidenceThreshold": 0.8,
+    "speechRate": 1.0,
+    "speechPitch": 1.0
+  },
+
+  "ui": {
+    "_comment": "User interface settings",
+    "theme": "dark",
+    "language": "en",
+    "messagesPerPage": 50,
+    "showTimestamps": true,
+    "showModelBadge": true,
+    "animationsEnabled": true
+  },
+
+  "storage": {
+    "_comment": "Data storage and retention",
+    "autoMigrate": true,
+    "maxChatHistory": 100,
+    "maxMessagesPerChat": 1000,
+    "eventLogRetention": 30,
+    "rlhfEnabled": true
+  },
+
+  "security": {
+    "_comment": "Security settings - API keys go server-side!",
+    "apiKeyStorage": "localStorage",
+    "sessionTimeout": 86400000,
+    "csrfEnabled": true
+  }
+}
