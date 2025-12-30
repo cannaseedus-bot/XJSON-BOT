@@ -1,0 +1,391 @@
+{
+  "@id": "asx://fold/SRP_PACK_v1",
+  "@type": "asx.fold.pack",
+  "@version": "1.0.0",
+  "@status": "frozen",
+  "@title": "SRP_PACK_v1 — System Runtime Preprocessor (ASX-R v1 locked)",
+  "@locks_into": [
+    { "@layer": "ASX-R", "@version": "1.x", "@binding": "srp.v1" }
+  ],
+
+  "srp_spec": {
+    "name": "SRP (System Runtime Preprocessor)",
+    "definition": [
+      "SRP is a deterministic, always-callable runtime plane that consumes events, advances a tick, collapses lawful deltas, and emits projections.",
+      "SRP replaces line-by-line scripting with state-transition law. Execution is fold-native, schema-validated, replay-verifiable, and projection-based."
+    ],
+    "kernel_phases": ["submit", "tick", "collapse", "project", "verify"],
+    "determinism_law": {
+      "ordering": [
+        "events sorted by (ts, id)",
+        "directives sorted by directive.order then id",
+        "delta ops applied in stable order"
+      ],
+      "no_eval": true,
+      "no_time_reads": true,
+      "no_rng": true
+    }
+  },
+
+  "schemas": {
+    "asx://schema/srp.class.v1": {
+      "$schema": "xjson://schema/draft/2020-12",
+      "$id": "asx://schema/srp.class.v1",
+      "title": "SRP Class v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@id", "@type", "@version", "name", "state", "directives"],
+      "properties": {
+        "@id": { "type": "string", "pattern": "^asx://.*" },
+        "@type": { "const": "srp.class.v1" },
+        "@version": { "type": "string" },
+        "@status": { "type": "string" },
+        "name": { "type": "string" },
+        "state": { "type": "object" },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path"],
+            "properties": {
+              "path": { "type": "string" },
+              "enum": { "type": "array", "items": { "type": ["string", "number", "boolean", "null"] } },
+              "type": { "type": "string" }
+            }
+          }
+        },
+        "directives": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "asx://schema/srp.directive.v1" }
+        }
+      }
+    },
+
+    "asx://schema/srp.event.v1": {
+      "$schema": "xjson://schema/draft/2020-12",
+      "$id": "asx://schema/srp.event.v1",
+      "title": "SRP Event v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@type", "id", "kind", "ts", "class_id", "payload"],
+      "properties": {
+        "@type": { "const": "srp.event.v1" },
+        "id": { "type": "string" },
+        "kind": { "type": "string", "enum": ["submit", "tick", "system"] },
+        "ts": { "type": "integer" },
+        "class_id": { "type": "string", "pattern": "^asx://.*" },
+        "payload": { "type": "object" },
+        "sig": { "type": "string" }
+      }
+    },
+
+    "asx://schema/srp.directive.v1": {
+      "$schema": "xjson://schema/draft/2020-12",
+      "$id": "asx://schema/srp.directive.v1",
+      "title": "SRP Directive v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when"],
+      "properties": {
+        "id": { "type": "string" },
+        "order": { "type": "integer", "default": 0 },
+        "when": {
+          "description": "XCFE-compatible boolean expression (pure; refs only).",
+          "type": "object",
+          "minProperties": 1
+        },
+        "emit_delta": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "set": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": [{ "type": "string" }, {}]
+              }
+            },
+            "ops": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "items": [{ "type": "string" }, {}]
+              }
+            }
+          }
+        },
+        "emit_projection": { "$ref": "asx://schema/srp.projection.v1" }
+      }
+    },
+
+    "asx://schema/srp.delta.v1": {
+      "$schema": "xjson://schema/draft/2020-12",
+      "$id": "asx://schema/srp.delta.v1",
+      "title": "SRP Delta v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@type", "id", "from_event", "ops"],
+      "properties": {
+        "@type": { "const": "srp.delta.v1" },
+        "id": { "type": "string" },
+        "from_event": { "type": "string" },
+        "ops": {
+          "description": "Deterministic ops: [op, path, value] (e.g., ['set','state.x',123])",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": [{ "type": "string" }, { "type": "string" }, {}]
+          }
+        }
+      }
+    },
+
+    "asx://schema/srp.projection.v1": {
+      "$schema": "xjson://schema/draft/2020-12",
+      "$id": "asx://schema/srp.projection.v1",
+      "title": "SRP Projection v1",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["@type", "id", "class_id", "view"],
+      "properties": {
+        "@type": { "const": "srp.projection.v1" },
+        "id": { "type": "string" },
+        "class_id": { "type": "string", "pattern": "^asx://.*" },
+        "view": { "type": "string" },
+        "css_vars": { "type": "object", "additionalProperties": { "type": ["string", "number", "boolean", "null"] } },
+        "dom": { "type": "object" },
+        "mesh_hooks": { "type": "object" },
+        "gpu_svg3d": { "type": "object" }
+      }
+    }
+  },
+
+  "formal_bindings": {
+    "SRP↔XCFE": {
+      "binding_id": "asx://binding/srp.xcfe.v1",
+      "law": [
+        "directive.when is an XCFE-pure predicate (no side effects).",
+        "directive.emit_delta and directive.emit_projection correspond to XCFE @then actions.",
+        "Multiple matching directives collapse in stable order (order,id).",
+        "SRP never executes arbitrary code; it evaluates XCFE expressions over class.state only."
+      ],
+      "xcfe_min_ops": ["@eq", "@ne", "@and", "@or", "@not", "@ref"]
+    },
+
+    "SRP→CSS_atomic_projection_compiler": {
+      "binding_id": "asx://binding/srp.css_projection.v1",
+      "law": [
+        "projection.css_vars compile to :root CSS variables (or scoped host vars).",
+        "projection.view compiles to a single root class toggle: .asx-view-{view}.",
+        "projection.dom.blocks compile to atomic block state classes (e.g., .asx-active).",
+        "Compiler is pure: same projection => identical CSS mutations."
+      ],
+      "outputs": ["css_var_patch", "class_toggle_patch"]
+    },
+
+    "SRP→MeshChain_execution_hooks": {
+      "binding_id": "asx://binding/srp.meshchain.v1",
+      "law": [
+        "projection.mesh_hooks may emit MeshChain envelopes (intent only).",
+        "Actual contract execution is delegated to MeshChain runtime; SRP only signs/queues.",
+        "All mesh hook emissions are included in the replay hash chain."
+      ],
+      "hook_shapes": ["mesh.invoke", "mesh.preview", "mesh.queue"]
+    },
+
+    "SRP→GPU/SVG-3D_runtime_bridge": {
+      "binding_id": "asx://binding/srp.gpu_svg3d.v1",
+      "law": [
+        "projection.gpu_svg3d is forwarded to ASXR-GPU (WebGL/WebGPU) or SVG-3D engines.",
+        "Bridge is declarative: scene ops are data, not code.",
+        "GPU bridge emissions are included in the replay hash chain."
+      ]
+    }
+  },
+
+  "demo_class": {
+    "@id": "asx://srp/demo.class.v1",
+    "@type": "srp.class.v1",
+    "@version": "1.0.0",
+    "@status": "frozen",
+    "name": "demo.toggle_active",
+    "state": { "status": "inactive" },
+    "invariants": [
+      { "path": "state.status", "enum": ["inactive", "active"] }
+    ],
+    "directives": [
+      {
+        "id": "d1",
+        "order": 0,
+        "when": { "@eq": [{ "@ref": "state.status" }, "inactive"] },
+        "emit_delta": { "set": [["state.status", "active"]] }
+      },
+      {
+        "id": "d2",
+        "order": 1,
+        "when": { "@eq": [{ "@ref": "state.status" }, "active"] },
+        "emit_projection": {
+          "@type": "srp.projection.v1",
+          "id": "p_demo_active",
+          "class_id": "asx://srp/demo.class.v1",
+          "view": "active",
+          "css_vars": { "--asx-view": "active" },
+          "dom": { "blocks": [{ "type": "card", "state": "active" }] }
+        }
+      }
+    ]
+  },
+
+  "replay_verifier_v1": {
+    "@id": "asx://srp/replay_verifier.v1",
+    "hash": "sha256",
+    "canonicalization": "json:sort_keys,separators(',',':')",
+    "chain_rule": "H0 = '00..00'(64 hex); Hn = sha256(H(n-1) + '|' + canon(obj_n))",
+    "objects_in_chain": ["srp.event.v1", "srp.delta.v1", "srp.projection.v1"],
+    "verify_outputs": ["ok:boolean", "last_hash:hex", "errors:[{code,msg,at}]"]
+  },
+
+  "rest_mesh_routes": {
+    "shape_id": "asx://rest_mesh/srp.v1",
+    "routes": [
+      { "method": "POST", "path": "/srp/submit", "in": "srp.event.v1", "out": "srp.submit.result.v1" },
+      { "method": "POST", "path": "/srp/tick", "in": "srp.tick.request.v1", "out": "srp.tick.result.v1" },
+      { "method": "POST", "path": "/srp/project", "in": "srp.project.request.v1", "out": "srp.projection.v1" },
+      { "method": "POST", "path": "/srp/verify", "in": "srp.verify.request.v1", "out": "srp.verify.result.v1" }
+    ]
+  },
+
+  "conformance_vectors": {
+    "@id": "asx://srp/conformance_suite.v1",
+    "@type": "srp.conformance.suite.v1",
+    "tests": [
+      {
+        "id": "SRP_OK_TOGGLE_ACTIVE",
+        "about": "submit→tick→collapse→project produces deterministic hash chain",
+        "h0": "0000000000000000000000000000000000000000000000000000000000000000",
+        "chain": [
+          {
+            "@type": "srp.event.v1",
+            "id": "e1",
+            "kind": "submit",
+            "ts": 1890000012300,
+            "class_id": "asx://srp/demo.class.v1",
+            "payload": { "intent": "click" }
+          },
+          {
+            "@type": "srp.delta.v1",
+            "id": "x1",
+            "from_event": "e1",
+            "ops": [["set", "state.status", "active"]]
+          },
+          {
+            "@type": "srp.projection.v1",
+            "id": "p1",
+            "class_id": "asx://srp/demo.class.v1",
+            "view": "active",
+            "css_vars": { "--asx-view": "active" },
+            "dom": { "blocks": [{ "type": "card", "state": "active" }] }
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "last_hash": "789959ba5bf7ecb7e2f901e8ac9bfe20d7078bed8a5b07535e8d9cf89405c3a5"
+        }
+      },
+
+      {
+        "id": "SRP_FAIL_INVARIANT",
+        "about": "delta violates invariant enum (state.status must be inactive|active)",
+        "h0": "0000000000000000000000000000000000000000000000000000000000000000",
+        "chain": [
+          {
+            "@type": "srp.event.v1",
+            "id": "e_bad",
+            "kind": "submit",
+            "ts": 1890000012310,
+            "class_id": "asx://srp/demo.class.v1",
+            "payload": { "intent": "force_bad_state" }
+          },
+          {
+            "@type": "srp.delta.v1",
+            "id": "x_bad",
+            "from_event": "e_bad",
+            "ops": [["set", "state.status", "banana"]]
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "errors_any": ["SRP_INVARIANT_VIOLATION"]
+        }
+      },
+
+      {
+        "id": "SRP_FAIL_HASH_MISMATCH",
+        "about": "projection altered => verifier produces different hash than claimed",
+        "h0": "0000000000000000000000000000000000000000000000000000000000000000",
+        "chain": [
+          {
+            "@type": "srp.event.v1",
+            "id": "e1",
+            "kind": "submit",
+            "ts": 1890000012300,
+            "class_id": "asx://srp/demo.class.v1",
+            "payload": { "intent": "click" }
+          },
+          {
+            "@type": "srp.delta.v1",
+            "id": "x1",
+            "from_event": "e1",
+            "ops": [["set", "state.status", "active"]]
+          },
+          {
+            "@type": "srp.projection.v1",
+            "id": "p1",
+            "class_id": "asx://srp/demo.class.v1",
+            "view": "active",
+            "css_vars": { "--asx-view": "tampered" },
+            "dom": { "blocks": [{ "type": "card", "state": "active" }] }
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "last_hash_not": "789959ba5bf7ecb7e2f901e8ac9bfe20d7078bed8a5b07535e8d9cf89405c3a5"
+        }
+      }
+    ],
+
+    "runner_requirements": [
+      "Schema-validate each chain object against its schema",
+      "Enforce SRP determinism ordering rules",
+      "Enforce class invariants during collapse (emit SRP_INVARIANT_VIOLATION)",
+      "Verify hash chain with replay_verifier_v1"
+    ],
+
+    "error_codes": [
+      "SRP_SCHEMA_INVALID",
+      "SRP_INVARIANT_VIOLATION",
+      "SRP_VERIFY_BAD_TYPE",
+      "SRP_VERIFY_HASH_MISMATCH"
+    ]
+  },
+
+  "tiny_kernel_skeleton": {
+    "three_file_rule": ["index.html", "manifest.json", "sw.js"],
+    "flow": "submit → tick → collapse → project",
+    "note": "This is the minimal SRP loop. Use REST Mesh routes for all IO.",
+    "pseudo": [
+      "POST /srp/submit (event) => store event in manifest fold buffer (or IDB via kernel)",
+      "POST /srp/tick => load buffered events, sort, evaluate directives, emit delta",
+      "collapse => apply delta ops to class.state, enforce invariants",
+      "project => emit srp.projection.v1 (css vars + dom blocks + optional mesh/gpu hooks)",
+      "verify => hash chain for replay + audit"
+    ]
+  }
+}
