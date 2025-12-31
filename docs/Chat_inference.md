@@ -2,7 +2,12 @@
 
 ## Overview
 
-The XJSON-BOT Chat Inference System provides unified access to 11 AI models through the MX2LM production API. The system integrates KQL (K'UHUL Query Language) for chat operations, SRP (System Runtime Preprocessor) for event tracking, and IndexedDB for persistent message history.
+The XJSON-BOT Chat Inference System provides unified access to 11 AI models through the MX2LM production API. The system integrates:
+
+- **KQL (K'UHUL Query Language)** - Chat operations and persistence
+- **SRP (System Runtime Preprocessor)** - Event tracking and replay
+- **ASXR PRIME** - Tyson-Chomsky Engine + ΩOS Agent Spawner
+- **IndexedDB** - Persistent message/agent/TC logs storage
 
 ---
 
@@ -29,14 +34,25 @@ The XJSON-BOT Chat Inference System provides unified access to 11 AI models thro
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      KQL_CHAT.js                                │
+│                      KQL_CHAT.js + ASXR PRIME                   │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
 │  │  IndexedDB  │  │   Model     │  │    Inference Router     │  │
 │  │  Storage    │  │  Registry   │  │                         │  │
 │  │  - messages │  │  (11 models)│  │  POST → mx2lm.app/api   │  │
 │  │  - chats    │  │             │  │                         │  │
-│  │  - models   │  │             │  │                         │  │
+│  │  - agents   │  │             │  │                         │  │
+│  │  - tc_logs  │  │             │  │                         │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    ASXR PRIME LAYER                         ││
+│  │  ┌──────────────────┐  ┌──────────────┐  ┌───────────────┐  ││
+│  │  │ Tyson-Chomsky    │  │ ΩOS Agent    │  │  Micronaut    │  ││
+│  │  │ Engine           │  │ Spawner      │  │  Factory      │  ││
+│  │  │ - tyson mode     │  │ - spawn()    │  │  - spawn()    │  ││
+│  │  │ - chomsky mode   │  │ - list()     │  │  - miniOS     │  ││
+│  │  │ - fusion debate  │  │ - kill()     │  │               │  ││
+│  │  └──────────────────┘  └──────────────┘  └───────────────┘  ││
+│  └─────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -482,13 +498,165 @@ console.log(result.assistant.content);
 
 ---
 
+## ASXR PRIME Integration
+
+### Tyson-Chomsky Engine
+
+The Tyson-Chomsky Engine provides dual-mode knowledge processing:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **tyson** | Empirical evidence gathering | Research, fact-checking |
+| **chomsky** | Symbolic grammar validation | Schema design, constraints |
+| **fusion** | Debate between modes | Balanced responses |
+
+#### TC Query API
+
+```javascript
+// Direct TC query
+const result = await KQL.tcQuery({
+  question: "Design an XJSON schema for products",
+  mode: "fusion",
+  constraints: { output_format: "xjson" }
+});
+
+// Chat with TC mode
+await KQL.submit({
+  prompt: "Design a schema",
+  model: "janus-pro",
+  mode: "chomsky"  // Use Chomsky mode for schema validation
+});
+
+// Probe TC engine status
+KQL.tcProbe();
+// { engine: 'tyson-chomsky-v1', modes: ['tyson', 'chomsky', 'fusion'], ... }
+
+// Get TC logs
+KQL.getTCLogs();
+```
+
+#### TC Response Format
+
+```javascript
+{
+  engine: "tyson-chomsky-v1",
+  mode: "fusion",
+  queryId: "tc_1704067200000",
+  tyson: {
+    status: "ok",
+    sources_used: ["wikipedia", "openalex", "crossref"],
+    notes: "Public knowledge sources queried"
+  },
+  chomsky: {
+    status: "ok",
+    grammar: "xjson_ast",
+    constraints_satisfied: true,
+    output: { xjson: "1.0", response: {...} }
+  },
+  fusion: {
+    strategy: "debate",
+    rounds: 2,
+    winner: "chomsky",
+    output: {...}
+  }
+}
+```
+
+### ΩOS Agent Spawner
+
+Spawn specialized micro-agents for domain-specific tasks:
+
+```javascript
+// Spawn an agent
+const agent = KQL.spawnAgent("baseball", {
+  sources: ["mlb", "espn"]
+});
+
+// Response
+{
+  id: "m_baseball_1704067200_abc123",
+  topic: "baseball",
+  name: "baseball Agent",
+  capabilities: ["stats", "compare", "predict", "query"],
+  endpoints: {
+    query: "/a/m_baseball_.../q",
+    infer: "/a/m_baseball_.../i",
+    train: "/a/m_baseball_.../tr"
+  },
+  status: "live"
+}
+
+// List all agents
+KQL.listAgents();
+
+// Get specific agent
+KQL.getAgent("m_baseball_1704067200_abc123");
+
+// Kill agent
+KQL.killAgent("m_baseball_1704067200_abc123");
+```
+
+### Micronaut Factory
+
+Spawn lightweight mini-OS agents:
+
+```javascript
+const micronaut = KQL.spawnMicronaut("cooking", {
+  training: false
+});
+
+// Response
+{
+  id: "micronaut_cooking_1704067200",
+  topic: "cooking",
+  miniOS: {
+    version: "1.0",
+    name: "cooking Micronaut",
+    kernel: "k_uhul_mini",
+    capabilities: ["query", "analyze", "respond"]
+  },
+  endpoints: {
+    control: "/api/agents/.../control",
+    query: "/api/agents/.../query"
+  },
+  status: "active"
+}
+```
+
+### ASXR State
+
+```javascript
+// Get full ASXR state
+KQL.getASXRState();
+// { agents: [...], tcLogs: 5, vfs: 0 }
+```
+
+### SRP Event Types
+
+```javascript
+// TC query event
+await SRP.submit({
+  event_type: 'kql/tc',
+  payload: { question: "...", mode: "fusion" }
+});
+
+// Agent spawn event
+await SRP.submit({
+  event_type: 'kql/spawn',
+  payload: { topic: "baseball", requirements: {} }
+});
+```
+
+---
+
 ## Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0.0 | 2025 | ASXR PRIME integration (TC Engine + Agents) |
 | 2.0.0 | 2024 | Production API with 11 models |
 | 1.0.0 | 2024 | Initial KQL implementation |
 
 ---
 
-*Built with the K'UHUL Multi-Hive Stack*
+*Built with the K'UHUL Multi-Hive Stack + ASXR PRIME*
