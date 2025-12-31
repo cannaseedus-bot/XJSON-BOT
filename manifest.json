@@ -40,6 +40,17 @@
       "quantum_models": 6
     },
 
+    "khl": {
+      "@id": "asx://khl/host.v1",
+      "host": "core/kuhul-host.js",
+      "converter": "python/py2khl.py",
+      "schema": "schemas/khl.program.schema.json",
+      "runner": "ui/khl-runner.html",
+      "description": "Python → KHL Intent Collapser + Browser Execution Host",
+      "supported_phases": ["@Pop", "@Wo", "@Sek", "@Collapse"],
+      "intrinsics": ["fs", "hash", "cc", "text", "mime", "path", "emit", "time", "json"]
+    },
+
     "tapes": {
       "system": [
         { "id": "system_boot", "name": "System Boot", "icon": "⚡" },
@@ -122,6 +133,13 @@
       "description": "3D weight visualizer",
       "url": "/ui/weights-visualizer.html",
       "icons": [{ "src": "assets/icons/viz.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "KHL Runner",
+      "short_name": "KHL",
+      "description": "K'UHUL program runner",
+      "url": "/ui/khl-runner.html",
+      "icons": [{ "src": "assets/icons/khl.png", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
@@ -154,6 +172,12 @@
       "accept": {
         "application/octet-stream": [".safetensors"],
         "application/json": [".json"]
+      }
+    },
+    {
+      "action": "/ui/khl-runner.html",
+      "accept": {
+        "text/x-kuhul": [".khl"]
       }
     }
   ],

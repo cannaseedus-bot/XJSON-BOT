@@ -1,0 +1,307 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "asx://schemas/khl.program.v1",
+  "title": "KHL Program Schema",
+  "description": "JSON AST representation of a K'UHUL program with XCFE phases",
+  "type": "object",
+  "required": ["@type", "@version", "phases"],
+  "properties": {
+    "@type": {
+      "type": "string",
+      "const": "khl-program",
+      "description": "Program type identifier"
+    },
+    "@id": {
+      "type": "string",
+      "pattern": "^[a-z_][a-z0-9_]*$",
+      "description": "Program identifier"
+    },
+    "@version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable program name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Program description"
+        },
+        "author": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "created": {
+          "type": "integer",
+          "description": "Unix timestamp"
+        },
+        "source_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{16,64}$",
+          "description": "SHA-256 hash of source"
+        },
+        "py_source": {
+          "type": "string",
+          "description": "Original Python source file (if converted)"
+        }
+      }
+    },
+    "phases": {
+      "type": "object",
+      "required": ["Pop", "Wo", "Sek", "Collapse"],
+      "properties": {
+        "Pop": {
+          "$ref": "#/definitions/phase",
+          "description": "IO/FS access phase - populate data"
+        },
+        "Wo": {
+          "$ref": "#/definitions/phase",
+          "description": "State declaration phase - work/transform"
+        },
+        "Sek": {
+          "$ref": "#/definitions/phase",
+          "description": "Ordered execution phase - seek/iterate"
+        },
+        "Collapse": {
+          "$ref": "#/definitions/phase",
+          "description": "Emit final output phase - collapse state"
+        }
+      },
+      "additionalProperties": false
+    },
+    "intrinsics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["fs", "hash", "cc", "text", "mime", "path", "emit", "time", "json"]
+      },
+      "description": "Required host intrinsics"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conversion errors (if any)"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conversion warnings"
+    }
+  },
+  "definitions": {
+    "phase": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/statement"
+      }
+    },
+    "statement": {
+      "type": "object",
+      "required": ["kind", "khl"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["io", "state", "loop", "condition", "emit", "expr", "function", "call"],
+          "description": "Statement classification"
+        },
+        "khl": {
+          "type": "string",
+          "description": "KHL source code"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Original source line number"
+        },
+        "ast": {
+          "$ref": "#/definitions/ast_node",
+          "description": "Optional parsed AST"
+        }
+      }
+    },
+    "ast_node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "let",
+            "assign",
+            "aug_assign",
+            "foreach",
+            "while",
+            "if",
+            "call",
+            "call_block",
+            "method_call",
+            "expr",
+            "return"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "Variable/function name"
+        },
+        "target": {
+          "$ref": "#/definitions/expr",
+          "description": "Assignment target"
+        },
+        "value": {
+          "$ref": "#/definitions/expr",
+          "description": "Expression value"
+        },
+        "iter": {
+          "$ref": "#/definitions/expr",
+          "description": "Iterator expression (foreach)"
+        },
+        "test": {
+          "$ref": "#/definitions/expr",
+          "description": "Condition expression (if/while)"
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ast_node"
+          }
+        },
+        "then": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ast_node"
+          }
+        },
+        "else": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ast_node"
+          }
+        },
+        "func": {
+          "type": "string",
+          "description": "Function path"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/expr"
+          }
+        },
+        "op": {
+          "type": "string",
+          "enum": ["+", "-", "*", "/", "%"],
+          "description": "Augmented assignment operator"
+        }
+      }
+    },
+    "expr": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "null",
+            "array",
+            "object",
+            "identifier",
+            "member",
+            "binary",
+            "call"
+          ]
+        },
+        "value": {
+          "description": "Literal value"
+        },
+        "name": {
+          "type": "string",
+          "description": "Identifier name"
+        },
+        "path": {
+          "type": "string",
+          "description": "Member access path"
+        },
+        "op": {
+          "type": "string",
+          "description": "Binary operator"
+        },
+        "left": {
+          "$ref": "#/definitions/expr"
+        },
+        "right": {
+          "$ref": "#/definitions/expr"
+        },
+        "func": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/expr"
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "@type": "khl-program",
+      "@id": "ngram_bundle_builder",
+      "@version": "1.0.0",
+      "meta": {
+        "name": "NGRAM Bundle Builder",
+        "description": "Build compressed file bundles with SCXQ2"
+      },
+      "phases": {
+        "Pop": [
+          {
+            "kind": "io",
+            "khl": "fs.scan { root: \"/workspace\", recursive: true }",
+            "line": 1
+          }
+        ],
+        "Wo": [
+          {
+            "kind": "state",
+            "khl": "let stats = { files: 0, raw_bytes: 0, cmp_bytes: 0 }",
+            "line": 5
+          },
+          {
+            "kind": "state",
+            "khl": "let cc.mode = \"SCXQ2\"",
+            "line": 6
+          }
+        ],
+        "Sek": [
+          {
+            "kind": "loop",
+            "khl": "foreach fs.file as f { ... }",
+            "line": 10
+          }
+        ],
+        "Collapse": [
+          {
+            "kind": "emit",
+            "khl": "emit.json({ id: bundle.id, meta: stats, files: files })",
+            "line": 50
+          }
+        ]
+      },
+      "intrinsics": ["fs", "hash", "cc", "text", "mime", "emit"]
+    }
+  ]
+}
