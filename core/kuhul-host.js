@@ -769,18 +769,394 @@
     };
   }
 
+  // ============================================================
+  // PROVIDER CONFIGURATION
+  // ============================================================
+
+  const PROVIDERS = {
+    'mx2lm': {
+      type: 'api',
+      baseUrl: 'https://mx2lm.app/api.php',
+      models: ['janus-pro', 'janus-flow', 'mx2-inference', 'kuhul-quantum', 'cline-agent']
+    },
+    'transformers.js': {
+      type: 'browser',
+      models: ['qwen-0.5b', 'qwen-1.5b', 'phi-2', 'tinyllama', 'smollm']
+    },
+    'ollama': {
+      type: 'local',
+      baseUrl: 'http://localhost:11434',
+      models: ['llama3', 'mistral', 'codellama', 'qwen2']
+    },
+    'openai': {
+      type: 'api',
+      baseUrl: 'https://api.openai.com/v1',
+      models: ['gpt-4', 'gpt-4o', 'gpt-3.5-turbo']
+    },
+    'deepseek': {
+      type: 'api',
+      baseUrl: 'https://api.deepseek.com',
+      models: ['deepseek-r1', 'deepseek-coder']
+    }
+  };
+
+  // Model to provider mapping
+  const MODEL_PROVIDER_MAP = {
+    // MX2LM models
+    'janus-pro': 'mx2lm',
+    'janus-flow': 'mx2lm',
+    'mx2-inference': 'mx2lm',
+    'kuhul-quantum': 'mx2lm',
+    'cline-agent': 'mx2lm',
+
+    // Browser-native (Transformers.js)
+    'qwen-0.5b': 'transformers.js',
+    'qwen-1.5b': 'transformers.js',
+    'qwen-asx': 'transformers.js',
+    'phi-2': 'transformers.js',
+    'tinyllama': 'transformers.js',
+    'smollm': 'transformers.js',
+
+    // Ollama (local)
+    'llama3': 'ollama',
+    'mistral': 'ollama',
+    'codellama': 'ollama',
+    'qwen2': 'ollama',
+
+    // OpenAI
+    'gpt-4': 'openai',
+    'gpt-4o': 'openai',
+    'gpt-3.5-turbo': 'openai',
+
+    // DeepSeek
+    'deepseek-r1': 'deepseek',
+    'deepseek-coder': 'deepseek'
+  };
+
   /**
-   * Inference intrinsics (connects to Python/API backend)
+   * Get provider for a model
+   */
+  function getProviderForModel(modelId) {
+    const normalized = (modelId || '').toLowerCase();
+
+    // Direct match
+    if (MODEL_PROVIDER_MAP[normalized]) {
+      return MODEL_PROVIDER_MAP[normalized];
+    }
+
+    // Partial match
+    for (const [key, provider] of Object.entries(MODEL_PROVIDER_MAP)) {
+      if (normalized.includes(key) || key.includes(normalized)) {
+        return provider;
+      }
+    }
+
+    // Default to MX2LM
+    return 'mx2lm';
+  }
+
+  // ============================================================
+  // TRANSFORMERS.JS INTEGRATION
+  // ============================================================
+
+  // Transformers.js model cache
+  const TransformersCache = {
+    pipelines: new Map(),
+    loading: new Map(),
+
+    async loadPipeline(modelId, task = 'text-generation') {
+      const cacheKey = `${task}:${modelId}`;
+
+      // Return cached pipeline
+      if (this.pipelines.has(cacheKey)) {
+        return this.pipelines.get(cacheKey);
+      }
+
+      // Wait if already loading
+      if (this.loading.has(cacheKey)) {
+        return this.loading.get(cacheKey);
+      }
+
+      // Load new pipeline
+      const loadPromise = this._loadPipeline(modelId, task);
+      this.loading.set(cacheKey, loadPromise);
+
+      try {
+        const pipeline = await loadPromise;
+        this.pipelines.set(cacheKey, pipeline);
+        this.loading.delete(cacheKey);
+        return pipeline;
+      } catch (err) {
+        this.loading.delete(cacheKey);
+        throw err;
+      }
+    },
+
+    async _loadPipeline(modelId, task) {
+      // Check if Transformers.js is available
+      if (typeof window === 'undefined' || !window.Transformers) {
+        // Try to dynamically import
+        try {
+          const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.0');
+          return await pipeline(task, this.getHFModelId(modelId), {
+            device: 'webgpu',
+            progress_callback: (progress) => {
+              console.log(`[Transformers.js] Loading ${modelId}: ${Math.round(progress.progress || 0)}%`);
+            }
+          });
+        } catch (err) {
+          console.error('[Transformers.js] Failed to load:', err);
+          throw new Error(`Transformers.js not available: ${err.message}`);
+        }
+      }
+
+      // Use global Transformers
+      return await window.Transformers.pipeline(task, this.getHFModelId(modelId));
+    },
+
+    // Map local model ID to HuggingFace model ID
+    getHFModelId(modelId) {
+      const HF_MODEL_MAP = {
+        'qwen-0.5b': 'Xenova/Qwen2.5-0.5B-Instruct',
+        'qwen-1.5b': 'Xenova/Qwen2.5-1.5B-Instruct',
+        'qwen-asx': 'Xenova/Qwen2.5-0.5B-Instruct',
+        'phi-2': 'Xenova/phi-2',
+        'tinyllama': 'Xenova/TinyLlama-1.1B-Chat-v1.0',
+        'smollm': 'Xenova/SmolLM-135M-Instruct'
+      };
+
+      return HF_MODEL_MAP[modelId.toLowerCase()] || modelId;
+    },
+
+    async unload(modelId) {
+      const keysToDelete = [];
+      for (const key of this.pipelines.keys()) {
+        if (key.includes(modelId)) {
+          keysToDelete.push(key);
+        }
+      }
+      for (const key of keysToDelete) {
+        this.pipelines.delete(key);
+      }
+    }
+  };
+
+  /**
+   * Inference intrinsics with multi-provider routing
    */
   function HostInfer(context) {
-    // Get API endpoint from context or default
     const apiBase = context.apiBase || 'https://mx2lm.app/api.php';
 
     return {
       /**
-       * Text generation (chat, completion)
+       * Text generation with automatic provider routing
        */
       async generate(args) {
+        const modelId = args.model || 'janus-pro';
+        const provider = args.provider || getProviderForModel(modelId);
+
+        console.log(`[Infer] Model: ${modelId}, Provider: ${provider}`);
+
+        switch (provider) {
+          case 'transformers.js':
+            return this._generateTransformers(args);
+
+          case 'ollama':
+            return this._generateOllama(args);
+
+          case 'openai':
+            return this._generateOpenAI(args);
+
+          case 'deepseek':
+            return this._generateDeepSeek(args);
+
+          case 'mx2lm':
+          default:
+            return this._generateMX2LM(args);
+        }
+      },
+
+      /**
+       * Generate with Transformers.js (browser-native)
+       */
+      async _generateTransformers(args) {
+        try {
+          const pipeline = await TransformersCache.loadPipeline(args.model);
+
+          // Build prompt with correct template
+          const prompt = typeof args.prompt === 'string'
+            ? args.prompt
+            : HostChatPrompt().build({ model: args.model, ...args.prompt });
+
+          const output = await pipeline(prompt, {
+            max_new_tokens: args.max_tokens || 256,
+            temperature: args.temperature || 0.7,
+            top_p: args.top_p || 0.95,
+            do_sample: (args.temperature || 0.7) > 0
+          });
+
+          const text = output[0]?.generated_text || '';
+          // Extract only the new text (remove prompt)
+          const newText = text.slice(prompt.length).trim();
+
+          return {
+            text: newText,
+            tokens: newText.split(/\s+/).length,
+            model: args.model,
+            provider: 'transformers.js',
+            device: 'browser'
+          };
+        } catch (err) {
+          console.error('[Transformers.js] Error:', err);
+          return {
+            text: `[Browser inference error: ${err.message}]`,
+            tokens: 0,
+            error: err.message,
+            provider: 'transformers.js'
+          };
+        }
+      },
+
+      /**
+       * Generate with Ollama (local)
+       */
+      async _generateOllama(args) {
+        const endpoint = context.ollamaEndpoint || 'http://localhost:11434/api/generate';
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: args.model,
+              prompt: args.prompt,
+              options: {
+                num_predict: args.max_tokens || 256,
+                temperature: args.temperature || 0.7,
+                top_p: args.top_p || 0.95
+              },
+              stream: false
+            })
+          });
+
+          const data = await res.json();
+
+          return {
+            text: data.response || '',
+            tokens: data.eval_count || 0,
+            model: args.model,
+            provider: 'ollama'
+          };
+        } catch (err) {
+          console.error('[Ollama] Error:', err);
+          return {
+            text: `[Ollama error: ${err.message}]`,
+            tokens: 0,
+            error: err.message,
+            provider: 'ollama'
+          };
+        }
+      },
+
+      /**
+       * Generate with OpenAI API
+       */
+      async _generateOpenAI(args) {
+        const endpoint = 'https://api.openai.com/v1/chat/completions';
+        const apiKey = context.openaiApiKey || args.apiKey;
+
+        if (!apiKey) {
+          return { text: '[OpenAI API key required]', tokens: 0, error: 'No API key' };
+        }
+
+        try {
+          // Build messages array
+          const messages = Array.isArray(args.prompt)
+            ? args.prompt
+            : HostChatPrompt().build({ model: 'openai', ...args });
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: args.model || 'gpt-3.5-turbo',
+              messages,
+              max_tokens: args.max_tokens || 256,
+              temperature: args.temperature || 0.7
+            })
+          });
+
+          const data = await res.json();
+
+          return {
+            text: data.choices?.[0]?.message?.content || '',
+            tokens: data.usage?.total_tokens || 0,
+            model: args.model,
+            provider: 'openai'
+          };
+        } catch (err) {
+          console.error('[OpenAI] Error:', err);
+          return {
+            text: `[OpenAI error: ${err.message}]`,
+            tokens: 0,
+            error: err.message,
+            provider: 'openai'
+          };
+        }
+      },
+
+      /**
+       * Generate with DeepSeek API
+       */
+      async _generateDeepSeek(args) {
+        const endpoint = 'https://api.deepseek.com/v1/chat/completions';
+        const apiKey = context.deepseekApiKey || args.apiKey;
+
+        if (!apiKey) {
+          // Fall back to MX2LM which proxies DeepSeek
+          return this._generateMX2LM(args);
+        }
+
+        try {
+          const messages = [
+            { role: 'user', content: args.prompt }
+          ];
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: args.model || 'deepseek-chat',
+              messages,
+              max_tokens: args.max_tokens || 256,
+              temperature: args.temperature || 0.7
+            })
+          });
+
+          const data = await res.json();
+
+          return {
+            text: data.choices?.[0]?.message?.content || '',
+            tokens: data.usage?.total_tokens || 0,
+            model: args.model,
+            provider: 'deepseek'
+          };
+        } catch (err) {
+          console.error('[DeepSeek] Error:', err);
+          return this._generateMX2LM(args);  // Fallback
+        }
+      },
+
+      /**
+       * Generate with MX2LM API (default)
+       */
+      async _generateMX2LM(args) {
         const payload = {
           action: 'chat',
           model: args.model || 'janus-pro',
@@ -790,7 +1166,6 @@
           top_p: args.top_p || 0.95
         };
 
-        // Use custom endpoint if provided
         const endpoint = context.inferEndpoint || apiBase;
 
         try {
@@ -806,14 +1181,16 @@
             text: data.response || data.text || data.content || '',
             tokens: data.tokens || data.usage?.total_tokens || 0,
             model: args.model,
+            provider: 'mx2lm',
             raw: data
           };
         } catch (err) {
-          console.error('Infer error:', err);
+          console.error('[MX2LM] Error:', err);
           return {
             text: `[Inference error: ${err.message}]`,
             tokens: 0,
-            error: err.message
+            error: err.message,
+            provider: 'mx2lm'
           };
         }
       },
@@ -941,55 +1318,243 @@
     };
   }
 
+  // ============================================================
+  // MODEL-SPECIFIC PROMPT TEMPLATES
+  // ============================================================
+
+  const PROMPT_TEMPLATES = {
+    // Qwen 2.5 family (including Qwen-ASX)
+    'qwen': {
+      system: (s) => `<|im_start|>system\n${s}<|im_end|>\n`,
+      user: (u) => `<|im_start|>user\n${u}<|im_end|>\n`,
+      assistant: (a) => a ? `<|im_start|>assistant\n${a}<|im_end|>\n` : `<|im_start|>assistant\n`,
+      stop: ['<|im_end|>', '<|endoftext|>']
+    },
+
+    // Llama 3 family
+    'llama3': {
+      system: (s) => `<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n${s}<|eot_id|>`,
+      user: (u) => `<|start_header_id|>user<|end_header_id|>\n\n${u}<|eot_id|>`,
+      assistant: (a) => a ? `<|start_header_id|>assistant<|end_header_id|>\n\n${a}<|eot_id|>` : `<|start_header_id|>assistant<|end_header_id|>\n\n`,
+      stop: ['<|eot_id|>', '<|end_of_text|>']
+    },
+
+    // Mistral / Mixtral
+    'mistral': {
+      system: (s) => `<s>[INST] ${s}\n\n`,
+      user: (u) => `[INST] ${u} [/INST]`,
+      assistant: (a) => a ? `${a}</s>` : '',
+      stop: ['</s>']
+    },
+
+    // DeepSeek family
+    'deepseek': {
+      system: (s) => `<|begin▁of▁sentence|>${s}\n\n`,
+      user: (u) => `User: ${u}\n\n`,
+      assistant: (a) => a ? `Assistant: ${a}<|end▁of▁sentence|>` : `Assistant: `,
+      stop: ['<|end▁of▁sentence|>', 'User:']
+    },
+
+    // DeepSeek R1 (reasoning model)
+    'deepseek-r1': {
+      system: (s) => `<|begin▁of▁sentence|>${s}\n\n`,
+      user: (u) => `User: ${u}\n\n`,
+      assistant: (a) => a ? `Assistant: <think>${a}</think><|end▁of▁sentence|>` : `Assistant: `,
+      stop: ['<|end▁of▁sentence|>', '</think>']
+    },
+
+    // Janus (MX2LM multimodal)
+    'janus': {
+      system: (s) => `[SYSTEM]\n${s}\n[/SYSTEM]\n`,
+      user: (u) => `[USER]\n${u}\n[/USER]\n`,
+      assistant: (a) => a ? `[ASSISTANT]\n${a}\n[/ASSISTANT]\n` : `[ASSISTANT]\n`,
+      stop: ['[/ASSISTANT]', '[USER]']
+    },
+
+    // ChatML (default fallback)
+    'chatml': {
+      system: (s) => `<|system|>\n${s}\n`,
+      user: (u) => `<|user|>\n${u}\n`,
+      assistant: (a) => a ? `<|assistant|>\n${a}\n` : `<|assistant|>\n`,
+      stop: ['<|user|>', '<|system|>']
+    },
+
+    // OpenAI-style (for API compatibility)
+    'openai': {
+      system: (s) => ({ role: 'system', content: s }),
+      user: (u) => ({ role: 'user', content: u }),
+      assistant: (a) => ({ role: 'assistant', content: a || '' }),
+      stop: [],
+      isMessages: true  // Returns message array, not string
+    }
+  };
+
+  // Model ID to template mapping
+  const MODEL_TEMPLATE_MAP = {
+    // Qwen family
+    'qwen': 'qwen',
+    'qwen2': 'qwen',
+    'qwen2.5': 'qwen',
+    'qwen-coder': 'qwen',
+    'qwen-asx': 'qwen',
+
+    // Llama family
+    'llama': 'llama3',
+    'llama3': 'llama3',
+    'llama-3': 'llama3',
+    'codellama': 'llama3',
+
+    // Mistral family
+    'mistral': 'mistral',
+    'mixtral': 'mistral',
+
+    // DeepSeek family
+    'deepseek': 'deepseek',
+    'deepseek-coder': 'deepseek',
+    'deepseek-r1': 'deepseek-r1',
+
+    // Janus (MX2LM)
+    'janus': 'janus',
+    'janus-pro': 'janus',
+    'janus-flow': 'janus',
+
+    // MX2LM special models
+    'mx2lm': 'janus',
+    'mx2-inference': 'janus',
+    'kuhul-quantum': 'janus',
+    'cline-agent': 'janus',
+
+    // OpenAI
+    'gpt': 'openai',
+    'gpt-4': 'openai',
+    'gpt-3.5': 'openai',
+    'chatgpt': 'openai'
+  };
+
   /**
-   * Chat prompt builder intrinsic
+   * Get template for a model
+   */
+  function getTemplateForModel(modelId) {
+    const normalizedId = (modelId || '').toLowerCase();
+
+    // Direct match
+    if (MODEL_TEMPLATE_MAP[normalizedId]) {
+      return PROMPT_TEMPLATES[MODEL_TEMPLATE_MAP[normalizedId]];
+    }
+
+    // Partial match
+    for (const [key, templateId] of Object.entries(MODEL_TEMPLATE_MAP)) {
+      if (normalizedId.includes(key)) {
+        return PROMPT_TEMPLATES[templateId];
+      }
+    }
+
+    // Default to ChatML
+    return PROMPT_TEMPLATES['chatml'];
+  }
+
+  /**
+   * Chat prompt builder intrinsic (model-aware)
    */
   function HostChatPrompt() {
     return {
       /**
        * Build structured prompt from history
+       * @param {object} args - { model, system, history, user }
        */
       build(args) {
-        const parts = [];
+        const template = getTemplateForModel(args.model);
 
-        // System prompt
-        if (args.system) {
-          parts.push(`<|system|>\n${args.system}\n`);
+        // OpenAI-style returns message array
+        if (template.isMessages) {
+          const messages = [];
+          if (args.system) messages.push(template.system(args.system));
+          if (args.history) {
+            for (const msg of args.history) {
+              if (msg.role === 'user') messages.push(template.user(msg.content));
+              else messages.push(template.assistant(msg.content));
+            }
+          }
+          if (args.user) messages.push(template.user(args.user));
+          return messages;
         }
 
-        // History
+        // String-based templates
+        const parts = [];
+
+        if (args.system) {
+          parts.push(template.system(args.system));
+        }
+
         if (args.history && args.history.length > 0) {
           for (const msg of args.history) {
-            const role = msg.role === 'user' ? 'user' : 'assistant';
-            parts.push(`<|${role}|>\n${msg.content}\n`);
+            if (msg.role === 'user') {
+              parts.push(template.user(msg.content));
+            } else {
+              parts.push(template.assistant(msg.content));
+            }
           }
         }
 
-        // Current user input
         if (args.user) {
-          parts.push(`<|user|>\n${args.user}\n`);
+          parts.push(template.user(args.user));
         }
 
-        // Assistant turn marker
-        parts.push('<|assistant|>\n');
+        // Add assistant turn marker
+        parts.push(template.assistant(''));
 
         return parts.join('');
       },
 
       /**
-       * Build vision prompt
+       * Build vision prompt (model-aware)
        */
       buildVision(args) {
-        const parts = [];
+        const template = getTemplateForModel(args.model);
 
-        if (args.system) {
-          parts.push(`<|system|>\n${args.system}\n`);
+        if (template.isMessages) {
+          const messages = [];
+          if (args.system) messages.push(template.system(args.system));
+          messages.push({
+            role: 'user',
+            content: [
+              { type: 'image', image: args.image },
+              { type: 'text', text: args.user || 'Describe this image.' }
+            ]
+          });
+          return messages;
         }
 
-        parts.push(`<|user|>\n[Image: ${args.task || 'analyze'}]\n${args.user || 'Describe this image.'}\n`);
-        parts.push('<|assistant|>\n');
+        const parts = [];
+        if (args.system) {
+          parts.push(template.system(args.system));
+        }
+        parts.push(template.user(`[Image: ${args.task || 'analyze'}]\n${args.user || 'Describe this image.'}`));
+        parts.push(template.assistant(''));
 
         return parts.join('');
+      },
+
+      /**
+       * Get stop tokens for a model
+       */
+      getStopTokens(modelId) {
+        const template = getTemplateForModel(modelId);
+        return template.stop || [];
+      },
+
+      /**
+       * Get available templates
+       */
+      listTemplates() {
+        return Object.keys(PROMPT_TEMPLATES);
+      },
+
+      /**
+       * Get template info
+       */
+      getTemplate(templateId) {
+        return PROMPT_TEMPLATES[templateId] || null;
       }
     };
   }
