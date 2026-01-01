@@ -1,0 +1,75 @@
+// ============================================================
+// CHAT_INFERENCE_FRAME.khl
+// ============================================================
+// Canonical chat inference law for one conversational turn.
+// Runs on KUHUL_JS_HOST with Python/API inference backend.
+//
+// Triggers: button click, form submit, message send, API call
+// ============================================================
+
+@Wo {
+  // Model configuration from context or defaults
+  chat.model = context.model ?? "janus-pro"
+  chat.max_tokens = context.max_tokens ?? 256
+  chat.temperature = context.temperature ?? 0.7
+  chat.top_p = context.top_p ?? 0.95
+
+  // Conversation state
+  chat.history = context.history ?? []
+  chat.input = context.input
+  chat.system = context.system ?? "You are a helpful AI assistant."
+
+  // Execution metadata
+  chat.request_id = hash.sha256(concat(now(), chat.input))
+  chat.timestamp = now()
+}
+
+@Sek {
+  // Build structured prompt deterministically
+  let prompt = chat.prompt.build {
+    system: chat.system,
+    history: chat.history,
+    user: chat.input
+  }
+
+  // Calculate prompt hash for replay verification
+  let prompt_hash = hash.sha256(prompt)
+
+  // Call host inference intrinsic (Python/API)
+  let output = infer.generate {
+    model: chat.model,
+    prompt: prompt,
+    max_tokens: chat.max_tokens,
+    temperature: chat.temperature,
+    top_p: chat.top_p
+  }
+
+  // Calculate output hash for verification
+  let output_hash = hash.sha256(output.text)
+
+  // Append to history
+  let new_history = chat.history.concat([
+    { role: "user", content: chat.input },
+    { role: "assistant", content: output.text }
+  ])
+
+  // Build verification trace
+  let trace = {
+    request_id: chat.request_id,
+    prompt_hash: prompt_hash,
+    output_hash: output_hash,
+    model: chat.model,
+    tokens: output.tokens,
+    timestamp: chat.timestamp,
+    latency_ms: now() - chat.timestamp
+  }
+}
+
+@Collapse {
+  emit.chat {
+    text: output.text,
+    tokens: output.tokens,
+    history: new_history,
+    trace: trace
+  }
+}

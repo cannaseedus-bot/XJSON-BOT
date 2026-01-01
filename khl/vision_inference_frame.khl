@@ -1,0 +1,89 @@
+// ============================================================
+// VISION_INFERENCE_FRAME.khl
+// ============================================================
+// Multimodal vision inference law for image understanding.
+// Supports Janus Pro/Flow and other vision-language models.
+//
+// Triggers: image upload, drag-drop, clipboard paste, camera
+// ============================================================
+
+@Pop {
+  // Load image from context
+  @if context.image_url
+  @then {
+    let image = fs.fetch(context.image_url)
+  }
+  @else {
+    let image = context.image_bytes
+  }
+}
+
+@Wo {
+  // Model configuration
+  vision.model = context.model ?? "janus-pro"
+  vision.task = context.task ?? "describe"  // describe, analyze, ocr, caption
+  vision.max_tokens = context.max_tokens ?? 512
+  vision.temperature = context.temperature ?? 0.3
+
+  // Input state
+  vision.image = image
+  vision.prompt = context.prompt ?? "Describe this image in detail."
+  vision.system = context.system ?? "You are a vision AI that analyzes images accurately."
+
+  // Execution metadata
+  vision.request_id = hash.sha256(concat(now(), vision.prompt))
+  vision.timestamp = now()
+}
+
+@Sek {
+  // Encode image for model
+  let image_encoded = image.encode {
+    format: "base64",
+    max_size: 1024,
+    quality: 0.9
+  }
+
+  // Calculate image hash for replay
+  let image_hash = hash.sha256(image_encoded)
+
+  // Build multimodal prompt
+  let prompt = vision.prompt.build {
+    system: vision.system,
+    image: image_encoded,
+    user: vision.prompt,
+    task: vision.task
+  }
+
+  // Call host vision inference
+  let output = infer.vision {
+    model: vision.model,
+    image: image_encoded,
+    prompt: prompt,
+    max_tokens: vision.max_tokens,
+    temperature: vision.temperature
+  }
+
+  // Calculate output hash
+  let output_hash = hash.sha256(output.text)
+
+  // Build verification trace
+  let trace = {
+    request_id: vision.request_id,
+    image_hash: image_hash,
+    output_hash: output_hash,
+    model: vision.model,
+    task: vision.task,
+    tokens: output.tokens,
+    timestamp: vision.timestamp,
+    latency_ms: now() - vision.timestamp
+  }
+}
+
+@Collapse {
+  emit.vision {
+    text: output.text,
+    tokens: output.tokens,
+    task: vision.task,
+    trace: trace
+  }
+}
