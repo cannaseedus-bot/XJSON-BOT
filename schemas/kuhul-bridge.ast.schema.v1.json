@@ -1,0 +1,479 @@
+{
+  "$schema": "xjson://schema/core/v1",
+  "@id": "kuhul://schema/bridge/ast-universal/v1",
+  "@type": "kuhul.bridge.schema",
+  "@version": "1.0.0",
+  "@status": "frozen",
+  "@title": "KUHUL Universal AST Bridge Schema v1",
+  "@notes": [
+    "One canonical AST for all languages.",
+    "Languages are adapters (parse/print/bind) against the canonical AST.",
+    "No external schema URLs allowed.",
+    "Designed to lower into KPI binary deterministically."
+  ],
+
+  "@invariants": {
+    "no_external_schema_urls": true,
+    "canonical_ast_authority": true,
+    "deterministic_ordering": true,
+    "field_order_lexicographic": true,
+    "string_interning_required": true,
+    "no_eval": true
+  },
+
+  "@bridge": {
+    "concept": "AST is the single source of truth. Language packs only map to/from AST and bind effects.",
+    "phases": [
+      "parse_source_to_ast",
+      "ast_normalize",
+      "ast_validate",
+      "ast_bind_effects",
+      "ast_compile_to_target",
+      "optional_emit_kpi"
+    ]
+  },
+
+  "@defs": {
+    "Ref": {
+      "type": "object",
+      "required": ["@ref"],
+      "properties": {
+        "@ref": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "Loc": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/@defs/Pos" },
+        "end": { "$ref": "#/@defs/Pos" },
+        "source": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Pos": {
+      "type": "object",
+      "required": ["line", "col", "off"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "col": { "type": "integer", "minimum": 0 },
+        "off": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+
+    "NodeId": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_\\-:.]{1,128}$"
+    },
+
+    "LangId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-./]{1,128}$"
+    },
+
+    "TargetId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-./]{1,128}$"
+    },
+
+    "Value": {
+      "description": "Canonical JSON value domain used inside AST literals and binding configs.",
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "array", "items": { "$ref": "#/@defs/Value" } },
+        {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/@defs/Value" }
+        }
+      ]
+    },
+
+    "Program": {
+      "type": "object",
+      "required": ["type", "body"],
+      "properties": {
+        "type": { "const": "Program" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "body": { "type": "array", "items": { "$ref": "#/@defs/Node" } }
+      },
+      "additionalProperties": false
+    },
+
+    "Meta": {
+      "type": "object",
+      "properties": {
+        "lang": { "$ref": "#/@defs/LangId" },
+        "dialect": { "type": "string" },
+        "comments": { "type": "array", "items": { "type": "string" } },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+
+    "Identifier": {
+      "type": "object",
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "const": "Identifier" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "Literal": {
+      "type": "object",
+      "required": ["type", "kind", "value"],
+      "properties": {
+        "type": { "const": "Literal" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "kind": {
+          "enum": ["null", "bool", "number", "string", "array", "object", "bytes"]
+        },
+        "value": { "$ref": "#/@defs/Value" },
+        "bytes_b64": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "VarDecl": {
+      "type": "object",
+      "required": ["type", "mode", "idn"],
+      "properties": {
+        "type": { "const": "VarDecl" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "mode": {
+          "description": "Unifies JS let/const/var AND KUHUL π/τ bindings.",
+          "enum": ["const", "let", "var", "pi", "tau"]
+        },
+        "idn": { "$ref": "#/@defs/Identifier" },
+        "init": { "$ref": "#/@defs/Node" },
+        "type_hint": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Assign": {
+      "type": "object",
+      "required": ["type", "op", "left", "right"],
+      "properties": {
+        "type": { "const": "Assign" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "op": { "type": "string" },
+        "left": { "$ref": "#/@defs/Node" },
+        "right": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "Call": {
+      "type": "object",
+      "required": ["type", "callee", "args"],
+      "properties": {
+        "type": { "const": "Call" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "callee": { "$ref": "#/@defs/Node" },
+        "args": { "type": "array", "items": { "$ref": "#/@defs/Node" } }
+      },
+      "additionalProperties": false
+    },
+
+    "Member": {
+      "type": "object",
+      "required": ["type", "obj", "key", "computed"],
+      "properties": {
+        "type": { "const": "Member" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "obj": { "$ref": "#/@defs/Node" },
+        "key": { "$ref": "#/@defs/Node" },
+        "computed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+
+    "Block": {
+      "type": "object",
+      "required": ["type", "body"],
+      "properties": {
+        "type": { "const": "Block" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "body": { "type": "array", "items": { "$ref": "#/@defs/Node" } }
+      },
+      "additionalProperties": false
+    },
+
+    "If": {
+      "type": "object",
+      "required": ["type", "test", "then"],
+      "properties": {
+        "type": { "const": "If" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "test": { "$ref": "#/@defs/Node" },
+        "then": { "$ref": "#/@defs/Node" },
+        "else": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "For": {
+      "type": "object",
+      "required": ["type", "kind", "body"],
+      "properties": {
+        "type": { "const": "For" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "kind": { "enum": ["cstyle", "forof", "forin"] },
+        "init": { "$ref": "#/@defs/Node" },
+        "test": { "$ref": "#/@defs/Node" },
+        "step": { "$ref": "#/@defs/Node" },
+        "lhs": { "$ref": "#/@defs/Node" },
+        "rhs": { "$ref": "#/@defs/Node" },
+        "body": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "While": {
+      "type": "object",
+      "required": ["type", "test", "body"],
+      "properties": {
+        "type": { "const": "While" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "test": { "$ref": "#/@defs/Node" },
+        "body": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "Return": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "Return" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "value": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "Effect": {
+      "description": "Universal effect node. This is where binding to IDB/KQL/MySQL/KPI happens.",
+      "type": "object",
+      "required": ["type", "op", "args"],
+      "properties": {
+        "type": { "const": "Effect" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "op": {
+          "description": "Canonical effect op. Target bindings map these to runtimes.",
+          "enum": [
+            "log",
+            "time.now",
+            "idb.get",
+            "idb.put",
+            "idb.query",
+            "kql.query",
+            "mysql.query",
+            "kpi.emit",
+            "trace.record",
+            "trace.verify"
+          ]
+        },
+        "args": { "type": "array", "items": { "$ref": "#/@defs/Node" } },
+        "bind": { "$ref": "#/@defs/Bind" }
+      },
+      "additionalProperties": false
+    },
+
+    "Bind": {
+      "description": "Binding tells the bridge how to resolve an effect against a target runtime.",
+      "type": "object",
+      "required": ["target"],
+      "properties": {
+        "target": { "$ref": "#/@defs/TargetId" },
+        "route": { "type": "string" },
+        "capability": { "type": "string" },
+        "deterministic": { "type": "boolean", "default": true },
+        "io_policy": {
+          "enum": ["pure", "local", "network", "kernel"],
+          "default": "local"
+        },
+        "config": { "$ref": "#/@defs/Value" }
+      },
+      "additionalProperties": false
+    },
+
+    "FuncDecl": {
+      "type": "object",
+      "required": ["type", "name", "params", "body"],
+      "properties": {
+        "type": { "const": "FuncDecl" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "name": { "$ref": "#/@defs/Identifier" },
+        "params": { "type": "array", "items": { "$ref": "#/@defs/Param" } },
+        "body": { "$ref": "#/@defs/Block" },
+        "generator": { "type": "boolean" },
+        "async": { "type": "boolean" },
+        "return_type": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Param": {
+      "type": "object",
+      "required": ["type", "idn"],
+      "properties": {
+        "type": { "const": "Param" },
+        "idn": { "$ref": "#/@defs/Identifier" },
+        "type_hint": { "type": "string" },
+        "default": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "BinaryExpr": {
+      "type": "object",
+      "required": ["type", "op", "left", "right"],
+      "properties": {
+        "type": { "const": "BinaryExpr" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "op": { "type": "string" },
+        "left": { "$ref": "#/@defs/Node" },
+        "right": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "UnaryExpr": {
+      "type": "object",
+      "required": ["type", "op", "arg", "prefix"],
+      "properties": {
+        "type": { "const": "UnaryExpr" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "op": { "type": "string" },
+        "arg": { "$ref": "#/@defs/Node" },
+        "prefix": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+
+    "Conditional": {
+      "type": "object",
+      "required": ["type", "test", "consequent", "alternate"],
+      "properties": {
+        "type": { "const": "Conditional" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "test": { "$ref": "#/@defs/Node" },
+        "consequent": { "$ref": "#/@defs/Node" },
+        "alternate": { "$ref": "#/@defs/Node" }
+      },
+      "additionalProperties": false
+    },
+
+    "Pipe": {
+      "type": "object",
+      "required": ["type", "left", "right", "op"],
+      "properties": {
+        "type": { "const": "Pipe" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "left": { "$ref": "#/@defs/Node" },
+        "right": { "$ref": "#/@defs/Node" },
+        "op": { "enum": ["|>", "π>"] }
+      },
+      "additionalProperties": false
+    },
+
+    "Glyph": {
+      "type": "object",
+      "required": ["type", "name", "args"],
+      "properties": {
+        "type": { "const": "Glyph" },
+        "id": { "$ref": "#/@defs/NodeId" },
+        "loc": { "$ref": "#/@defs/Loc" },
+        "meta": { "$ref": "#/@defs/Meta" },
+        "name": { "type": "string" },
+        "args": { "type": "array", "items": { "$ref": "#/@defs/Node" } },
+        "dest": { "$ref": "#/@defs/Identifier" }
+      },
+      "additionalProperties": false
+    },
+
+    "Node": {
+      "oneOf": [
+        { "$ref": "#/@defs/Program" },
+        { "$ref": "#/@defs/Identifier" },
+        { "$ref": "#/@defs/Literal" },
+        { "$ref": "#/@defs/VarDecl" },
+        { "$ref": "#/@defs/Assign" },
+        { "$ref": "#/@defs/Call" },
+        { "$ref": "#/@defs/Member" },
+        { "$ref": "#/@defs/Block" },
+        { "$ref": "#/@defs/If" },
+        { "$ref": "#/@defs/For" },
+        { "$ref": "#/@defs/While" },
+        { "$ref": "#/@defs/Return" },
+        { "$ref": "#/@defs/Effect" },
+        { "$ref": "#/@defs/FuncDecl" },
+        { "$ref": "#/@defs/Param" },
+        { "$ref": "#/@defs/BinaryExpr" },
+        { "$ref": "#/@defs/UnaryExpr" },
+        { "$ref": "#/@defs/Conditional" },
+        { "$ref": "#/@defs/Pipe" },
+        { "$ref": "#/@defs/Glyph" }
+      ]
+    }
+  },
+
+  "type": "object",
+  "required": [
+    "@id",
+    "@type",
+    "@version",
+    "@status",
+    "@invariants",
+    "@bridge",
+    "@defs"
+  ],
+  "additionalProperties": false
+}

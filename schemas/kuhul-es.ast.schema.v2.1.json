@@ -1,0 +1,650 @@
+{
+  "$schema": "xjson://schema/core/v1",
+  "@id": "kuhul://schema/kuhul-es/ast/v2.1",
+  "@type": "kuhul.ast.schema",
+  "@version": "2.1.0",
+  "@status": "frozen",
+  "@language": "KUHUL-ES",
+  "@law": "grammar-lowered-to-ast",
+  "@invariants": [
+    "syntax-only",
+    "no-runtime-semantics",
+    "deterministic-structure",
+    "no-implicit-effects"
+  ],
+
+  "@root": "Program",
+
+  "nodes": {
+
+    "Program": {
+      "description": "Top-level KUHUL-ES program",
+      "fields": {
+        "body": { "type": "Node[]", "required": true }
+      }
+    },
+
+    "πDeclaration": {
+      "description": "Immutable π binding declaration",
+      "fields": {
+        "identifier": { "type": "Identifier", "required": true },
+        "initializer": { "type": "Expression", "required": false },
+        "typeAnnotation": { "type": "Type", "required": false }
+      },
+      "flags": ["immutable"]
+    },
+
+    "τDeclaration": {
+      "description": "Temporal τ binding declaration",
+      "fields": {
+        "identifier": { "type": "Identifier", "required": true },
+        "initializer": { "type": "Expression", "required": false },
+        "typeAnnotation": { "type": "Type", "required": false }
+      },
+      "flags": ["temporal"]
+    },
+
+    "FunctionDeclaration": {
+      "description": "Function or generator declaration",
+      "fields": {
+        "name": { "type": "Identifier", "required": true },
+        "params": { "type": "Parameter[]", "required": true },
+        "returnType": { "type": "Type", "required": false },
+        "body": { "type": "Block", "required": true },
+        "generator": { "type": "boolean", "required": true },
+        "async": { "type": "boolean", "required": false }
+      }
+    },
+
+    "LambdaExpression": {
+      "description": "Lambda (λ) expression",
+      "fields": {
+        "params": { "type": "Parameter[]", "required": true },
+        "returnType": { "type": "Type", "required": false },
+        "body": { "type": "Expression", "required": true }
+      }
+    },
+
+    "SystemDeclaration": {
+      "description": "@system or ⟁ system declaration",
+      "fields": {
+        "name": { "type": "Identifier", "required": true },
+        "params": { "type": "Parameter[]", "required": true },
+        "body": { "type": "Block", "required": true }
+      },
+      "flags": ["effect-bearing"]
+    },
+
+    "InterfaceDeclaration": {
+      "description": "Interface type declaration",
+      "fields": {
+        "name": { "type": "Identifier", "required": true },
+        "methods": { "type": "MethodSignature[]", "required": true }
+      }
+    },
+
+    "MethodSignature": {
+      "description": "Method signature in interface",
+      "fields": {
+        "name": { "type": "Identifier", "required": true },
+        "params": { "type": "Parameter[]", "required": true },
+        "returnType": { "type": "Type", "required": false }
+      }
+    },
+
+    "TypeDeclaration": {
+      "description": "Type alias declaration",
+      "fields": {
+        "name": { "type": "Identifier", "required": true },
+        "value": { "type": "Type", "required": true }
+      }
+    },
+
+    "Block": {
+      "description": "Block statement containing statements",
+      "fields": {
+        "statements": { "type": "Statement[]", "required": true }
+      }
+    },
+
+    "Identifier": {
+      "description": "Identifier node",
+      "fields": {
+        "name": { "type": "string", "required": true }
+      }
+    },
+
+    "Parameter": {
+      "description": "Function/system parameter",
+      "fields": {
+        "identifier": { "type": "Identifier", "required": true },
+        "type": { "type": "Type", "required": false },
+        "default": { "type": "Expression", "required": false }
+      }
+    },
+
+    "Type": {
+      "description": "Type annotation",
+      "union": [
+        "PrimitiveType",
+        "KUHULType",
+        "ArrayType",
+        "TupleType",
+        "RecordType",
+        "FunctionType",
+        "Identifier"
+      ]
+    },
+
+    "PrimitiveType": {
+      "description": "Primitive type",
+      "enum": ["Int", "Float", "Bool", "String"]
+    },
+
+    "KUHULType": {
+      "description": "KUHUL-specific types",
+      "enum": [
+        "πScalar",
+        "πVector",
+        "πField",
+        "πStream",
+        "Glyph",
+        "Body",
+        "Constraint",
+        "Field"
+      ]
+    },
+
+    "ArrayType": {
+      "description": "Array type [T]",
+      "fields": {
+        "element": { "type": "Type", "required": true }
+      }
+    },
+
+    "TupleType": {
+      "description": "Tuple type (T1, T2, ...)",
+      "fields": {
+        "elements": { "type": "Type[]", "required": true }
+      }
+    },
+
+    "RecordType": {
+      "description": "Record type { key: Type, ... }",
+      "fields": {
+        "fields": { "type": "FieldType[]", "required": true }
+      }
+    },
+
+    "FieldType": {
+      "description": "Field in record type",
+      "fields": {
+        "key": { "type": "Identifier", "required": true },
+        "value": { "type": "Type", "required": true }
+      }
+    },
+
+    "FunctionType": {
+      "description": "Function type (T1, T2) → R",
+      "fields": {
+        "params": { "type": "Type[]", "required": true },
+        "returns": { "type": "Type", "required": true }
+      }
+    },
+
+    "Statement": {
+      "description": "Statement union",
+      "union": [
+        "ExpressionStatement",
+        "Block",
+        "IfStatement",
+        "MatchStatement",
+        "ForStatement",
+        "WhileStatement",
+        "ReturnStatement",
+        "YieldStatement",
+        "BreakStatement",
+        "ContinueStatement",
+        "τUpdateStatement",
+        "GlyphStatement",
+        "DirectiveStatement"
+      ]
+    },
+
+    "ExpressionStatement": {
+      "description": "Expression as statement",
+      "fields": {
+        "expression": { "type": "Expression", "required": true }
+      }
+    },
+
+    "IfStatement": {
+      "description": "@if conditional statement",
+      "fields": {
+        "test": { "type": "Expression", "required": true },
+        "consequent": { "type": "Statement", "required": true },
+        "alternate": { "type": "Statement", "required": false }
+      }
+    },
+
+    "MatchStatement": {
+      "description": "@match pattern matching statement",
+      "fields": {
+        "discriminant": { "type": "Expression", "required": true },
+        "cases": { "type": "CaseClause[]", "required": true }
+      }
+    },
+
+    "CaseClause": {
+      "description": "Case clause in match statement",
+      "fields": {
+        "pattern": { "type": "Pattern", "required": true },
+        "body": { "type": "Statement", "required": true }
+      }
+    },
+
+    "Pattern": {
+      "description": "Pattern for matching",
+      "union": [
+        "LiteralPattern",
+        "IdentifierPattern",
+        "ArrayPattern",
+        "ObjectPattern",
+        "WildcardPattern"
+      ]
+    },
+
+    "LiteralPattern": {
+      "fields": {
+        "value": { "type": "Literal", "required": true }
+      }
+    },
+
+    "IdentifierPattern": {
+      "fields": {
+        "identifier": { "type": "Identifier", "required": true }
+      }
+    },
+
+    "ArrayPattern": {
+      "fields": {
+        "elements": { "type": "Pattern[]", "required": true }
+      }
+    },
+
+    "ObjectPattern": {
+      "fields": {
+        "properties": { "type": "PatternProperty[]", "required": true }
+      }
+    },
+
+    "PatternProperty": {
+      "fields": {
+        "key": { "type": "Identifier", "required": true },
+        "value": { "type": "Pattern", "required": true }
+      }
+    },
+
+    "WildcardPattern": {
+      "fields": {}
+    },
+
+    "ForStatement": {
+      "description": "@for loop statement",
+      "union": ["ForLoop", "ForOfLoop", "ForInLoop"]
+    },
+
+    "ForLoop": {
+      "description": "C-style for loop",
+      "fields": {
+        "init": { "type": "Expression", "required": false },
+        "test": { "type": "Expression", "required": false },
+        "update": { "type": "Expression", "required": false },
+        "body": { "type": "Statement", "required": true }
+      }
+    },
+
+    "ForOfLoop": {
+      "description": "@for (π x of collection) loop",
+      "fields": {
+        "binding": { "type": "Identifier", "required": true },
+        "iterable": { "type": "Expression", "required": true },
+        "body": { "type": "Statement", "required": true }
+      },
+      "flags": ["immutable-binding"]
+    },
+
+    "ForInLoop": {
+      "description": "@for (τ x in collection) loop",
+      "fields": {
+        "binding": { "type": "Identifier", "required": true },
+        "iterable": { "type": "Expression", "required": true },
+        "body": { "type": "Statement", "required": true }
+      },
+      "flags": ["temporal-binding"]
+    },
+
+    "WhileStatement": {
+      "description": "@while loop statement",
+      "fields": {
+        "test": { "type": "Expression", "required": true },
+        "body": { "type": "Statement", "required": true }
+      }
+    },
+
+    "ReturnStatement": {
+      "description": "Return statement",
+      "fields": {
+        "argument": { "type": "Expression", "required": false }
+      }
+    },
+
+    "YieldStatement": {
+      "description": "Yield statement (generators)",
+      "fields": {
+        "argument": { "type": "Expression", "required": false },
+        "delegate": { "type": "boolean", "required": false }
+      }
+    },
+
+    "BreakStatement": {
+      "description": "Break statement",
+      "fields": {
+        "label": { "type": "Identifier", "required": false }
+      }
+    },
+
+    "ContinueStatement": {
+      "description": "Continue statement",
+      "fields": {
+        "label": { "type": "Identifier", "required": false }
+      }
+    },
+
+    "τUpdateStatement": {
+      "description": "Temporal mutation: τ x ← value",
+      "fields": {
+        "identifier": { "type": "Identifier", "required": true },
+        "value": { "type": "Expression", "required": true }
+      },
+      "flags": ["temporal-mutation-only"]
+    },
+
+    "GlyphStatement": {
+      "description": "Glyph execution: ⟁ Glyph(args) → dest",
+      "fields": {
+        "glyph": { "type": "Identifier", "required": true },
+        "arguments": { "type": "Expression[]", "required": true },
+        "destination": { "type": "Identifier", "required": false }
+      },
+      "flags": ["effect-descriptor"]
+    },
+
+    "DirectiveStatement": {
+      "description": "Directive block: @compressed, @flow, etc.",
+      "fields": {
+        "directive": { "type": "string", "required": true },
+        "body": { "type": "Block", "required": true }
+      },
+      "allowed_directives": [
+        "compressed",
+        "flow",
+        "data",
+        "atomic",
+        "deterministic",
+        "replayable"
+      ]
+    },
+
+    "Expression": {
+      "description": "Expression union",
+      "union": [
+        "Identifier",
+        "Literal",
+        "CallExpression",
+        "MemberExpression",
+        "BinaryExpression",
+        "UnaryExpression",
+        "ConditionalExpression",
+        "PipeExpression",
+        "πLiteral",
+        "τLiteral",
+        "ArrayExpression",
+        "ObjectExpression",
+        "LambdaExpression",
+        "GlyphExpression",
+        "TemplateLiteral"
+      ]
+    },
+
+    "CallExpression": {
+      "description": "Function/glyph call",
+      "fields": {
+        "callee": { "type": "Expression", "required": true },
+        "arguments": { "type": "Expression[]", "required": true }
+      }
+    },
+
+    "MemberExpression": {
+      "description": "Member access: obj.prop or obj[expr]",
+      "fields": {
+        "object": { "type": "Expression", "required": true },
+        "property": { "type": "Expression", "required": true },
+        "computed": { "type": "boolean", "required": true }
+      }
+    },
+
+    "BinaryExpression": {
+      "description": "Binary operation",
+      "fields": {
+        "operator": { "type": "string", "required": true },
+        "left": { "type": "Expression", "required": true },
+        "right": { "type": "Expression", "required": true }
+      },
+      "operators": {
+        "arithmetic": ["+", "-", "*", "/", "%", "**", "π+", "π-", "π*", "π/", "π**"],
+        "comparison": ["==", "!=", "===", "!==", "<", ">", "<=", ">=", "π<", "π>"],
+        "logical": ["&&", "||"],
+        "bitwise": ["&", "|", "^", "<<", ">>", ">>>"]
+      }
+    },
+
+    "UnaryExpression": {
+      "description": "Unary operation",
+      "fields": {
+        "operator": { "type": "string", "required": true },
+        "argument": { "type": "Expression", "required": true },
+        "prefix": { "type": "boolean", "required": true }
+      },
+      "operators": ["-", "+", "!", "~", "π-", "++", "--"]
+    },
+
+    "ConditionalExpression": {
+      "description": "Ternary: test ? consequent : alternate",
+      "fields": {
+        "test": { "type": "Expression", "required": true },
+        "consequent": { "type": "Expression", "required": true },
+        "alternate": { "type": "Expression", "required": true }
+      }
+    },
+
+    "PipeExpression": {
+      "description": "Pipe expression: left |> right or left π> right",
+      "fields": {
+        "left": { "type": "Expression", "required": true },
+        "right": { "type": "Expression", "required": true },
+        "operator": { "enum": ["|>", "π>"], "required": true }
+      }
+    },
+
+    "πLiteral": {
+      "description": "Immutable π literal: π[...], π{...}, π(...)",
+      "fields": {
+        "form": { "enum": ["scalar", "array", "object"], "required": true },
+        "value": { "type": "any", "required": true }
+      },
+      "flags": ["immutable"]
+    },
+
+    "τLiteral": {
+      "description": "Temporal τ literal: τ[...], τ{...}",
+      "fields": {
+        "form": { "enum": ["array", "object"], "required": true },
+        "value": { "type": "any", "required": true }
+      },
+      "flags": ["temporal"]
+    },
+
+    "ArrayExpression": {
+      "description": "Array literal [...]",
+      "fields": {
+        "elements": { "type": "Expression[]", "required": true }
+      }
+    },
+
+    "ObjectExpression": {
+      "description": "Object literal {...}",
+      "fields": {
+        "properties": { "type": "Property[]", "required": true }
+      }
+    },
+
+    "Property": {
+      "description": "Object property",
+      "fields": {
+        "key": { "type": "Expression", "required": true },
+        "value": { "type": "Expression", "required": true },
+        "computed": { "type": "boolean", "required": false },
+        "shorthand": { "type": "boolean", "required": false }
+      }
+    },
+
+    "GlyphExpression": {
+      "description": "Glyph as expression: @glyph(args)",
+      "fields": {
+        "glyph": { "type": "Identifier", "required": true },
+        "arguments": { "type": "Expression[]", "required": true }
+      }
+    },
+
+    "TemplateLiteral": {
+      "description": "Template literal `...${expr}...`",
+      "fields": {
+        "quasis": { "type": "TemplateElement[]", "required": true },
+        "expressions": { "type": "Expression[]", "required": true }
+      }
+    },
+
+    "TemplateElement": {
+      "description": "Template literal text part",
+      "fields": {
+        "value": { "type": "string", "required": true },
+        "tail": { "type": "boolean", "required": true }
+      }
+    },
+
+    "Literal": {
+      "description": "Literal value",
+      "union": [
+        "NumericLiteral",
+        "StringLiteral",
+        "BooleanLiteral",
+        "NullLiteral",
+        "RegExpLiteral"
+      ]
+    },
+
+    "NumericLiteral": {
+      "description": "Numeric literal with optional unit",
+      "fields": {
+        "value": { "type": "number", "required": true },
+        "unit": { "enum": ["π", "τ", null], "required": false },
+        "raw": { "type": "string", "required": false }
+      }
+    },
+
+    "StringLiteral": {
+      "description": "String literal",
+      "fields": {
+        "value": { "type": "string", "required": true }
+      }
+    },
+
+    "BooleanLiteral": {
+      "description": "Boolean literal",
+      "fields": {
+        "value": { "type": "boolean", "required": true }
+      }
+    },
+
+    "NullLiteral": {
+      "description": "Null literal",
+      "fields": {}
+    },
+
+    "RegExpLiteral": {
+      "description": "Regular expression literal",
+      "fields": {
+        "pattern": { "type": "string", "required": true },
+        "flags": { "type": "string", "required": false }
+      }
+    },
+
+    "ImportDeclaration": {
+      "description": "Import declaration",
+      "fields": {
+        "specifiers": { "type": "ImportSpecifier[]", "required": true },
+        "source": { "type": "StringLiteral", "required": true }
+      }
+    },
+
+    "ImportSpecifier": {
+      "description": "Import specifier",
+      "fields": {
+        "imported": { "type": "Identifier", "required": true },
+        "local": { "type": "Identifier", "required": false }
+      }
+    },
+
+    "ExportDeclaration": {
+      "description": "Export declaration",
+      "fields": {
+        "declaration": { "type": "Node", "required": false },
+        "specifiers": { "type": "ExportSpecifier[]", "required": false },
+        "default": { "type": "boolean", "required": false }
+      }
+    },
+
+    "ExportSpecifier": {
+      "description": "Export specifier",
+      "fields": {
+        "local": { "type": "Identifier", "required": true },
+        "exported": { "type": "Identifier", "required": false }
+      }
+    }
+  },
+
+  "@glyphs": {
+    "description": "Built-in glyph names",
+    "builtin": ["Pop", "Wo", "Sek", "Ch'en", "Yax", "Xul"],
+    "reserved": ["π", "SVG", "Path", "Transform"]
+  },
+
+  "@location": {
+    "description": "Source location tracking",
+    "Loc": {
+      "fields": {
+        "start": { "type": "Position", "required": true },
+        "end": { "type": "Position", "required": true },
+        "source": { "type": "string", "required": false }
+      }
+    },
+    "Position": {
+      "fields": {
+        "line": { "type": "number", "required": true },
+        "column": { "type": "number", "required": true },
+        "offset": { "type": "number", "required": true }
+      }
+    }
+  }
+}
