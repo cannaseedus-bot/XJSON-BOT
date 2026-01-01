@@ -769,6 +769,153 @@
         tcLogs: ASXR.tcLogs.length,
         vfs: ASXR.vfs.size
       };
+    },
+
+    // ===== KUHUL Integration =====
+
+    /**
+     * Execute a KHL inference frame with KUHUL host
+     * @param {string} frameId - KHL frame identifier
+     * @param {object} context - Execution context (input, history, model, etc.)
+     */
+    async khlInfer(frameId, context = {}) {
+      if (typeof KUHUL === 'undefined') {
+        console.warn('[KQL] KUHUL host not loaded');
+        return { ok: false, error: 'KUHUL host not available' };
+      }
+
+      // Merge with model registry defaults
+      const registry = await loadModelRegistry();
+      const modelId = context.model || registry.default_model || 'janus-pro';
+      const modelDef = getModelById(modelId);
+
+      const execContext = {
+        ...context,
+        model: modelId,
+        modelDef,
+        apiBase: MX2LM_API_BASE,
+        inferEndpoint: `${MX2LM_API_BASE}?route=chat&model=${modelId}`
+      };
+
+      try {
+        const result = await KUHUL.run(frameId, execContext);
+
+        // Save to chat history if chat context provided
+        if (context.chatId && result.text) {
+          await this.saveMessage({
+            id: `msg_${Date.now()}_user`,
+            chat_id: context.chatId,
+            role: 'user',
+            content: context.input,
+            model: modelId,
+            ts: Date.now()
+          });
+
+          await this.saveMessage({
+            id: `msg_${Date.now()}_assistant`,
+            chat_id: context.chatId,
+            role: 'assistant',
+            content: result.text,
+            model: modelId,
+            tokens: result.tokens || 0,
+            ts: Date.now(),
+            trace: result.trace
+          });
+        }
+
+        return { ok: true, ...result };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    },
+
+    /**
+     * Load and register a KHL frame from URL
+     */
+    async loadKHLFrame(frameId, url) {
+      if (typeof KUHUL === 'undefined') {
+        console.warn('[KQL] KUHUL host not loaded');
+        return false;
+      }
+
+      try {
+        await KUHUL.load(frameId, url);
+        return true;
+      } catch (e) {
+        console.error('[KQL] Failed to load KHL frame:', e);
+        return false;
+      }
+    },
+
+    /**
+     * Register KHL frame from source string
+     */
+    registerKHLFrame(frameId, source) {
+      if (typeof KUHUL === 'undefined') {
+        console.warn('[KQL] KUHUL host not loaded');
+        return false;
+      }
+
+      KUHUL.register(frameId, source);
+      return true;
+    },
+
+    /**
+     * List registered KHL frames
+     */
+    listKHLFrames() {
+      if (typeof KUHUL === 'undefined') return [];
+      return KUHUL.list();
+    },
+
+    /**
+     * Get KHL frame info
+     */
+    getKHLFrame(frameId) {
+      if (typeof KUHUL === 'undefined') return null;
+      return KUHUL.info(frameId);
+    },
+
+    /**
+     * Vision inference via KUHUL
+     */
+    async khlVision(imageData, prompt, options = {}) {
+      if (typeof KUHUL === 'undefined') {
+        return { ok: false, error: 'KUHUL host not available' };
+      }
+
+      // Register vision frame if not present
+      if (!KUHUL.programs.has('vision_frame')) {
+        await this.loadKHLFrame('vision_frame', '../khl/vision_inference_frame.khl');
+      }
+
+      return this.khlInfer('vision_frame', {
+        image_bytes: imageData,
+        prompt,
+        model: options.model || 'janus-pro',
+        task: options.task || 'describe',
+        ...options
+      });
+    },
+
+    /**
+     * Image generation via KUHUL
+     */
+    async khlGenerateImage(prompt, options = {}) {
+      if (typeof KUHUL === 'undefined') {
+        return { ok: false, error: 'KUHUL host not available' };
+      }
+
+      // Register image gen frame if not present
+      if (!KUHUL.programs.has('image_gen_frame')) {
+        await this.loadKHLFrame('image_gen_frame', '../khl/image_gen_frame.khl');
+      }
+
+      return this.khlInfer('image_gen_frame', {
+        prompt,
+        model: options.model || 'janus-flow',
+        ...options
+      });
     }
   };
 

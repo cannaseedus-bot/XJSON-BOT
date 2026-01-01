@@ -770,6 +770,281 @@
   }
 
   /**
+   * Inference intrinsics (connects to Python/API backend)
+   */
+  function HostInfer(context) {
+    // Get API endpoint from context or default
+    const apiBase = context.apiBase || 'https://mx2lm.app/api.php';
+
+    return {
+      /**
+       * Text generation (chat, completion)
+       */
+      async generate(args) {
+        const payload = {
+          action: 'chat',
+          model: args.model || 'janus-pro',
+          prompt: args.prompt,
+          max_tokens: args.max_tokens || 256,
+          temperature: args.temperature || 0.7,
+          top_p: args.top_p || 0.95
+        };
+
+        // Use custom endpoint if provided
+        const endpoint = context.inferEndpoint || apiBase;
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          return {
+            text: data.response || data.text || data.content || '',
+            tokens: data.tokens || data.usage?.total_tokens || 0,
+            model: args.model,
+            raw: data
+          };
+        } catch (err) {
+          console.error('Infer error:', err);
+          return {
+            text: `[Inference error: ${err.message}]`,
+            tokens: 0,
+            error: err.message
+          };
+        }
+      },
+
+      /**
+       * Streaming text generation
+       */
+      async stream(args, onToken) {
+        const payload = {
+          action: 'chat_stream',
+          model: args.model || 'janus-pro',
+          prompt: args.prompt,
+          max_tokens: args.max_tokens || 256,
+          temperature: args.temperature || 0.7,
+          stream: true
+        };
+
+        const endpoint = context.inferEndpoint || apiBase;
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let fullText = '';
+          let tokens = 0;
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            fullText += chunk;
+            tokens++;
+
+            if (onToken) onToken(chunk);
+          }
+
+          return { text: fullText, tokens };
+        } catch (err) {
+          console.error('Stream error:', err);
+          return { text: '', tokens: 0, error: err.message };
+        }
+      },
+
+      /**
+       * Vision inference (image understanding)
+       */
+      async vision(args) {
+        const payload = {
+          action: 'vision',
+          model: args.model || 'janus-pro',
+          image: args.image,  // base64 encoded
+          prompt: args.prompt || 'Describe this image.',
+          max_tokens: args.max_tokens || 512,
+          temperature: args.temperature || 0.3
+        };
+
+        const endpoint = context.inferEndpoint || apiBase;
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          return {
+            text: data.response || data.description || '',
+            tokens: data.tokens || 0,
+            model: args.model,
+            raw: data
+          };
+        } catch (err) {
+          console.error('Vision error:', err);
+          return { text: '', tokens: 0, error: err.message };
+        }
+      },
+
+      /**
+       * Image generation
+       */
+      async generate_image(args) {
+        const payload = {
+          action: 'generate_image',
+          model: args.model || 'janus-flow',
+          prompt: args.prompt,
+          negative_prompt: args.negative_prompt || '',
+          width: args.width || 512,
+          height: args.height || 512,
+          steps: args.steps || 30,
+          guidance_scale: args.guidance_scale || 7.5,
+          seed: args.seed || Date.now()
+        };
+
+        const endpoint = context.inferEndpoint || apiBase;
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          return {
+            image: data.image || data.base64 || '',
+            format: 'png',
+            seed: args.seed,
+            model: args.model,
+            raw: data
+          };
+        } catch (err) {
+          console.error('Image gen error:', err);
+          return { image: '', error: err.message };
+        }
+      }
+    };
+  }
+
+  /**
+   * Chat prompt builder intrinsic
+   */
+  function HostChatPrompt() {
+    return {
+      /**
+       * Build structured prompt from history
+       */
+      build(args) {
+        const parts = [];
+
+        // System prompt
+        if (args.system) {
+          parts.push(`<|system|>\n${args.system}\n`);
+        }
+
+        // History
+        if (args.history && args.history.length > 0) {
+          for (const msg of args.history) {
+            const role = msg.role === 'user' ? 'user' : 'assistant';
+            parts.push(`<|${role}|>\n${msg.content}\n`);
+          }
+        }
+
+        // Current user input
+        if (args.user) {
+          parts.push(`<|user|>\n${args.user}\n`);
+        }
+
+        // Assistant turn marker
+        parts.push('<|assistant|>\n');
+
+        return parts.join('');
+      },
+
+      /**
+       * Build vision prompt
+       */
+      buildVision(args) {
+        const parts = [];
+
+        if (args.system) {
+          parts.push(`<|system|>\n${args.system}\n`);
+        }
+
+        parts.push(`<|user|>\n[Image: ${args.task || 'analyze'}]\n${args.user || 'Describe this image.'}\n`);
+        parts.push('<|assistant|>\n');
+
+        return parts.join('');
+      }
+    };
+  }
+
+  /**
+   * Image encoding utilities
+   */
+  function HostImage() {
+    return {
+      /**
+       * Encode image to base64
+       */
+      encode(args) {
+        const bytes = args.bytes || args;
+        const format = args.format || 'png';
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+        return `data:image/${format};base64,${base64}`;
+      },
+
+      /**
+       * Resize image (canvas-based)
+       */
+      async resize(imageData, maxSize = 1024) {
+        // For browser with canvas
+        if (typeof document !== 'undefined') {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let { width, height } = img;
+
+              if (width > maxSize || height > maxSize) {
+                const ratio = Math.min(maxSize / width, maxSize / height);
+                width = Math.round(width * ratio);
+                height = Math.round(height * ratio);
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+
+              resolve(canvas.toDataURL('image/png'));
+            };
+            img.src = imageData;
+          });
+        }
+
+        // Fallback: return as-is
+        return imageData;
+      }
+    };
+  }
+
+  /**
    * Classification helper
    */
   function classify(path) {
@@ -961,12 +1236,28 @@
       case 'emit':
         return env.emit[method]?.(...evalArgs);
 
+      case 'infer':
+        return env.infer[method]?.(...evalArgs);
+
+      case 'chat':
+        if (method.startsWith('prompt.')) {
+          const promptMethod = method.slice(7);
+          return env.chat.prompt[promptMethod]?.(evalArgs[0]);
+        }
+        return null;
+
+      case 'image':
+        return env.image[method]?.(...evalArgs);
+
       case 'now':
         return Date.now();
 
       case 'len':
         const val = evalArgs[0];
         return val?.length ?? 0;
+
+      case 'concat':
+        return evalArgs.join('');
 
       case 'classify':
         return classify(evalArgs[0]);
@@ -1112,7 +1403,11 @@
         mime: HostMime(),
         path: HostPath(),
         emit: HostEmit(context, state),
-        now: () => Date.now()
+        infer: HostInfer(context),
+        chat: { prompt: HostChatPrompt() },
+        image: HostImage(),
+        now: () => Date.now(),
+        concat: (...args) => args.join('')
       };
 
       // Execute phases in order (MANDATORY)
