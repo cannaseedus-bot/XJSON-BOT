@@ -1,0 +1,388 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xjson-bot.dev/schemas/ggl-tokenizer.schema.v1.json",
+  "title": "GGL Tokenizer Schema v1.0",
+  "description": "Geometric tokenization schema for GGL-LORA training",
+  "version": "1.0.0",
+
+  "definitions": {
+    "TokenType": {
+      "description": "Types of geometric tokens",
+      "enum": [
+        "GLYPH_CIRCLE",
+        "GLYPH_SQUARE",
+        "GLYPH_TRIANGLE",
+        "GLYPH_LINE",
+        "GLYPH_POINT",
+        "GLYPH_POLYGON",
+        "GLYPH_BEZIER",
+        "GLYPH_ARC",
+        "OP_UNION",
+        "OP_INTERSECT",
+        "OP_DIFF",
+        "OP_XOR",
+        "OP_BLEND",
+        "OP_MORPH",
+        "TRANSFORM_TRANSLATE",
+        "TRANSFORM_ROTATE",
+        "TRANSFORM_SCALE",
+        "TRANSFORM_SKEW",
+        "SEMANTIC_CYCLE",
+        "SEMANTIC_DISCRETE",
+        "SEMANTIC_FLOW",
+        "SEMANTIC_CONNECT",
+        "COORD_X",
+        "COORD_Y",
+        "COORD_Z",
+        "VALUE_FLOAT",
+        "VALUE_INT",
+        "COLOR_RGB",
+        "DELIMITER_START",
+        "DELIMITER_END",
+        "DELIMITER_SEP",
+        "SPECIAL_PAD",
+        "SPECIAL_BOS",
+        "SPECIAL_EOS",
+        "SPECIAL_UNK"
+      ]
+    },
+
+    "GGLToken": {
+      "description": "A single GGL token",
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "type": { "$ref": "#/definitions/TokenType" },
+        "value": {
+          "description": "Token value (numeric for coords/values, null for glyphs)",
+          "oneOf": [
+            { "type": "number" },
+            { "type": "null" },
+            { "type": "string" }
+          ]
+        },
+        "glyph": {
+          "description": "Unicode glyph representation",
+          "type": "string"
+        },
+        "embedding": {
+          "description": "Pre-computed embedding vector",
+          "type": "array",
+          "items": { "type": "number" }
+        }
+      },
+      "required": ["id", "type"]
+    },
+
+    "TokenVocabulary": {
+      "description": "Complete token vocabulary for GGL",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "vocabSize": { "type": "integer", "minimum": 1 },
+        "specialTokens": {
+          "type": "object",
+          "properties": {
+            "pad": { "type": "integer" },
+            "bos": { "type": "integer" },
+            "eos": { "type": "integer" },
+            "unk": { "type": "integer" }
+          },
+          "required": ["pad", "bos", "eos", "unk"]
+        },
+        "glyphTokens": {
+          "type": "object",
+          "description": "Mapping of glyph characters to token IDs",
+          "additionalProperties": { "type": "integer" }
+        },
+        "operationTokens": {
+          "type": "object",
+          "description": "Mapping of operations to token IDs",
+          "additionalProperties": { "type": "integer" }
+        },
+        "coordinateTokens": {
+          "type": "object",
+          "description": "Quantized coordinate vocabulary",
+          "properties": {
+            "numBins": { "type": "integer" },
+            "range": {
+              "type": "object",
+              "properties": {
+                "min": { "type": "number" },
+                "max": { "type": "number" }
+              }
+            },
+            "tokenOffset": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["version", "vocabSize", "specialTokens"]
+    },
+
+    "FourierTokenization": {
+      "description": "Fourier-based shape tokenization",
+      "type": "object",
+      "properties": {
+        "numDescriptors": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 32,
+          "description": "Number of Fourier descriptors to use"
+        },
+        "quantizationBits": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 16,
+          "default": 8,
+          "description": "Bits for quantizing Fourier coefficients"
+        },
+        "normalizeRotation": {
+          "type": "boolean",
+          "default": true
+        },
+        "normalizeScale": {
+          "type": "boolean",
+          "default": true
+        },
+        "normalizeTranslation": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": ["numDescriptors"]
+    },
+
+    "GeometricEncoding": {
+      "description": "How geometric primitives are encoded to tokens",
+      "type": "object",
+      "properties": {
+        "method": {
+          "enum": ["direct", "fourier", "vq", "learned"]
+        },
+        "direct": {
+          "description": "Direct coordinate encoding",
+          "type": "object",
+          "properties": {
+            "coordinateQuantization": { "type": "integer", "default": 256 },
+            "radiusQuantization": { "type": "integer", "default": 64 },
+            "angleQuantization": { "type": "integer", "default": 360 }
+          }
+        },
+        "fourier": { "$ref": "#/definitions/FourierTokenization" },
+        "vq": {
+          "description": "Vector quantization encoding",
+          "type": "object",
+          "properties": {
+            "codebookSize": { "type": "integer" },
+            "vectorDim": { "type": "integer" },
+            "codebookPath": { "type": "string" }
+          }
+        },
+        "learned": {
+          "description": "Learned tokenization (from training)",
+          "type": "object",
+          "properties": {
+            "modelPath": { "type": "string" },
+            "vocabSize": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["method"]
+    },
+
+    "TokenSequence": {
+      "description": "A tokenized GGL expression",
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "attentionMask": {
+          "type": "array",
+          "items": { "type": "integer", "enum": [0, 1] }
+        },
+        "tokenTypes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/TokenType" }
+        },
+        "positions": {
+          "type": "array",
+          "items": { "type": "integer" }
+        },
+        "geometricPositions": {
+          "description": "2D positions for geometric attention",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["tokens"]
+    },
+
+    "TrainingExample": {
+      "description": "A single training example for GGL-LORA",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "input": {
+          "description": "Input modality",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "text" },
+                "content": { "type": "string" }
+              },
+              "required": ["type", "content"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "image" },
+                "path": { "type": "string" },
+                "base64": { "type": "string" }
+              },
+              "required": ["type"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ggl" },
+                "program": { "type": "object" }
+              },
+              "required": ["type", "program"]
+            }
+          ]
+        },
+        "output": {
+          "description": "Output modality",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "text" },
+                "content": { "type": "string" }
+              },
+              "required": ["type", "content"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ggl" },
+                "program": { "type": "object" },
+                "tokens": { "$ref": "#/definitions/TokenSequence" }
+              },
+              "required": ["type", "program"]
+            }
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "task": {
+              "enum": ["text2ggl", "ggl2text", "ggl2ggl", "image2ggl", "ggl2image"]
+            },
+            "difficulty": { "type": "string" },
+            "category": { "type": "string" },
+            "source": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "input", "output"]
+    },
+
+    "TokenizerConfig": {
+      "description": "Complete tokenizer configuration",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "vocabulary": { "$ref": "#/definitions/TokenVocabulary" },
+        "encoding": { "$ref": "#/definitions/GeometricEncoding" },
+        "maxSequenceLength": { "type": "integer", "default": 2048 },
+        "paddingSide": { "enum": ["left", "right"], "default": "right" },
+        "truncationSide": { "enum": ["left", "right"], "default": "right" },
+        "addSpecialTokens": { "type": "boolean", "default": true },
+        "geometricAttention": {
+          "description": "Use geometric positions for attention",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": ["name", "version", "vocabulary", "encoding"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "type": { "const": "ggl-tokenizer-config" },
+    "config": { "$ref": "#/definitions/TokenizerConfig" },
+    "defaultVocabulary": {
+      "description": "Default GGL vocabulary",
+      "type": "object",
+      "properties": {
+        "specialTokens": {
+          "type": "object",
+          "properties": {
+            "[PAD]": { "const": 0 },
+            "[BOS]": { "const": 1 },
+            "[EOS]": { "const": 2 },
+            "[UNK]": { "const": 3 }
+          }
+        },
+        "glyphTokens": {
+          "type": "object",
+          "properties": {
+            "◯": { "const": 10 },
+            "□": { "const": 11 },
+            "△": { "const": 12 },
+            "─": { "const": 13 },
+            "•": { "const": 14 },
+            "⬡": { "const": 15 },
+            "∿": { "const": 16 },
+            "⌒": { "const": 17 }
+          }
+        },
+        "operationTokens": {
+          "type": "object",
+          "properties": {
+            "∪": { "const": 20, "description": "union" },
+            "∩": { "const": 21, "description": "intersection" },
+            "∖": { "const": 22, "description": "difference" },
+            "⊕": { "const": 23, "description": "xor" },
+            "⊗": { "const": 24, "description": "blend" },
+            "⟿": { "const": 25, "description": "morph" },
+            "→": { "const": 26, "description": "translate" },
+            "↻": { "const": 27, "description": "rotate" },
+            "⇔": { "const": 28, "description": "scale" }
+          }
+        },
+        "delimiterTokens": {
+          "type": "object",
+          "properties": {
+            "(": { "const": 30 },
+            ")": { "const": 31 },
+            "[": { "const": 32 },
+            "]": { "const": 33 },
+            "{": { "const": 34 },
+            "}": { "const": 35 },
+            ",": { "const": 36 },
+            ";": { "const": 37 }
+          }
+        },
+        "coordinateTokensStart": { "const": 100 },
+        "coordinateTokensEnd": { "const": 355 },
+        "colorTokensStart": { "const": 400 },
+        "colorTokensEnd": { "const": 655 }
+      }
+    }
+  },
+  "required": ["type", "config"]
+}

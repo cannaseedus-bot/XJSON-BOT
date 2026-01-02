@@ -1,0 +1,397 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xjson-bot.dev/schemas/ggl.schema.v1.json",
+  "title": "GGL - Geometric Glyph Language v1.0",
+  "description": "Pure geometric computation language where shapes ARE operations",
+  "version": "1.0.0",
+
+  "definitions": {
+    "Point2D": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      },
+      "required": ["x", "y"]
+    },
+
+    "Point3D": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" }
+      },
+      "required": ["x", "y", "z"]
+    },
+
+    "Color": {
+      "oneOf": [
+        { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        {
+          "type": "object",
+          "properties": {
+            "r": { "type": "number", "minimum": 0, "maximum": 255 },
+            "g": { "type": "number", "minimum": 0, "maximum": 255 },
+            "b": { "type": "number", "minimum": 0, "maximum": 255 },
+            "a": { "type": "number", "minimum": 0, "maximum": 1, "default": 1 }
+          },
+          "required": ["r", "g", "b"]
+        }
+      ]
+    },
+
+    "GeometricPrimitive": {
+      "description": "Core geometric glyphs - shapes ARE operations",
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/definitions/Circle" },
+        { "$ref": "#/definitions/Square" },
+        { "$ref": "#/definitions/Triangle" },
+        { "$ref": "#/definitions/Line" },
+        { "$ref": "#/definitions/Point" },
+        { "$ref": "#/definitions/Polygon" },
+        { "$ref": "#/definitions/Bezier" },
+        { "$ref": "#/definitions/Arc" }
+      ]
+    },
+
+    "Circle": {
+      "description": "◯ - Circle primitive (continuous/cyclic operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "◯" },
+        "type": { "const": "circle" },
+        "center": { "$ref": "#/definitions/Point2D" },
+        "radius": { "type": "number", "minimum": 0 },
+        "fill": { "$ref": "#/definitions/Color" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["cycle", "loop", "continuous", "smooth", "container", "group"]
+        }
+      },
+      "required": ["glyph", "type", "center", "radius"]
+    },
+
+    "Square": {
+      "description": "□ - Square primitive (discrete/grid operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "□" },
+        "type": { "const": "square" },
+        "center": { "$ref": "#/definitions/Point2D" },
+        "size": { "type": "number", "minimum": 0 },
+        "rotation": { "type": "number", "description": "Rotation in radians" },
+        "fill": { "$ref": "#/definitions/Color" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["discrete", "grid", "pixel", "cell", "block", "matrix"]
+        }
+      },
+      "required": ["glyph", "type", "center", "size"]
+    },
+
+    "Triangle": {
+      "description": "△ - Triangle primitive (directional/flow operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "△" },
+        "type": { "const": "triangle" },
+        "vertices": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Point2D" },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "fill": { "$ref": "#/definitions/Color" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["direction", "flow", "gradient", "pointer", "delta", "change"]
+        }
+      },
+      "required": ["glyph", "type", "vertices"]
+    },
+
+    "Line": {
+      "description": "─ - Line primitive (connection/edge operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "─" },
+        "type": { "const": "line" },
+        "start": { "$ref": "#/definitions/Point2D" },
+        "end": { "$ref": "#/definitions/Point2D" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["connection", "edge", "relationship", "flow", "path", "link"]
+        }
+      },
+      "required": ["glyph", "type", "start", "end"]
+    },
+
+    "Point": {
+      "description": "• - Point primitive (atom/node operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "•" },
+        "type": { "const": "point" },
+        "position": { "$ref": "#/definitions/Point2D" },
+        "size": { "type": "number", "minimum": 0 },
+        "fill": { "$ref": "#/definitions/Color" },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["atom", "node", "vertex", "position", "anchor", "focus"]
+        }
+      },
+      "required": ["glyph", "type", "position"]
+    },
+
+    "Polygon": {
+      "description": "⬡ - Polygon primitive (complex structure operations)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "⬡" },
+        "type": { "const": "polygon" },
+        "vertices": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Point2D" },
+          "minItems": 3
+        },
+        "fill": { "$ref": "#/definitions/Color" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["structure", "complex", "aggregate", "mesh", "region", "area"]
+        }
+      },
+      "required": ["glyph", "type", "vertices"]
+    },
+
+    "Bezier": {
+      "description": "∿ - Bezier curve primitive (smooth interpolation)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "∿" },
+        "type": { "const": "bezier" },
+        "points": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Point2D" },
+          "minItems": 2
+        },
+        "controlPoints": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Point2D" }
+        },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["interpolation", "smooth", "transition", "ease", "curve", "path"]
+        }
+      },
+      "required": ["glyph", "type", "points"]
+    },
+
+    "Arc": {
+      "description": "⌒ - Arc primitive (partial cycle/segment)",
+      "type": "object",
+      "properties": {
+        "glyph": { "const": "⌒" },
+        "type": { "const": "arc" },
+        "center": { "$ref": "#/definitions/Point2D" },
+        "radius": { "type": "number", "minimum": 0 },
+        "startAngle": { "type": "number" },
+        "endAngle": { "type": "number" },
+        "stroke": { "$ref": "#/definitions/Color" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "semantic": {
+          "description": "Semantic meaning in computation",
+          "enum": ["segment", "partial", "range", "slice", "sector", "portion"]
+        }
+      },
+      "required": ["glyph", "type", "center", "radius", "startAngle", "endAngle"]
+    },
+
+    "GeometricTransform": {
+      "description": "Transformations applied to geometric primitives",
+      "type": "object",
+      "properties": {
+        "translate": { "$ref": "#/definitions/Point2D" },
+        "rotate": { "type": "number", "description": "Rotation in radians" },
+        "scale": {
+          "oneOf": [
+            { "type": "number" },
+            { "$ref": "#/definitions/Point2D" }
+          ]
+        },
+        "skew": { "$ref": "#/definitions/Point2D" },
+        "matrix": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 6,
+          "maxItems": 6,
+          "description": "2D affine transform matrix [a, b, c, d, tx, ty]"
+        }
+      }
+    },
+
+    "GeometricOperation": {
+      "description": "Operations on geometric primitives",
+      "type": "object",
+      "properties": {
+        "op": {
+          "enum": [
+            "union",
+            "intersection",
+            "difference",
+            "xor",
+            "blend",
+            "morph",
+            "tessellate",
+            "simplify",
+            "convexHull",
+            "boundingBox",
+            "centroid",
+            "area",
+            "perimeter",
+            "distance",
+            "contains",
+            "intersects",
+            "overlaps"
+          ]
+        },
+        "operands": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GeometricPrimitive" }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["op", "operands"]
+    },
+
+    "GGLExpression": {
+      "description": "A GGL expression - geometric computation unit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "ggl-expr" },
+        "primitives": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GeometricPrimitive" }
+        },
+        "operations": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GeometricOperation" }
+        },
+        "transforms": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GeometricTransform" }
+        },
+        "bindings": {
+          "type": "object",
+          "description": "Named references to primitives/results",
+          "additionalProperties": { "$ref": "#/definitions/GeometricPrimitive" }
+        }
+      },
+      "required": ["type", "primitives"]
+    },
+
+    "GGLProgram": {
+      "description": "A complete GGL program",
+      "type": "object",
+      "properties": {
+        "type": { "const": "ggl-program" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "canvas": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" },
+            "origin": { "$ref": "#/definitions/Point2D" },
+            "scale": { "type": "number" }
+          }
+        },
+        "expressions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/GGLExpression" }
+        },
+        "entryPoint": { "type": "string" },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "author": { "type": "string" },
+            "created": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "required": ["type", "version", "expressions"]
+    },
+
+    "FourierDescriptor": {
+      "description": "Fourier descriptor for shape encoding (used in tokenization)",
+      "type": "object",
+      "properties": {
+        "coefficients": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "real": { "type": "number" },
+              "imag": { "type": "number" }
+            },
+            "required": ["real", "imag"]
+          }
+        },
+        "numCoefficients": { "type": "integer", "minimum": 1 },
+        "normalized": { "type": "boolean" },
+        "centroid": { "$ref": "#/definitions/Point2D" }
+      },
+      "required": ["coefficients", "numCoefficients"]
+    },
+
+    "GeometricEmbedding": {
+      "description": "Neural network embedding of geometric primitives",
+      "type": "object",
+      "properties": {
+        "type": { "const": "ggl-embedding" },
+        "primitive": { "$ref": "#/definitions/GeometricPrimitive" },
+        "fourierDescriptor": { "$ref": "#/definitions/FourierDescriptor" },
+        "vector": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Fixed-size embedding vector"
+        },
+        "dimension": { "type": "integer" },
+        "normalized": { "type": "boolean" }
+      },
+      "required": ["type", "primitive", "vector", "dimension"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "type": { "const": "ggl-document" },
+    "version": { "type": "string" },
+    "program": { "$ref": "#/definitions/GGLProgram" },
+    "embeddings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/GeometricEmbedding" },
+      "description": "Pre-computed embeddings for AI inference"
+    }
+  },
+  "required": ["type", "version", "program"]
+}
