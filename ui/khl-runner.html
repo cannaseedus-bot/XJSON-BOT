@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K'UHUL Runner | ASX-R Execution</title>
+  <link rel="stylesheet" href="../assets/css/atomic-asx.css">
+  <style>
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-secondary: #12121a;
+      --bg-tertiary: #1a1a24;
+      --text-primary: #e0e0e8;
+      --text-secondary: #8888a0;
+      --accent-primary: #7c3aed;
+      --accent-secondary: #06b6d4;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --border: #2a2a3a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header h1 .glyph {
+      color: var(--accent-primary);
+      font-size: 1.5rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    /* Main Layout */
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    .panel {
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      background: var(--bg-secondary);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.875rem;
+    }
+
+    .panel-header h2 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow: auto;
+      padding: 1rem;
+    }
+
+    /* Editor */
+    .editor {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      resize: none;
+    }
+
+    .editor:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #6d28d9;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent-primary);
+      background: rgba(124, 58, 237, 0.1);
+    }
+
+    .drop-zone p {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .drop-zone input[type="file"] {
+      display: none;
+    }
+
+    /* Output */
+    .output {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      min-height: 200px;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+
+    .output.success {
+      border-color: var(--success);
+    }
+
+    .output.error {
+      border-color: var(--error);
+    }
+
+    /* Phases Display */
+    .phases {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .phase {
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      opacity: 0.5;
+    }
+
+    .phase.active {
+      opacity: 1;
+      animation: pulse 0.5s ease-in-out infinite alternate;
+    }
+
+    .phase.complete {
+      opacity: 1;
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .phase.pop { --phase-color: #f59e0b; }
+    .phase.wo { --phase-color: #3b82f6; }
+    .phase.sek { --phase-color: #8b5cf6; }
+    .phase.collapse { --phase-color: #10b981; }
+
+    .phase.active {
+      border-color: var(--phase-color);
+      color: var(--phase-color);
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent-secondary);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Console */
+    .console {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      font-size: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .console-line {
+      padding: 0.125rem 0;
+    }
+
+    .console-line.info { color: var(--text-secondary); }
+    .console-line.success { color: var(--success); }
+    .console-line.warning { color: var(--warning); }
+    .console-line.error { color: var(--error); }
+    .console-line.phase { color: var(--accent-primary); font-weight: 600; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .tab {
+      padding: 0.75rem 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      color: var(--accent-primary);
+      border-bottom-color: var(--accent-primary);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 1rem;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Sample Programs */
+    .samples {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .sample-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sample-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+    }
+
+    .sample-card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .sample-card p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 0.5rem 2rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h1>
+      <span class="glyph">⟁</span>
+      K'UHUL Runner
+    </h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" id="btn-load-sample">Load Sample</button>
+      <button class="btn btn-primary" id="btn-run">
+        <span>Run</span>
+        <span style="opacity:0.7">⌘+Enter</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Editor Panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>
+          <span style="color:var(--accent-secondary)">⌸</span>
+          KHL Source
+        </h2>
+        <span style="color:var(--text-secondary)">XCFE Phases</span>
+      </div>
+      <div class="panel-content">
+        <textarea class="editor" id="editor" spellcheck="false" placeholder="@Pop {
+  // IO operations - load data
+}
+
+@Wo {
+  // State declarations - initialize
+}
+
+@Sek {
+  // Ordered execution - process
+}
+
+@Collapse {
+  // Emit output - finalize
+}"></textarea>
+      </div>
+    </section>
+
+    <!-- Output Panel -->
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="output">Output</button>
+        <button class="tab" data-tab="files">Files</button>
+        <button class="tab" data-tab="console">Console</button>
+      </div>
+
+      <!-- Output Tab -->
+      <div class="tab-content active" id="tab-output">
+        <div class="phases">
+          <div class="phase pop" id="phase-pop">@Pop</div>
+          <div class="phase wo" id="phase-wo">@Wo</div>
+          <div class="phase sek" id="phase-sek">@Sek</div>
+          <div class="phase collapse" id="phase-collapse">@Collapse</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="stat-files">0</div>
+            <div class="stat-label">Files</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-time">0ms</div>
+            <div class="stat-label">Time</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="stat-output">0B</div>
+            <div class="stat-label">Output</div>
+          </div>
+        </div>
+
+        <div class="output" id="output">Ready. Load a KHL program or drop files to begin.</div>
+      </div>
+
+      <!-- Files Tab -->
+      <div class="tab-content" id="tab-files">
+        <div class="drop-zone" id="drop-zone">
+          <p>Drop files or folders here</p>
+          <label class="btn btn-secondary">
+            Browse
+            <input type="file" id="file-input" multiple webkitdirectory>
+          </label>
+        </div>
+        <div id="file-list" style="color:var(--text-secondary);font-size:0.8rem;"></div>
+      </div>
+
+      <!-- Console Tab -->
+      <div class="tab-content" id="tab-console">
+        <div class="console" id="console"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>KUHUL_JS_HOST_v1 | ASX-R Runtime</span>
+    <span id="version">K'UHUL π</span>
+  </footer>
+
+  <!-- Load KUHUL Host -->
+  <script src="../core/kuhul-host.js"></script>
+
+  <!-- App Logic -->
+  <script>
+    // ============================================
+    // KHL RUNNER APP
+    // ============================================
+
+    const App = {
+      files: [],
+      consoleLines: [],
+
+      init() {
+        this.setupTabs();
+        this.setupEditor();
+        this.setupDropZone();
+        this.setupFileInput();
+        this.setupButtons();
+        this.loadSample('hello');
+      },
+
+      // Tab switching
+      setupTabs() {
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+          });
+        });
+      },
+
+      // Editor keyboard shortcuts
+      setupEditor() {
+        const editor = document.getElementById('editor');
+        editor.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            this.run();
+          }
+        });
+      },
+
+      // Drop zone
+      setupDropZone() {
+        const zone = document.getElementById('drop-zone');
+
+        zone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          zone.classList.add('dragover');
+        });
+
+        zone.addEventListener('dragleave', () => {
+          zone.classList.remove('dragover');
+        });
+
+        zone.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          zone.classList.remove('dragover');
+          await this.handleFiles([...e.dataTransfer.files]);
+        });
+      },
+
+      // File input
+      setupFileInput() {
+        document.getElementById('file-input').addEventListener('change', async (e) => {
+          await this.handleFiles([...e.target.files]);
+        });
+      },
+
+      // Handle dropped/selected files
+      async handleFiles(files) {
+        this.files = [];
+
+        for (const file of files) {
+          file._bytes = new Uint8Array(await file.arrayBuffer());
+          this.files.push(file);
+        }
+
+        const list = document.getElementById('file-list');
+        list.innerHTML = `<strong>${this.files.length} files loaded:</strong><br>` +
+          this.files.map(f => `• ${f.webkitRelativePath || f.name} (${this.formatBytes(f.size)})`).join('<br>');
+
+        this.log('info', `Loaded ${this.files.length} files`);
+        document.getElementById('stat-files').textContent = this.files.length;
+      },
+
+      // Button handlers
+      setupButtons() {
+        document.getElementById('btn-run').addEventListener('click', () => this.run());
+        document.getElementById('btn-load-sample').addEventListener('click', () => this.showSamples());
+      },
+
+      // Run KHL program
+      async run() {
+        const source = document.getElementById('editor').value;
+        if (!source.trim()) {
+          this.showError('No KHL source to run');
+          return;
+        }
+
+        this.resetPhases();
+        this.clearConsole();
+        this.log('phase', '⟁ Starting execution...');
+
+        const output = document.getElementById('output');
+        output.className = 'output';
+        output.textContent = 'Running...';
+
+        const startTime = performance.now();
+
+        try {
+          // Register program
+          KUHUL.register('runner_program', source);
+
+          // Execute with files context
+          const context = {
+            mode: 'runner',
+            files: this.files,
+            vfs: {}
+          };
+
+          // Build VFS from loaded files
+          for (const file of this.files) {
+            context.vfs[file.webkitRelativePath || file.name] = {
+              bytes: file._bytes,
+              size: file.size,
+              type: file.type
+            };
+          }
+
+          // Intercept phase execution for UI
+          this.setPhaseActive('pop');
+          await this.delay(100);
+          this.setPhaseComplete('pop');
+
+          this.setPhaseActive('wo');
+          await this.delay(100);
+          this.setPhaseComplete('wo');
+
+          this.setPhaseActive('sek');
+          await this.delay(100);
+          this.setPhaseComplete('sek');
+
+          this.setPhaseActive('collapse');
+
+          const result = await KUHUL.run('runner_program', context);
+
+          this.setPhaseComplete('collapse');
+
+          const endTime = performance.now();
+          const duration = (endTime - startTime).toFixed(2);
+
+          // Display result
+          const resultJson = JSON.stringify(result, null, 2);
+          output.textContent = resultJson;
+          output.className = 'output success';
+
+          // Update stats
+          document.getElementById('stat-time').textContent = duration + 'ms';
+          document.getElementById('stat-output').textContent = this.formatBytes(resultJson.length);
+
+          this.log('success', `⟁ Complete in ${duration}ms`);
+
+        } catch (error) {
+          output.textContent = 'Error: ' + error.message;
+          output.className = 'output error';
+          this.log('error', 'Error: ' + error.message);
+        }
+      },
+
+      // Phase UI helpers
+      resetPhases() {
+        ['pop', 'wo', 'sek', 'collapse'].forEach(p => {
+          document.getElementById('phase-' + p).className = 'phase ' + p;
+        });
+      },
+
+      setPhaseActive(phase) {
+        document.getElementById('phase-' + phase).classList.add('active');
+        this.log('phase', `  @${phase.charAt(0).toUpperCase() + phase.slice(1)}...`);
+      },
+
+      setPhaseComplete(phase) {
+        const el = document.getElementById('phase-' + phase);
+        el.classList.remove('active');
+        el.classList.add('complete');
+      },
+
+      // Console logging
+      log(type, message) {
+        const console = document.getElementById('console');
+        const line = document.createElement('div');
+        line.className = 'console-line ' + type;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        console.appendChild(line);
+        console.scrollTop = console.scrollHeight;
+      },
+
+      clearConsole() {
+        document.getElementById('console').innerHTML = '';
+      },
+
+      showError(message) {
+        const output = document.getElementById('output');
+        output.textContent = message;
+        output.className = 'output error';
+        this.log('error', message);
+      },
+
+      // Sample programs
+      samples: {
+        hello: `@Pop {
+  // No IO needed for hello world
+}
+
+@Wo {
+  let message = "Hello from K'UHUL!"
+  let timestamp = now()
+}
+
+@Sek {
+  // No processing needed
+}
+
+@Collapse {
+  emit.json({
+    message: message,
+    timestamp: timestamp,
+    runtime: "KUHUL_JS_HOST_v1"
+  })
+}`,
+
+        bundle_builder: `@Pop {
+  fs.scan {
+    root: "/workspace",
+    recursive: true,
+    exclude: ["**/.git/**", "**/node_modules/**"]
+  }
+}
+
+@Wo {
+  let bundle.id = "BUNDLE_v1"
+  let bundle.ts = now()
+
+  let cc.mode = "SCXQ2"
+  let cc.level = 9
+  let cc.chunk = 262144
+
+  let stats = { files: 0, raw_bytes: 0, cmp_bytes: 0 }
+  let index = []
+  let files = {}
+}
+
+@Sek {
+  foreach fs.file as f {
+    let path = f.path
+    let raw = f.bytes
+
+    stats.files += 1
+    stats.raw_bytes += len(raw)
+
+    let mime = mime.of(path)
+    let group = classify(path)
+
+    @if mime.startsWith("text/")
+    @then {
+      let norm = text.normalize(raw)
+      let hash = hash.sha256(norm)
+      let packed = cc.pack(norm)
+
+      files[path] = {
+        kind: "text",
+        mime: mime,
+        group: group,
+        hash: hash,
+        cmp: packed
+      }
+    }
+    @else {
+      let hash = hash.sha256(raw)
+      let packed = cc.pack(raw)
+
+      files[path] = {
+        kind: "binary",
+        mime: mime,
+        group: group,
+        hash: hash,
+        cmp: packed
+      }
+    }
+  }
+}
+
+@Collapse {
+  emit.json({
+    id: bundle.id,
+    ts: bundle.ts,
+    meta: stats,
+    index: index,
+    files: files
+  })
+}`,
+
+        file_stats: `@Pop {
+  fs.scan { root: "/workspace", recursive: true }
+}
+
+@Wo {
+  let stats = {
+    total_files: 0,
+    total_bytes: 0,
+    by_type: {},
+    by_group: {}
+  }
+}
+
+@Sek {
+  foreach fs.file as f {
+    stats.total_files += 1
+    stats.total_bytes += len(f.bytes)
+
+    let ext = path.ext(f.path)
+    let group = classify(f.path)
+
+    // Count by extension
+    @if stats.by_type[ext]
+    @then { stats.by_type[ext] += 1 }
+    @else { stats.by_type[ext] = 1 }
+
+    // Count by group
+    @if stats.by_group[group]
+    @then { stats.by_group[group] += 1 }
+    @else { stats.by_group[group] = 1 }
+  }
+}
+
+@Collapse {
+  emit.json(stats)
+}`
+      },
+
+      loadSample(name) {
+        if (this.samples[name]) {
+          document.getElementById('editor').value = this.samples[name];
+          this.log('info', `Loaded sample: ${name}`);
+        }
+      },
+
+      showSamples() {
+        const names = Object.keys(this.samples);
+        const current = names[(names.indexOf(this._currentSample) + 1) % names.length] || names[0];
+        this._currentSample = current;
+        this.loadSample(current);
+      },
+
+      // Utilities
+      formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      },
+
+      delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    };
+
+    // Initialize
+    App.init();
+  </script>
+
+</body>
+</html>

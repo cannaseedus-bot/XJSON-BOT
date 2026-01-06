@@ -1,0 +1,353 @@
+{
+  "$schema": "xjson://schema/core/v1",
+  "@id": "kuhul://schema/adapter/python/v1",
+  "@type": "kuhul.adapter.contract",
+  "@version": "1.0.0",
+  "@status": "frozen",
+  "@title": "KUHUL Python Adapter Contract v1",
+  "@authority": "KPI_IS_LAW",
+
+  "@notes": [
+    "Defines how KPI effects route to Python execution.",
+    "Python is a HOST, not a source language.",
+    "All calls go through ForeignCall glyph.",
+    "Determinism is enforced at KPI layer, not Python layer.",
+    "Python adapter is replaceable, sandboxable, killable."
+  ],
+
+  "@invariants": {
+    "kpi_causes_effects": true,
+    "python_is_host_only": true,
+    "no_python_in_ast": true,
+    "foreign_call_is_glyph": true,
+    "adapter_is_replaceable": true,
+    "execution_is_sandboxed": true
+  },
+
+  "@glyphs": {
+    "ForeignCall": {
+      "@id": "kuhul://glyph/ForeignCall/v1",
+      "description": "Execute a function in a foreign host runtime",
+      "category": "effect",
+      "deterministic": false,
+      "replayable": true,
+
+      "inputs": {
+        "host": {
+          "type": "HostId",
+          "required": true,
+          "description": "Target host runtime (python, node, wasm, native)"
+        },
+        "module": {
+          "type": "string",
+          "required": true,
+          "description": "Module path (e.g., 'numpy', 'torch.nn')"
+        },
+        "symbol": {
+          "type": "string",
+          "required": true,
+          "description": "Function/class name to call"
+        },
+        "args": {
+          "type": "Value[]",
+          "required": true,
+          "description": "Positional arguments"
+        },
+        "kwargs": {
+          "type": "Record<string, Value>",
+          "required": false,
+          "description": "Keyword arguments"
+        },
+        "timeout_ms": {
+          "type": "number",
+          "required": false,
+          "default": 30000,
+          "description": "Execution timeout in milliseconds"
+        }
+      },
+
+      "outputs": {
+        "result": {
+          "type": "Value",
+          "description": "Return value from foreign call"
+        },
+        "error": {
+          "type": "Error | null",
+          "description": "Error if execution failed"
+        },
+        "trace": {
+          "type": "ExecutionTrace",
+          "description": "Trace for replay verification"
+        }
+      },
+
+      "kpi_opcode": 32,
+      "kpi_layout": "var"
+    },
+
+    "ForeignImport": {
+      "@id": "kuhul://glyph/ForeignImport/v1",
+      "description": "Import a module from foreign host (lazy, cached)",
+      "category": "effect",
+      "deterministic": true,
+      "replayable": true,
+
+      "inputs": {
+        "host": { "type": "HostId", "required": true },
+        "module": { "type": "string", "required": true },
+        "alias": { "type": "string", "required": false }
+      },
+
+      "outputs": {
+        "handle": { "type": "ModuleHandle", "description": "Opaque handle to imported module" }
+      },
+
+      "kpi_opcode": 33,
+      "kpi_layout": "var"
+    },
+
+    "ForeignConstruct": {
+      "@id": "kuhul://glyph/ForeignConstruct/v1",
+      "description": "Construct an object in foreign host",
+      "category": "effect",
+      "deterministic": false,
+      "replayable": true,
+
+      "inputs": {
+        "host": { "type": "HostId", "required": true },
+        "module": { "type": "string", "required": true },
+        "class": { "type": "string", "required": true },
+        "args": { "type": "Value[]", "required": true },
+        "kwargs": { "type": "Record<string, Value>", "required": false }
+      },
+
+      "outputs": {
+        "handle": { "type": "ObjectHandle", "description": "Opaque handle to constructed object" },
+        "error": { "type": "Error | null" }
+      },
+
+      "kpi_opcode": 34,
+      "kpi_layout": "var"
+    },
+
+    "ForeignMethod": {
+      "@id": "kuhul://glyph/ForeignMethod/v1",
+      "description": "Call a method on a foreign object",
+      "category": "effect",
+      "deterministic": false,
+      "replayable": true,
+
+      "inputs": {
+        "handle": { "type": "ObjectHandle", "required": true },
+        "method": { "type": "string", "required": true },
+        "args": { "type": "Value[]", "required": true },
+        "kwargs": { "type": "Record<string, Value>", "required": false }
+      },
+
+      "outputs": {
+        "result": { "type": "Value" },
+        "error": { "type": "Error | null" }
+      },
+
+      "kpi_opcode": 35,
+      "kpi_layout": "var"
+    },
+
+    "ForeignDispose": {
+      "@id": "kuhul://glyph/ForeignDispose/v1",
+      "description": "Release a foreign object handle",
+      "category": "effect",
+      "deterministic": true,
+      "replayable": true,
+
+      "inputs": {
+        "handle": { "type": "ObjectHandle", "required": true }
+      },
+
+      "outputs": {
+        "disposed": { "type": "boolean" }
+      },
+
+      "kpi_opcode": 36,
+      "kpi_layout": "fixed"
+    }
+  },
+
+  "@types": {
+    "HostId": {
+      "enum": ["python", "node", "wasm", "native", "jvm", "dotnet"]
+    },
+
+    "ModuleHandle": {
+      "type": "object",
+      "properties": {
+        "host": { "$ref": "#/@types/HostId" },
+        "module": { "type": "string" },
+        "handle_id": { "type": "integer" }
+      }
+    },
+
+    "ObjectHandle": {
+      "type": "object",
+      "properties": {
+        "host": { "$ref": "#/@types/HostId" },
+        "type_name": { "type": "string" },
+        "handle_id": { "type": "integer" }
+      }
+    },
+
+    "ExecutionTrace": {
+      "type": "object",
+      "properties": {
+        "call_id": { "type": "string" },
+        "timestamp_ms": { "type": "integer" },
+        "duration_ms": { "type": "integer" },
+        "input_hash": { "type": "string", "format": "sha256" },
+        "output_hash": { "type": "string", "format": "sha256" },
+        "host": { "$ref": "#/@types/HostId" }
+      }
+    },
+
+    "Value": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        { "type": "array", "items": { "$ref": "#/@types/Value" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/@types/Value" } },
+        { "$ref": "#/@types/ObjectHandle" },
+        { "type": "object", "properties": { "bytes_b64": { "type": "string" } } }
+      ]
+    },
+
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "host": { "$ref": "#/@types/HostId" },
+        "traceback": { "type": "string" }
+      }
+    }
+  },
+
+  "@python_adapter": {
+    "description": "Python-specific adapter implementation contract",
+
+    "capabilities": {
+      "numpy": {
+        "description": "NumPy array operations",
+        "module": "numpy",
+        "functions": ["array", "dot", "matmul", "transpose", "reshape", "zeros", "ones", "random.rand"]
+      },
+      "torch": {
+        "description": "PyTorch tensor operations",
+        "module": "torch",
+        "functions": ["tensor", "zeros", "ones", "randn", "matmul", "nn.Linear", "nn.ReLU"]
+      },
+      "transformers": {
+        "description": "HuggingFace Transformers",
+        "module": "transformers",
+        "functions": ["AutoTokenizer.from_pretrained", "AutoModel.from_pretrained", "pipeline"]
+      },
+      "PIL": {
+        "description": "Pillow image processing",
+        "module": "PIL.Image",
+        "functions": ["open", "new", "fromarray", "save", "resize", "crop"]
+      }
+    },
+
+    "serialization": {
+      "numpy_array": {
+        "to_kpi": "base64(tobytes()) + dtype + shape",
+        "from_kpi": "np.frombuffer(base64_decode(data), dtype=dtype).reshape(shape)"
+      },
+      "torch_tensor": {
+        "to_kpi": "base64(numpy().tobytes()) + dtype + shape + device",
+        "from_kpi": "torch.from_numpy(np.frombuffer(...)).to(device)"
+      },
+      "pil_image": {
+        "to_kpi": "base64(PNG bytes) + mode + size",
+        "from_kpi": "Image.open(BytesIO(base64_decode(data)))"
+      }
+    },
+
+    "sandbox": {
+      "allowed_modules": [
+        "numpy", "torch", "transformers", "PIL", "json", "base64",
+        "math", "random", "collections", "itertools", "functools"
+      ],
+      "denied_modules": [
+        "os", "sys", "subprocess", "socket", "requests", "urllib",
+        "shutil", "pathlib", "importlib", "ctypes", "multiprocessing"
+      ],
+      "max_memory_mb": 4096,
+      "max_execution_ms": 60000,
+      "max_output_bytes": 104857600
+    },
+
+    "lifecycle": {
+      "init": "Create Python interpreter subprocess",
+      "warmup": "Pre-import common modules",
+      "execute": "Run ForeignCall through IPC",
+      "teardown": "Kill subprocess, release handles"
+    }
+  },
+
+  "@kpi_encoding": {
+    "ForeignCall": {
+      "opcode": 32,
+      "fields": [
+        { "name": "host", "kind": "VarUInt", "encoding": "enum_index" },
+        { "name": "module", "kind": "StringRef" },
+        { "name": "symbol", "kind": "StringRef" },
+        { "name": "arg_count", "kind": "VarUInt" },
+        { "name": "args", "kind": "Value[]" },
+        { "name": "kwarg_count", "kind": "VarUInt" },
+        { "name": "kwargs", "kind": "KeyValue[]" }
+      ]
+    },
+
+    "ForeignImport": {
+      "opcode": 33,
+      "fields": [
+        { "name": "host", "kind": "VarUInt" },
+        { "name": "module", "kind": "StringRef" },
+        { "name": "alias", "kind": "StringRef?" }
+      ]
+    },
+
+    "ForeignConstruct": {
+      "opcode": 34,
+      "fields": [
+        { "name": "host", "kind": "VarUInt" },
+        { "name": "module", "kind": "StringRef" },
+        { "name": "class", "kind": "StringRef" },
+        { "name": "arg_count", "kind": "VarUInt" },
+        { "name": "args", "kind": "Value[]" },
+        { "name": "kwarg_count", "kind": "VarUInt" },
+        { "name": "kwargs", "kind": "KeyValue[]" }
+      ]
+    },
+
+    "ForeignMethod": {
+      "opcode": 35,
+      "fields": [
+        { "name": "handle_id", "kind": "VarUInt" },
+        { "name": "method", "kind": "StringRef" },
+        { "name": "arg_count", "kind": "VarUInt" },
+        { "name": "args", "kind": "Value[]" },
+        { "name": "kwarg_count", "kind": "VarUInt" },
+        { "name": "kwargs", "kind": "KeyValue[]" }
+      ]
+    },
+
+    "ForeignDispose": {
+      "opcode": 36,
+      "fields": [
+        { "name": "handle_id", "kind": "VarUInt" }
+      ]
+    }
+  }
+}

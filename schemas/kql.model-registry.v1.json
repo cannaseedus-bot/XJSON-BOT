@@ -231,6 +231,116 @@
       "status": "active",
       "icon": "⚛️",
       "color": "#22d3ee"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/qwen-0.5b.v1",
+      "id": "qwen-0.5b",
+      "name": "Qwen 2.5 0.5B (Browser)",
+      "type": "browser_llm",
+      "endpoint": "transformers.js",
+      "provider": "transformers.js",
+      "hf_model": "Xenova/Qwen2.5-0.5B-Instruct",
+      "capabilities": ["chat", "instruction_following"],
+      "context_window": 8192,
+      "quantum_enhanced": false,
+      "browser_native": true,
+      "prompt_template": "qwen",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 512
+      },
+      "status": "active",
+      "icon": "🌐",
+      "color": "#8b5cf6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/qwen-1.5b.v1",
+      "id": "qwen-1.5b",
+      "name": "Qwen 2.5 1.5B (Browser)",
+      "type": "browser_llm",
+      "endpoint": "transformers.js",
+      "provider": "transformers.js",
+      "hf_model": "Xenova/Qwen2.5-1.5B-Instruct",
+      "capabilities": ["chat", "instruction_following", "reasoning"],
+      "context_window": 8192,
+      "quantum_enhanced": false,
+      "browser_native": true,
+      "prompt_template": "qwen",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 512
+      },
+      "status": "active",
+      "icon": "🌐",
+      "color": "#8b5cf6"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/smollm.v1",
+      "id": "smollm",
+      "name": "SmolLM 135M (Browser)",
+      "type": "browser_llm",
+      "endpoint": "transformers.js",
+      "provider": "transformers.js",
+      "hf_model": "Xenova/SmolLM-135M-Instruct",
+      "capabilities": ["chat", "fast_inference"],
+      "context_window": 2048,
+      "quantum_enhanced": false,
+      "browser_native": true,
+      "prompt_template": "chatml",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 256
+      },
+      "status": "active",
+      "icon": "⚡",
+      "color": "#f59e0b"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/tinyllama.v1",
+      "id": "tinyllama",
+      "name": "TinyLlama 1.1B (Browser)",
+      "type": "browser_llm",
+      "endpoint": "transformers.js",
+      "provider": "transformers.js",
+      "hf_model": "Xenova/TinyLlama-1.1B-Chat-v1.0",
+      "capabilities": ["chat", "instruction_following"],
+      "context_window": 2048,
+      "quantum_enhanced": false,
+      "browser_native": true,
+      "prompt_template": "llama3",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 512
+      },
+      "status": "active",
+      "icon": "🦙",
+      "color": "#06b6d4"
+    },
+    {
+      "@type": "kql.model.v1",
+      "@id": "asx://model/phi-2.v1",
+      "id": "phi-2",
+      "name": "Phi-2 2.7B (Browser)",
+      "type": "browser_llm",
+      "endpoint": "transformers.js",
+      "provider": "transformers.js",
+      "hf_model": "Xenova/phi-2",
+      "capabilities": ["chat", "reasoning", "coding"],
+      "context_window": 2048,
+      "quantum_enhanced": false,
+      "browser_native": true,
+      "prompt_template": "chatml",
+      "parameters": {
+        "temperature": 0.7,
+        "max_tokens": 512
+      },
+      "status": "active",
+      "icon": "🔬",
+      "color": "#ec4899"
     }
   ],
 
@@ -238,11 +348,30 @@
 
   "provider_configs": {
     "mx2lm": {
+      "type": "api",
       "base_url": "https://mx2lm.app",
       "api_endpoint": "/api.php",
       "quantum_enabled": true
     },
+    "transformers.js": {
+      "type": "browser",
+      "cdn": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.0",
+      "device": "webgpu",
+      "fallback_device": "wasm",
+      "browser_native": true
+    },
+    "ollama": {
+      "type": "local",
+      "base_url": "http://localhost:11434",
+      "api_endpoint": "/api/generate"
+    },
+    "openai": {
+      "type": "api",
+      "base_url": "https://api.openai.com/v1",
+      "requires_key": true
+    },
     "deepseek": {
+      "type": "api",
       "via_mx2lm": true,
       "quantum_enhanced": true
     },

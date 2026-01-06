@@ -1,0 +1,601 @@
+{
+  "$schema": "xjson://schema/core/v1",
+  "@id": "kuhul://schema/bridge/adapters/v1",
+  "@type": "kuhul.bridge.adapters.schema",
+  "@version": "1.0.0",
+  "@status": "frozen",
+  "@title": "KUHUL Universal Language Adapter Schema",
+  "@authority": "AST_IS_LAW",
+  "@notes": [
+    "Defines how ANY language maps to/from the canonical KUHUL AST.",
+    "Adapters do NOT define semantics. AST does.",
+    "Adapters may parse, print, and bind — nothing more.",
+    "This schema is consumed by both JS and @kuhul/native runtimes."
+  ],
+
+  "@invariants": {
+    "single_canonical_ast": true,
+    "no_semantic_forks": true,
+    "deterministic_roundtrip": true,
+    "adapter_must_be_lossless": true,
+    "no_external_schema_urls": true,
+    "no_eval": true
+  },
+
+  "@adapter_model": {
+    "definition": "An adapter is a reversible mapping between a surface language and the canonical AST.",
+    "required_capabilities": [
+      "parse_to_ast",
+      "print_from_ast"
+    ],
+    "optional_capabilities": [
+      "effect_binding",
+      "type_projection",
+      "binary_lowering"
+    ]
+  },
+
+  "@defs": {
+    "LangId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_\\-./]{1,128}$"
+    },
+
+    "Token": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "keyword",
+            "identifier",
+            "literal",
+            "operator",
+            "delimiter",
+            "glyph",
+            "directive"
+          ]
+        },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "Precedence": {
+      "type": "object",
+      "required": ["operator", "level", "assoc"],
+      "properties": {
+        "operator": { "type": "string" },
+        "level": { "type": "integer", "minimum": 0 },
+        "assoc": { "enum": ["left", "right", "none"] }
+      },
+      "additionalProperties": false
+    },
+
+    "GrammarRule": {
+      "type": "object",
+      "required": ["lhs", "rhs"],
+      "properties": {
+        "lhs": { "type": "string" },
+        "rhs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ParseMap": {
+      "description": "Maps surface grammar constructs to AST node types.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["ast_type"],
+        "properties": {
+          "ast_type": { "type": "string" },
+          "fields": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "PrintMap": {
+      "description": "Maps AST node types to surface syntax templates.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["template"],
+        "properties": {
+          "template": { "type": "string" },
+          "emit_semicolon": { "type": "boolean", "default": false },
+          "wrap_block": { "type": "boolean", "default": false }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "EffectBinding": {
+      "description": "Maps canonical AST Effect ops to runtime-specific calls.",
+      "type": "object",
+      "required": ["effect", "target"],
+      "properties": {
+        "effect": { "type": "string" },
+        "target": { "type": "string" },
+        "call": { "type": "string" },
+        "io_policy": {
+          "enum": ["pure", "local", "network", "kernel"],
+          "default": "local"
+        },
+        "deterministic": { "type": "boolean", "default": true }
+      },
+      "additionalProperties": false
+    },
+
+    "BinaryLowering": {
+      "description": "Optional mapping from AST nodes to KPI binary sections.",
+      "type": "object",
+      "required": ["node_type", "opcode"],
+      "properties": {
+        "node_type": { "type": "string" },
+        "opcode": { "type": "integer", "minimum": 0 },
+        "layout": {
+          "enum": ["fixed", "var", "ref"]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Adapter": {
+      "type": "object",
+      "required": [
+        "lang_id",
+        "surface",
+        "tokens",
+        "precedence",
+        "grammar",
+        "parse_map",
+        "print_map"
+      ],
+      "properties": {
+        "lang_id": { "$ref": "#/@defs/LangId" },
+
+        "surface": {
+          "type": "object",
+          "required": ["family"],
+          "properties": {
+            "family": {
+              "enum": [
+                "js",
+                "ts",
+                "python",
+                "lua",
+                "wasm",
+                "xjson",
+                "kuhul-es",
+                "custom"
+              ]
+            },
+            "dialect": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+
+        "tokens": {
+          "type": "array",
+          "items": { "$ref": "#/@defs/Token" }
+        },
+
+        "precedence": {
+          "type": "array",
+          "items": { "$ref": "#/@defs/Precedence" }
+        },
+
+        "grammar": {
+          "type": "array",
+          "items": { "$ref": "#/@defs/GrammarRule" }
+        },
+
+        "parse_map": { "$ref": "#/@defs/ParseMap" },
+
+        "print_map": { "$ref": "#/@defs/PrintMap" },
+
+        "effect_bindings": {
+          "type": "array",
+          "items": { "$ref": "#/@defs/EffectBinding" }
+        },
+
+        "binary_lowering": {
+          "type": "array",
+          "items": { "$ref": "#/@defs/BinaryLowering" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+
+  "@adapters": {
+    "kuhul-es": {
+      "lang_id": "kuhul-es",
+      "surface": {
+        "family": "kuhul-es",
+        "dialect": "v2.1"
+      },
+      "tokens": [
+        { "kind": "keyword", "value": "π" },
+        { "kind": "keyword", "value": "τ" },
+        { "kind": "keyword", "value": "function" },
+        { "kind": "keyword", "value": "λ" },
+        { "kind": "keyword", "value": "return" },
+        { "kind": "keyword", "value": "yield" },
+        { "kind": "keyword", "value": "true" },
+        { "kind": "keyword", "value": "false" },
+        { "kind": "keyword", "value": "null" },
+        { "kind": "glyph", "value": "⟁" },
+        { "kind": "glyph", "value": "Pop" },
+        { "kind": "glyph", "value": "Wo" },
+        { "kind": "glyph", "value": "Sek" },
+        { "kind": "glyph", "value": "Ch'en" },
+        { "kind": "glyph", "value": "Yax" },
+        { "kind": "glyph", "value": "Xul" },
+        { "kind": "directive", "value": "@if" },
+        { "kind": "directive", "value": "@else" },
+        { "kind": "directive", "value": "@for" },
+        { "kind": "directive", "value": "@while" },
+        { "kind": "directive", "value": "@match" },
+        { "kind": "directive", "value": "@system" },
+        { "kind": "directive", "value": "@interface" },
+        { "kind": "directive", "value": "@compressed" },
+        { "kind": "directive", "value": "@flow" },
+        { "kind": "directive", "value": "@data" },
+        { "kind": "directive", "value": "@atomic" },
+        { "kind": "directive", "value": "@deterministic" },
+        { "kind": "directive", "value": "@replayable" },
+        { "kind": "operator", "value": "|>" },
+        { "kind": "operator", "value": "π>" },
+        { "kind": "operator", "value": "→" },
+        { "kind": "operator", "value": "←" },
+        { "kind": "operator", "value": "=>" },
+        { "kind": "operator", "value": "π+" },
+        { "kind": "operator", "value": "π-" },
+        { "kind": "operator", "value": "π*" },
+        { "kind": "operator", "value": "π/" },
+        { "kind": "operator", "value": "π**" },
+        { "kind": "delimiter", "value": "(" },
+        { "kind": "delimiter", "value": ")" },
+        { "kind": "delimiter", "value": "{" },
+        { "kind": "delimiter", "value": "}" },
+        { "kind": "delimiter", "value": "[" },
+        { "kind": "delimiter", "value": "]" },
+        { "kind": "delimiter", "value": ";" },
+        { "kind": "delimiter", "value": "," },
+        { "kind": "delimiter", "value": ":" }
+      ],
+      "precedence": [
+        { "operator": "|>", "level": 1, "assoc": "left" },
+        { "operator": "π>", "level": 1, "assoc": "left" },
+        { "operator": "||", "level": 2, "assoc": "left" },
+        { "operator": "&&", "level": 3, "assoc": "left" },
+        { "operator": "|", "level": 4, "assoc": "left" },
+        { "operator": "^", "level": 5, "assoc": "left" },
+        { "operator": "&", "level": 6, "assoc": "left" },
+        { "operator": "==", "level": 7, "assoc": "left" },
+        { "operator": "!=", "level": 7, "assoc": "left" },
+        { "operator": "===", "level": 7, "assoc": "left" },
+        { "operator": "!==", "level": 7, "assoc": "left" },
+        { "operator": "<", "level": 8, "assoc": "left" },
+        { "operator": ">", "level": 8, "assoc": "left" },
+        { "operator": "<=", "level": 8, "assoc": "left" },
+        { "operator": ">=", "level": 8, "assoc": "left" },
+        { "operator": "π<", "level": 8, "assoc": "left" },
+        { "operator": "π>", "level": 8, "assoc": "left" },
+        { "operator": "<<", "level": 9, "assoc": "left" },
+        { "operator": ">>", "level": 9, "assoc": "left" },
+        { "operator": ">>>", "level": 9, "assoc": "left" },
+        { "operator": "+", "level": 10, "assoc": "left" },
+        { "operator": "-", "level": 10, "assoc": "left" },
+        { "operator": "π+", "level": 10, "assoc": "left" },
+        { "operator": "π-", "level": 10, "assoc": "left" },
+        { "operator": "*", "level": 11, "assoc": "left" },
+        { "operator": "/", "level": 11, "assoc": "left" },
+        { "operator": "%", "level": 11, "assoc": "left" },
+        { "operator": "π*", "level": 11, "assoc": "left" },
+        { "operator": "π/", "level": 11, "assoc": "left" },
+        { "operator": "**", "level": 12, "assoc": "right" },
+        { "operator": "π**", "level": 12, "assoc": "right" }
+      ],
+      "grammar": [
+        { "lhs": "Program", "rhs": ["TopLevelItem*"] },
+        { "lhs": "TopLevelItem", "rhs": ["Declaration", "|", "Statement", "|", "DirectiveBlock"] },
+        { "lhs": "πDeclaration", "rhs": ["'π'", "Identifier", "('='", "Expression)?", "';'"] },
+        { "lhs": "τDeclaration", "rhs": ["'τ'", "Identifier", "('='", "Expression)?", "';'"] },
+        { "lhs": "FunctionDeclaration", "rhs": ["'function'", "'*'?", "Identifier", "'('", "ParameterList?", "')'", "ReturnType?", "Block"] },
+        { "lhs": "LambdaExpression", "rhs": ["'λ'", "'('", "ParameterList?", "')'", "ReturnType?", "'=>'", "Expression"] },
+        { "lhs": "SystemDeclaration", "rhs": ["'@system'", "Identifier", "'('", "ParameterList?", "')'", "Block"] },
+        { "lhs": "GlyphStatement", "rhs": ["'⟁'", "GlyphName", "'('", "ArgumentList?", "')'", "Destination?"] },
+        { "lhs": "τUpdateStatement", "rhs": ["'τ'", "Identifier", "'←'", "Expression", "';'"] },
+        { "lhs": "IfStatement", "rhs": ["'@if'", "'('", "Expression", "')'", "Statement", "('@else'", "Statement)?"] },
+        { "lhs": "ForStatement", "rhs": ["'@for'", "'('", "ForInit?", "';'", "Expression?", "';'", "Expression?", "')'", "Statement"] },
+        { "lhs": "WhileStatement", "rhs": ["'@while'", "'('", "Expression", "')'", "Statement"] },
+        { "lhs": "MatchStatement", "rhs": ["'@match'", "'('", "Expression", "')'", "'{'", "CaseClause*", "'}'"] },
+        { "lhs": "PipeExpression", "rhs": ["Expression", "('|>'", "|", "'π>')", "Expression"] }
+      ],
+      "parse_map": {
+        "πDeclaration": {
+          "ast_type": "VarDecl",
+          "fields": { "mode": "pi" }
+        },
+        "τDeclaration": {
+          "ast_type": "VarDecl",
+          "fields": { "mode": "tau" }
+        },
+        "FunctionDeclaration": {
+          "ast_type": "FuncDecl",
+          "fields": {}
+        },
+        "LambdaExpression": {
+          "ast_type": "FuncDecl",
+          "fields": { "lambda": "true" }
+        },
+        "GlyphStatement": {
+          "ast_type": "Glyph",
+          "fields": {}
+        },
+        "τUpdateStatement": {
+          "ast_type": "Assign",
+          "fields": { "op": "←" }
+        },
+        "IfStatement": {
+          "ast_type": "If",
+          "fields": {}
+        },
+        "ForStatement": {
+          "ast_type": "For",
+          "fields": {}
+        },
+        "WhileStatement": {
+          "ast_type": "While",
+          "fields": {}
+        },
+        "PipeExpression": {
+          "ast_type": "Pipe",
+          "fields": {}
+        }
+      },
+      "print_map": {
+        "VarDecl:pi": {
+          "template": "π {idn.name} = {init};",
+          "emit_semicolon": true
+        },
+        "VarDecl:tau": {
+          "template": "τ {idn.name} = {init};",
+          "emit_semicolon": true
+        },
+        "FuncDecl": {
+          "template": "function{generator ? '*' : ''} {name.name}({params}) {body}",
+          "wrap_block": true
+        },
+        "Glyph": {
+          "template": "⟁ {name}({args}){dest ? ' → ' + dest.name : ''}",
+          "emit_semicolon": false
+        },
+        "If": {
+          "template": "@if ({test}) {then}{else ? ' @else ' + else : ''}",
+          "wrap_block": false
+        },
+        "For": {
+          "template": "@for ({init}; {test}; {step}) {body}",
+          "wrap_block": false
+        },
+        "While": {
+          "template": "@while ({test}) {body}",
+          "wrap_block": false
+        },
+        "Pipe": {
+          "template": "{left} {op} {right}",
+          "emit_semicolon": false
+        }
+      },
+      "effect_bindings": [
+        { "effect": "log", "target": "console", "call": "console.log" },
+        { "effect": "time.now", "target": "js", "call": "Date.now", "deterministic": false },
+        { "effect": "idb.get", "target": "indexeddb", "call": "KQL.get", "io_policy": "local" },
+        { "effect": "idb.put", "target": "indexeddb", "call": "KQL.put", "io_policy": "local" },
+        { "effect": "idb.query", "target": "indexeddb", "call": "KQL.query", "io_policy": "local" },
+        { "effect": "kql.query", "target": "kql", "call": "KQL.execute", "io_policy": "local" },
+        { "effect": "kpi.emit", "target": "kpi", "call": "KPI.encode", "io_policy": "pure" },
+        { "effect": "trace.record", "target": "trace", "call": "Trace.record", "io_policy": "local" },
+        { "effect": "trace.verify", "target": "trace", "call": "Trace.verify", "io_policy": "pure" }
+      ],
+      "binary_lowering": [
+        { "node_type": "Program", "opcode": 1, "layout": "var" },
+        { "node_type": "VarDecl", "opcode": 2, "layout": "var" },
+        { "node_type": "Identifier", "opcode": 3, "layout": "ref" },
+        { "node_type": "Literal", "opcode": 4, "layout": "var" },
+        { "node_type": "Call", "opcode": 5, "layout": "var" },
+        { "node_type": "Member", "opcode": 6, "layout": "var" },
+        { "node_type": "Block", "opcode": 7, "layout": "var" },
+        { "node_type": "If", "opcode": 8, "layout": "var" },
+        { "node_type": "For", "opcode": 9, "layout": "var" },
+        { "node_type": "While", "opcode": 10, "layout": "var" },
+        { "node_type": "Return", "opcode": 11, "layout": "var" },
+        { "node_type": "FuncDecl", "opcode": 12, "layout": "var" },
+        { "node_type": "BinaryExpr", "opcode": 13, "layout": "var" },
+        { "node_type": "UnaryExpr", "opcode": 14, "layout": "var" },
+        { "node_type": "Assign", "opcode": 15, "layout": "var" },
+        { "node_type": "Glyph", "opcode": 16, "layout": "var" },
+        { "node_type": "Pipe", "opcode": 17, "layout": "var" },
+        { "node_type": "Effect", "opcode": 18, "layout": "var" }
+      ]
+    },
+
+    "javascript": {
+      "lang_id": "javascript",
+      "surface": {
+        "family": "js",
+        "dialect": "es2022"
+      },
+      "tokens": [
+        { "kind": "keyword", "value": "const" },
+        { "kind": "keyword", "value": "let" },
+        { "kind": "keyword", "value": "var" },
+        { "kind": "keyword", "value": "function" },
+        { "kind": "keyword", "value": "return" },
+        { "kind": "keyword", "value": "if" },
+        { "kind": "keyword", "value": "else" },
+        { "kind": "keyword", "value": "for" },
+        { "kind": "keyword", "value": "while" },
+        { "kind": "keyword", "value": "true" },
+        { "kind": "keyword", "value": "false" },
+        { "kind": "keyword", "value": "null" },
+        { "kind": "keyword", "value": "undefined" }
+      ],
+      "precedence": [
+        { "operator": "||", "level": 2, "assoc": "left" },
+        { "operator": "&&", "level": 3, "assoc": "left" },
+        { "operator": "+", "level": 10, "assoc": "left" },
+        { "operator": "-", "level": 10, "assoc": "left" },
+        { "operator": "*", "level": 11, "assoc": "left" },
+        { "operator": "/", "level": 11, "assoc": "left" }
+      ],
+      "grammar": [
+        { "lhs": "Program", "rhs": ["Statement*"] },
+        { "lhs": "VariableDeclaration", "rhs": ["('const'", "|", "'let'", "|", "'var')", "Identifier", "'='", "Expression", "';'"] },
+        { "lhs": "FunctionDeclaration", "rhs": ["'function'", "Identifier", "'('", "ParameterList?", "')'", "Block"] },
+        { "lhs": "IfStatement", "rhs": ["'if'", "'('", "Expression", "')'", "Statement", "('else'", "Statement)?"] },
+        { "lhs": "ForStatement", "rhs": ["'for'", "'('", "ForInit?", "';'", "Expression?", "';'", "Expression?", "')'", "Statement"] }
+      ],
+      "parse_map": {
+        "VariableDeclaration:const": {
+          "ast_type": "VarDecl",
+          "fields": { "mode": "const" }
+        },
+        "VariableDeclaration:let": {
+          "ast_type": "VarDecl",
+          "fields": { "mode": "let" }
+        },
+        "VariableDeclaration:var": {
+          "ast_type": "VarDecl",
+          "fields": { "mode": "var" }
+        },
+        "FunctionDeclaration": {
+          "ast_type": "FuncDecl",
+          "fields": {}
+        },
+        "IfStatement": {
+          "ast_type": "If",
+          "fields": {}
+        },
+        "ForStatement": {
+          "ast_type": "For",
+          "fields": {}
+        }
+      },
+      "print_map": {
+        "VarDecl:const": {
+          "template": "const {idn.name} = {init};",
+          "emit_semicolon": true
+        },
+        "VarDecl:let": {
+          "template": "let {idn.name} = {init};",
+          "emit_semicolon": true
+        },
+        "VarDecl:var": {
+          "template": "var {idn.name} = {init};",
+          "emit_semicolon": true
+        },
+        "FuncDecl": {
+          "template": "function {name.name}({params}) {body}",
+          "wrap_block": true
+        },
+        "If": {
+          "template": "if ({test}) {then}{else ? ' else ' + else : ''}",
+          "wrap_block": false
+        }
+      },
+      "effect_bindings": [
+        { "effect": "log", "target": "console", "call": "console.log" },
+        { "effect": "time.now", "target": "js", "call": "Date.now", "deterministic": false }
+      ],
+      "binary_lowering": []
+    },
+
+    "python": {
+      "lang_id": "python",
+      "surface": {
+        "family": "python",
+        "dialect": "3.10"
+      },
+      "tokens": [
+        { "kind": "keyword", "value": "def" },
+        { "kind": "keyword", "value": "return" },
+        { "kind": "keyword", "value": "if" },
+        { "kind": "keyword", "value": "elif" },
+        { "kind": "keyword", "value": "else" },
+        { "kind": "keyword", "value": "for" },
+        { "kind": "keyword", "value": "while" },
+        { "kind": "keyword", "value": "True" },
+        { "kind": "keyword", "value": "False" },
+        { "kind": "keyword", "value": "None" }
+      ],
+      "precedence": [
+        { "operator": "or", "level": 2, "assoc": "left" },
+        { "operator": "and", "level": 3, "assoc": "left" },
+        { "operator": "+", "level": 10, "assoc": "left" },
+        { "operator": "-", "level": 10, "assoc": "left" },
+        { "operator": "*", "level": 11, "assoc": "left" },
+        { "operator": "/", "level": 11, "assoc": "left" },
+        { "operator": "**", "level": 12, "assoc": "right" }
+      ],
+      "grammar": [
+        { "lhs": "Program", "rhs": ["Statement*"] },
+        { "lhs": "FunctionDef", "rhs": ["'def'", "Identifier", "'('", "ParameterList?", "')'", "':'", "Suite"] },
+        { "lhs": "IfStatement", "rhs": ["'if'", "Expression", "':'", "Suite", "('elif'", "Expression", "':'", "Suite)*", "('else'", "':'", "Suite)?"] },
+        { "lhs": "ForStatement", "rhs": ["'for'", "Identifier", "'in'", "Expression", "':'", "Suite"] }
+      ],
+      "parse_map": {
+        "FunctionDef": {
+          "ast_type": "FuncDecl",
+          "fields": {}
+        },
+        "IfStatement": {
+          "ast_type": "If",
+          "fields": {}
+        },
+        "ForStatement": {
+          "ast_type": "For",
+          "fields": { "kind": "forin" }
+        }
+      },
+      "print_map": {
+        "FuncDecl": {
+          "template": "def {name.name}({params}):\n{body}",
+          "wrap_block": false
+        },
+        "If": {
+          "template": "if {test}:\n{then}{else ? '\nelse:\n' + else : ''}",
+          "wrap_block": false
+        }
+      },
+      "effect_bindings": [
+        { "effect": "log", "target": "console", "call": "print" },
+        { "effect": "time.now", "target": "python", "call": "time.time", "deterministic": false }
+      ],
+      "binary_lowering": []
+    }
+  },
+
+  "type": "object",
+  "required": [
+    "@id",
+    "@type",
+    "@version",
+    "@status",
+    "@invariants",
+    "@adapter_model",
+    "@defs"
+  ],
+  "additionalProperties": false
+}

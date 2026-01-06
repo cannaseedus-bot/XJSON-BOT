@@ -1,0 +1,374 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xjson-bot.dev/schemas/ggltensors.schema.v1.json",
+  "title": ".ggltensors Format Schema v1.0",
+  "description": "Geometric tensor storage format for GGL-LORA models",
+  "version": "1.0.0",
+
+  "definitions": {
+    "DataType": {
+      "description": "Tensor data types",
+      "enum": [
+        "float32",
+        "float16",
+        "bfloat16",
+        "int32",
+        "int16",
+        "int8",
+        "uint8",
+        "bool",
+        "complex64",
+        "complex128"
+      ]
+    },
+
+    "QuantizationType": {
+      "description": "Quantization methods for GGL tensors",
+      "enum": [
+        "none",
+        "q4_0",
+        "q4_1",
+        "q5_0",
+        "q5_1",
+        "q8_0",
+        "q8_1",
+        "ggl_fourier_q8",
+        "ggl_vq_256",
+        "ggl_vq_1024"
+      ]
+    },
+
+    "TensorShape": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "minItems": 1,
+      "description": "Tensor dimensions"
+    },
+
+    "GeometricMetadata": {
+      "description": "Geometric-specific tensor metadata",
+      "type": "object",
+      "properties": {
+        "primitiveType": {
+          "enum": ["circle", "square", "triangle", "line", "point", "polygon", "bezier", "arc", "mixed"]
+        },
+        "coordinateSystem": {
+          "enum": ["cartesian", "polar", "barycentric", "normalized"]
+        },
+        "spatialDimension": {
+          "enum": [2, 3],
+          "default": 2
+        },
+        "isEmbedding": { "type": "boolean" },
+        "embeddingType": {
+          "enum": ["fourier", "learned", "vq", "hybrid"]
+        },
+        "numFourierCoeffs": { "type": "integer" },
+        "normalizedTo": {
+          "enum": ["unit_circle", "unit_square", "bounding_box", "centroid"]
+        }
+      }
+    },
+
+    "TensorDescriptor": {
+      "description": "Descriptor for a single tensor",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "shape": { "$ref": "#/definitions/TensorShape" },
+        "dtype": { "$ref": "#/definitions/DataType" },
+        "quantization": { "$ref": "#/definitions/QuantizationType" },
+        "offset": {
+          "type": "integer",
+          "description": "Byte offset in data section"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size in bytes"
+        },
+        "geometric": { "$ref": "#/definitions/GeometricMetadata" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["name", "shape", "dtype", "offset", "size"]
+    },
+
+    "LoraConfig": {
+      "description": "LoRA adapter configuration",
+      "type": "object",
+      "properties": {
+        "r": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "LoRA rank"
+        },
+        "alpha": {
+          "type": "number",
+          "description": "LoRA alpha scaling"
+        },
+        "dropout": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "targetModules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Modules to apply LoRA to"
+        },
+        "biasType": {
+          "enum": ["none", "all", "lora_only"]
+        },
+        "taskType": {
+          "enum": ["causal_lm", "seq2seq", "token_classification", "ggl_generation"]
+        },
+        "gglSpecific": {
+          "type": "object",
+          "properties": {
+            "geometricPositionalEncoding": { "type": "boolean" },
+            "fourierEmbeddingDim": { "type": "integer" },
+            "primitiveTypeEmbedding": { "type": "boolean" },
+            "coordinateNormalization": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["r", "alpha", "targetModules"]
+    },
+
+    "ModelConfig": {
+      "description": "Base model configuration",
+      "type": "object",
+      "properties": {
+        "modelType": { "type": "string" },
+        "baseModel": { "type": "string" },
+        "hiddenSize": { "type": "integer" },
+        "numAttentionHeads": { "type": "integer" },
+        "numHiddenLayers": { "type": "integer" },
+        "intermediateSize": { "type": "integer" },
+        "vocabSize": { "type": "integer" },
+        "maxPositionEmbeddings": { "type": "integer" },
+        "gglVocabSize": {
+          "type": "integer",
+          "description": "GGL-specific vocabulary additions"
+        },
+        "gglConfig": {
+          "type": "object",
+          "properties": {
+            "maxPrimitives": { "type": "integer" },
+            "maxCoordinateBins": { "type": "integer" },
+            "fourierDescriptors": { "type": "integer" },
+            "geometricAttention": { "type": "boolean" },
+            "spatialPositionalEncoding": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["modelType", "baseModel"]
+    },
+
+    "TrainingMetadata": {
+      "description": "Training run metadata",
+      "type": "object",
+      "properties": {
+        "trainingDate": { "type": "string", "format": "date-time" },
+        "epochs": { "type": "integer" },
+        "batchSize": { "type": "integer" },
+        "learningRate": { "type": "number" },
+        "optimizer": { "type": "string" },
+        "scheduler": { "type": "string" },
+        "numTrainingSamples": { "type": "integer" },
+        "numValidationSamples": { "type": "integer" },
+        "finalLoss": { "type": "number" },
+        "finalAccuracy": { "type": "number" },
+        "gglMetrics": {
+          "type": "object",
+          "properties": {
+            "geometricIoU": { "type": "number" },
+            "primitiveAccuracy": { "type": "number" },
+            "coordinateMSE": { "type": "number" },
+            "fourierSimilarity": { "type": "number" }
+          }
+        },
+        "hardware": {
+          "type": "object",
+          "properties": {
+            "gpuType": { "type": "string" },
+            "numGpus": { "type": "integer" },
+            "totalVRAM": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "FileHeader": {
+      "description": ".ggltensors file header",
+      "type": "object",
+      "properties": {
+        "magic": {
+          "const": "GGLT",
+          "description": "Magic bytes: 0x47 0x47 0x4C 0x54"
+        },
+        "version": {
+          "type": "object",
+          "properties": {
+            "major": { "type": "integer" },
+            "minor": { "type": "integer" },
+            "patch": { "type": "integer" }
+          },
+          "required": ["major", "minor", "patch"]
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "generator": { "type": "string" },
+        "checksum": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 of data section"
+        },
+        "compressed": { "type": "boolean" },
+        "compressionType": {
+          "enum": ["none", "gzip", "lz4", "zstd"]
+        },
+        "metadataOffset": { "type": "integer" },
+        "metadataSize": { "type": "integer" },
+        "dataOffset": { "type": "integer" },
+        "dataSize": { "type": "integer" }
+      },
+      "required": ["magic", "version", "checksum", "metadataOffset", "dataOffset"]
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "type": { "const": "ggltensors" },
+    "header": { "$ref": "#/definitions/FileHeader" },
+    "modelConfig": { "$ref": "#/definitions/ModelConfig" },
+    "loraConfig": { "$ref": "#/definitions/LoraConfig" },
+    "tensors": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/TensorDescriptor" }
+    },
+    "trainingMetadata": { "$ref": "#/definitions/TrainingMetadata" },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "license": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "huggingfaceRepo": { "type": "string" },
+        "paperUrl": { "type": "string" }
+      }
+    }
+  },
+  "required": ["type", "header", "modelConfig", "tensors"],
+
+  "examples": [
+    {
+      "type": "ggltensors",
+      "header": {
+        "magic": "GGLT",
+        "version": { "major": 1, "minor": 0, "patch": 0 },
+        "createdAt": "2025-01-15T10:30:00Z",
+        "generator": "ggl-lora-trainer v1.0",
+        "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "compressed": true,
+        "compressionType": "zstd",
+        "metadataOffset": 64,
+        "metadataSize": 4096,
+        "dataOffset": 4160,
+        "dataSize": 52428800
+      },
+      "modelConfig": {
+        "modelType": "ggl-lora",
+        "baseModel": "meta-llama/Llama-3.2-3B",
+        "hiddenSize": 3072,
+        "numAttentionHeads": 24,
+        "numHiddenLayers": 28,
+        "vocabSize": 128256,
+        "gglVocabSize": 1024,
+        "gglConfig": {
+          "maxPrimitives": 256,
+          "maxCoordinateBins": 256,
+          "fourierDescriptors": 32,
+          "geometricAttention": true,
+          "spatialPositionalEncoding": true
+        }
+      },
+      "loraConfig": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "targetModules": ["q_proj", "v_proj", "k_proj", "o_proj"],
+        "taskType": "ggl_generation",
+        "gglSpecific": {
+          "geometricPositionalEncoding": true,
+          "fourierEmbeddingDim": 64,
+          "primitiveTypeEmbedding": true,
+          "coordinateNormalization": true
+        }
+      },
+      "tensors": [
+        {
+          "name": "lora_A.q_proj",
+          "shape": [16, 3072],
+          "dtype": "float16",
+          "quantization": "none",
+          "offset": 0,
+          "size": 98304
+        },
+        {
+          "name": "lora_B.q_proj",
+          "shape": [3072, 16],
+          "dtype": "float16",
+          "quantization": "none",
+          "offset": 98304,
+          "size": 98304
+        },
+        {
+          "name": "ggl_embedding.fourier",
+          "shape": [1024, 64],
+          "dtype": "float16",
+          "quantization": "ggl_fourier_q8",
+          "offset": 196608,
+          "size": 65536,
+          "geometric": {
+            "primitiveType": "mixed",
+            "isEmbedding": true,
+            "embeddingType": "fourier",
+            "numFourierCoeffs": 32,
+            "normalizedTo": "unit_circle"
+          }
+        }
+      ],
+      "trainingMetadata": {
+        "trainingDate": "2025-01-15T10:30:00Z",
+        "epochs": 3,
+        "batchSize": 8,
+        "learningRate": 2e-4,
+        "optimizer": "AdamW",
+        "scheduler": "cosine",
+        "numTrainingSamples": 100000,
+        "finalLoss": 0.234,
+        "gglMetrics": {
+          "geometricIoU": 0.87,
+          "primitiveAccuracy": 0.94,
+          "coordinateMSE": 0.0012,
+          "fourierSimilarity": 0.92
+        }
+      },
+      "metadata": {
+        "name": "GGL-LORA-Llama3.2-3B",
+        "description": "LoRA adapter for geometric glyph language generation",
+        "author": "XJSON-BOT",
+        "license": "Apache-2.0",
+        "tags": ["ggl", "lora", "geometric", "multimodal"]
+      }
+    }
+  ]
+}

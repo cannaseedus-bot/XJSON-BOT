@@ -1,0 +1,624 @@
+{
+  "$schema": "xjson://schema/core/v1",
+  "@id": "kuhul://schema/sandbox/v1",
+  "@type": "kuhul.sandbox.contract",
+  "@version": "1.0.0",
+  "@status": "frozen",
+  "@title": "KUHUL Universal Sandbox Contract",
+  "@authority": "KPI_IS_LAW",
+
+  "@notes": [
+    "This is the universal execution container for ANY runtime.",
+    "Any language/runtime that implements this contract can execute KPI.",
+    "XCFE phases are mandatory. No shortcuts.",
+    "JSON describes intent. Binary causes effects.",
+    "Sandbox is the boundary between description and execution."
+  ],
+
+  "@invariants": {
+    "xcfe_phases_mandatory": true,
+    "no_ambient_authority": true,
+    "all_effects_declared": true,
+    "execution_is_traced": true,
+    "replay_must_verify": true,
+    "sandbox_is_killable": true
+  },
+
+  "@model": {
+    "concept": "A sandbox is a bounded execution context that receives KPI effects and produces traced results.",
+    "flow": [
+      "1. Sandbox receives KPI binary or AST",
+      "2. Sandbox validates against declared capabilities",
+      "3. Sandbox executes through XCFE phases",
+      "4. Sandbox returns result + trace",
+      "5. Trace hash can be verified for replay"
+    ],
+    "guarantees": [
+      "Sandbox cannot escape its capability boundary",
+      "Sandbox cannot access undeclared resources",
+      "Sandbox can be killed at any time",
+      "Sandbox execution is deterministic given same inputs"
+    ]
+  },
+
+  "@xcfe": {
+    "description": "Execution phases - all sandboxes must implement these",
+    "phases": {
+      "Pop": {
+        "glyph": "⟁Pop⟁",
+        "purpose": "Populate - Load data, initialize state, resolve imports",
+        "inputs": ["KPI binary", "Initial context", "Capability grants"],
+        "outputs": ["Populated state", "Import handles"],
+        "deterministic": true,
+        "can_fail": true
+      },
+      "Wo": {
+        "glyph": "⟁Wo⟁",
+        "purpose": "Work - Transform, compute, process",
+        "inputs": ["Populated state", "Effect descriptors"],
+        "outputs": ["Computed values", "Intermediate results"],
+        "deterministic": "depends on effects",
+        "can_fail": true
+      },
+      "Sek": {
+        "glyph": "⟁Sek⟁",
+        "purpose": "Seek - Query, filter, search, dispatch to hosts",
+        "inputs": ["Effect requests", "Host routes"],
+        "outputs": ["Effect results", "Host responses"],
+        "deterministic": false,
+        "can_fail": true
+      },
+      "Collapse": {
+        "glyph": "⟁Ch'en⟁",
+        "purpose": "Collapse - Finalize, commit, return results",
+        "inputs": ["All phase results", "Trace data"],
+        "outputs": ["Final result", "Execution trace", "Verification hash"],
+        "deterministic": true,
+        "can_fail": false
+      }
+    },
+    "phase_order": ["Pop", "Wo", "Sek", "Collapse"],
+    "phase_invariant": "Each phase must complete before next begins"
+  },
+
+  "@sandbox_spec": {
+    "description": "Specification for a sandbox instance",
+
+    "SandboxConfig": {
+      "type": "object",
+      "required": ["id", "runtime", "capabilities"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique sandbox identifier",
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+        },
+        "runtime": {
+          "$ref": "#/@sandbox_spec/RuntimeSpec"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": { "$ref": "#/@sandbox_spec/Capability" },
+          "description": "Granted capabilities"
+        },
+        "limits": {
+          "$ref": "#/@sandbox_spec/ResourceLimits"
+        },
+        "isolation": {
+          "$ref": "#/@sandbox_spec/IsolationSpec"
+        },
+        "trace": {
+          "$ref": "#/@sandbox_spec/TraceConfig"
+        }
+      }
+    },
+
+    "RuntimeSpec": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["python", "node", "wasm", "native", "jvm", "dotnet", "lua", "custom"],
+          "description": "Runtime type"
+        },
+        "version": {
+          "type": "string",
+          "description": "Runtime version constraint"
+        },
+        "entry": {
+          "type": "string",
+          "description": "Entry point (module, function, etc.)"
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Environment variables"
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Runtime arguments"
+        }
+      }
+    },
+
+    "Capability": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Capability identifier"
+        },
+        "type": {
+          "enum": [
+            "module",
+            "function",
+            "class",
+            "io.read",
+            "io.write",
+            "network",
+            "gpu",
+            "memory",
+            "time",
+            "random",
+            "custom"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "description": "Target resource (module name, path, etc.)"
+        },
+        "allowed_ops": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowed operations on this capability"
+        },
+        "denied_ops": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explicitly denied operations"
+        },
+        "constraints": {
+          "type": "object",
+          "description": "Additional constraints"
+        }
+      }
+    },
+
+    "ResourceLimits": {
+      "type": "object",
+      "properties": {
+        "memory_mb": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536,
+          "default": 512,
+          "description": "Maximum memory in MB"
+        },
+        "cpu_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600000,
+          "default": 30000,
+          "description": "Maximum CPU time in milliseconds"
+        },
+        "wall_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600000,
+          "default": 60000,
+          "description": "Maximum wall clock time in milliseconds"
+        },
+        "output_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1073741824,
+          "default": 104857600,
+          "description": "Maximum output size in bytes"
+        },
+        "handles": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 1000,
+          "description": "Maximum open handles"
+        },
+        "recursion_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 1000,
+          "description": "Maximum recursion depth"
+        }
+      }
+    },
+
+    "IsolationSpec": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "enum": ["none", "process", "container", "vm", "hardware"],
+          "default": "process",
+          "description": "Isolation level"
+        },
+        "network": {
+          "enum": ["none", "localhost", "filtered", "full"],
+          "default": "none",
+          "description": "Network access"
+        },
+        "filesystem": {
+          "enum": ["none", "readonly", "tempdir", "scoped", "full"],
+          "default": "none",
+          "description": "Filesystem access"
+        },
+        "ipc": {
+          "enum": ["none", "pipe", "socket", "shared_memory"],
+          "default": "pipe",
+          "description": "IPC mechanism for host communication"
+        }
+      }
+    },
+
+    "TraceConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "level": {
+          "enum": ["minimal", "standard", "detailed", "debug"],
+          "default": "standard"
+        },
+        "hash_algorithm": {
+          "enum": ["sha256", "sha3-256", "blake3"],
+          "default": "sha256"
+        },
+        "include_inputs": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_outputs": {
+          "type": "boolean",
+          "default": true
+        },
+        "include_timing": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  },
+
+  "@execution_contract": {
+    "description": "The execution interface every sandbox must implement",
+
+    "SandboxInterface": {
+      "methods": {
+        "init": {
+          "description": "Initialize sandbox with config",
+          "input": { "$ref": "#/@sandbox_spec/SandboxConfig" },
+          "output": { "type": "SandboxHandle" },
+          "phase": "Pop"
+        },
+        "execute": {
+          "description": "Execute KPI effects",
+          "input": {
+            "type": "object",
+            "properties": {
+              "kpi": { "type": "Uint8Array", "description": "KPI binary" },
+              "ast": { "type": "object", "description": "Or AST directly" },
+              "context": { "type": "object", "description": "Execution context" }
+            }
+          },
+          "output": { "$ref": "#/@execution_contract/ExecutionResult" },
+          "phases": ["Pop", "Wo", "Sek", "Collapse"]
+        },
+        "query": {
+          "description": "Query sandbox state",
+          "input": { "type": "string", "description": "KQL query" },
+          "output": { "type": "any" },
+          "phase": "Sek"
+        },
+        "kill": {
+          "description": "Terminate sandbox immediately",
+          "input": { "type": "null" },
+          "output": { "type": "boolean" },
+          "phase": "Collapse"
+        },
+        "dispose": {
+          "description": "Clean up sandbox resources",
+          "input": { "type": "null" },
+          "output": { "type": "boolean" },
+          "phase": "Collapse"
+        }
+      }
+    },
+
+    "ExecutionResult": {
+      "type": "object",
+      "required": ["success", "trace"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "result": { "type": "any", "description": "Execution result" },
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "phase": { "enum": ["Pop", "Wo", "Sek", "Collapse"] },
+            "traceback": { "type": "string" }
+          }
+        },
+        "trace": { "$ref": "#/@execution_contract/ExecutionTrace" },
+        "handles": {
+          "type": "array",
+          "items": { "$ref": "#/@execution_contract/HandleInfo" },
+          "description": "Open handles after execution"
+        }
+      }
+    },
+
+    "ExecutionTrace": {
+      "type": "object",
+      "required": ["id", "phases", "hash"],
+      "properties": {
+        "id": { "type": "string", "description": "Trace identifier" },
+        "sandbox_id": { "type": "string" },
+        "started_at": { "type": "integer", "description": "Unix timestamp ms" },
+        "ended_at": { "type": "integer" },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "#/@execution_contract/PhaseTrace" }
+        },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/@execution_contract/EffectTrace" }
+        },
+        "hash": {
+          "type": "string",
+          "description": "Verification hash of entire trace"
+        },
+        "input_hash": { "type": "string" },
+        "output_hash": { "type": "string" }
+      }
+    },
+
+    "PhaseTrace": {
+      "type": "object",
+      "required": ["phase", "started_at", "ended_at", "success"],
+      "properties": {
+        "phase": { "enum": ["Pop", "Wo", "Sek", "Collapse"] },
+        "started_at": { "type": "integer" },
+        "ended_at": { "type": "integer" },
+        "duration_ms": { "type": "integer" },
+        "success": { "type": "boolean" },
+        "error": { "type": "string" },
+        "input_hash": { "type": "string" },
+        "output_hash": { "type": "string" }
+      }
+    },
+
+    "EffectTrace": {
+      "type": "object",
+      "required": ["id", "opcode", "phase"],
+      "properties": {
+        "id": { "type": "string" },
+        "opcode": { "type": "integer" },
+        "glyph": { "type": "string" },
+        "phase": { "enum": ["Pop", "Wo", "Sek", "Collapse"] },
+        "host": { "type": "string" },
+        "started_at": { "type": "integer" },
+        "ended_at": { "type": "integer" },
+        "input_hash": { "type": "string" },
+        "output_hash": { "type": "string" },
+        "success": { "type": "boolean" }
+      }
+    },
+
+    "HandleInfo": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "type": { "type": "string" },
+        "created_at": { "type": "integer" },
+        "host": { "type": "string" }
+      }
+    }
+  },
+
+  "@runtime_templates": {
+    "description": "Pre-defined sandbox configurations for common runtimes",
+
+    "python_ml": {
+      "id": "python-ml-sandbox",
+      "runtime": {
+        "type": "python",
+        "version": ">=3.10"
+      },
+      "capabilities": [
+        { "id": "numpy", "type": "module", "target": "numpy" },
+        { "id": "torch", "type": "module", "target": "torch" },
+        { "id": "transformers", "type": "module", "target": "transformers" },
+        { "id": "PIL", "type": "module", "target": "PIL" },
+        { "id": "json", "type": "module", "target": "json" },
+        { "id": "math", "type": "module", "target": "math" }
+      ],
+      "limits": {
+        "memory_mb": 4096,
+        "cpu_ms": 60000,
+        "wall_ms": 120000,
+        "output_bytes": 104857600
+      },
+      "isolation": {
+        "level": "process",
+        "network": "none",
+        "filesystem": "none",
+        "ipc": "pipe"
+      }
+    },
+
+    "wasm_browser": {
+      "id": "wasm-browser-sandbox",
+      "runtime": {
+        "type": "wasm",
+        "version": "1.0"
+      },
+      "capabilities": [
+        { "id": "math", "type": "module", "target": "math" },
+        { "id": "array", "type": "module", "target": "array" },
+        { "id": "ml", "type": "module", "target": "ml" },
+        { "id": "transformers", "type": "module", "target": "transformers.js" }
+      ],
+      "limits": {
+        "memory_mb": 512,
+        "cpu_ms": 30000,
+        "wall_ms": 60000,
+        "output_bytes": 10485760
+      },
+      "isolation": {
+        "level": "none",
+        "network": "none",
+        "filesystem": "none",
+        "ipc": "none"
+      }
+    },
+
+    "node_io": {
+      "id": "node-io-sandbox",
+      "runtime": {
+        "type": "node",
+        "version": ">=18"
+      },
+      "capabilities": [
+        { "id": "fs_read", "type": "io.read", "target": "/tmp/kuhul/**" },
+        { "id": "fetch", "type": "network", "target": "localhost:*" }
+      ],
+      "limits": {
+        "memory_mb": 256,
+        "cpu_ms": 10000,
+        "wall_ms": 30000
+      },
+      "isolation": {
+        "level": "process",
+        "network": "localhost",
+        "filesystem": "scoped",
+        "ipc": "pipe"
+      }
+    },
+
+    "pure_compute": {
+      "id": "pure-compute-sandbox",
+      "runtime": {
+        "type": "wasm",
+        "version": "1.0"
+      },
+      "capabilities": [
+        { "id": "math", "type": "function", "target": "Math.*" }
+      ],
+      "limits": {
+        "memory_mb": 64,
+        "cpu_ms": 1000,
+        "wall_ms": 5000
+      },
+      "isolation": {
+        "level": "none",
+        "network": "none",
+        "filesystem": "none",
+        "ipc": "none"
+      }
+    }
+  },
+
+  "@verification": {
+    "description": "How to verify execution traces for replay",
+
+    "VerificationContract": {
+      "methods": {
+        "verify_trace": {
+          "description": "Verify an execution trace is valid",
+          "input": { "$ref": "#/@execution_contract/ExecutionTrace" },
+          "output": { "type": "boolean" },
+          "algorithm": [
+            "1. Recompute phase hashes from inputs/outputs",
+            "2. Verify phase hash chain",
+            "3. Verify final trace hash",
+            "4. Check timestamps are monotonic",
+            "5. Verify all effects have valid traces"
+          ]
+        },
+        "replay": {
+          "description": "Replay execution and verify results match",
+          "input": {
+            "kpi": { "type": "Uint8Array" },
+            "trace": { "$ref": "#/@execution_contract/ExecutionTrace" }
+          },
+          "output": {
+            "type": "object",
+            "properties": {
+              "matches": { "type": "boolean" },
+              "divergence_point": { "type": "string" },
+              "expected_hash": { "type": "string" },
+              "actual_hash": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "hash_chain": {
+      "description": "How trace hashes are computed",
+      "algorithm": [
+        "pop_hash = SHA256(input_hash || pop_output_hash)",
+        "wo_hash = SHA256(pop_hash || wo_output_hash)",
+        "sek_hash = SHA256(wo_hash || sek_output_hash)",
+        "collapse_hash = SHA256(sek_hash || final_output_hash)",
+        "trace_hash = collapse_hash"
+      ]
+    }
+  },
+
+  "@examples": {
+    "create_sandbox": {
+      "description": "Create a Python ML sandbox",
+      "code": {
+        "config": {
+          "id": "my-ml-sandbox",
+          "runtime": { "type": "python", "version": ">=3.10" },
+          "capabilities": [
+            { "id": "numpy", "type": "module", "target": "numpy" },
+            { "id": "torch", "type": "module", "target": "torch" }
+          ],
+          "limits": { "memory_mb": 2048, "cpu_ms": 30000 },
+          "isolation": { "level": "process", "network": "none" }
+        }
+      }
+    },
+
+    "execute_in_sandbox": {
+      "description": "Execute KPI in sandbox",
+      "code": {
+        "request": {
+          "sandbox_id": "my-ml-sandbox",
+          "kpi": "<base64 KPI binary>",
+          "context": { "device": "cpu" }
+        },
+        "response": {
+          "success": true,
+          "result": { "type": "numpy_array", "shape": [3, 3] },
+          "trace": {
+            "id": "trace_123",
+            "phases": [
+              { "phase": "Pop", "duration_ms": 5, "success": true },
+              { "phase": "Wo", "duration_ms": 10, "success": true },
+              { "phase": "Sek", "duration_ms": 100, "success": true },
+              { "phase": "Collapse", "duration_ms": 2, "success": true }
+            ],
+            "hash": "a1b2c3d4..."
+          }
+        }
+      }
+    }
+  }
+}

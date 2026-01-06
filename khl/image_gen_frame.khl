@@ -1,0 +1,66 @@
+// ============================================================
+// IMAGE_GEN_FRAME.khl
+// ============================================================
+// Image generation inference law.
+// Supports Janus Pro, Janus Flow, and other image models.
+//
+// Triggers: button click, form submit, prompt input
+// ============================================================
+
+@Wo {
+  // Model configuration
+  gen.model = context.model ?? "janus-flow"
+  gen.prompt = context.prompt
+  gen.negative = context.negative ?? ""
+  gen.width = context.width ?? 512
+  gen.height = context.height ?? 512
+  gen.steps = context.steps ?? 30
+  gen.guidance = context.guidance ?? 7.5
+  gen.seed = context.seed ?? now()
+
+  // Execution metadata
+  gen.request_id = hash.sha256(concat(now(), gen.prompt, gen.seed))
+  gen.timestamp = now()
+}
+
+@Sek {
+  // Calculate prompt hash for replay
+  let prompt_hash = hash.sha256(gen.prompt)
+
+  // Call host image generation
+  let output = infer.generate_image {
+    model: gen.model,
+    prompt: gen.prompt,
+    negative_prompt: gen.negative,
+    width: gen.width,
+    height: gen.height,
+    steps: gen.steps,
+    guidance_scale: gen.guidance,
+    seed: gen.seed
+  }
+
+  // Calculate image hash
+  let image_hash = hash.sha256(output.image)
+
+  // Build verification trace
+  let trace = {
+    request_id: gen.request_id,
+    prompt_hash: prompt_hash,
+    image_hash: image_hash,
+    model: gen.model,
+    seed: gen.seed,
+    steps: gen.steps,
+    dimensions: concat(gen.width, "x", gen.height),
+    timestamp: gen.timestamp,
+    latency_ms: now() - gen.timestamp
+  }
+}
+
+@Collapse {
+  emit.image {
+    image: output.image,
+    format: "png",
+    seed: gen.seed,
+    trace: trace
+  }
+}
