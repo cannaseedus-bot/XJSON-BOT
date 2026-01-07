@@ -13,6 +13,16 @@ This project provides a complete browser-based AI development environment that c
 - **Multi-Hive Architecture** - Distributed shard-based system
 - **Colab Integration** - Free GPU training capabilities
 
+## ❓ What is this?
+
+XJSON-BOT is a self-contained AI workstation for experimenting with the K'UHUL ecosystem. It bundles a browser-first chat UI, schema-driven runtimes, and multiple backend options so you can:
+
+- Prototype multi-agent chat experiences that run locally in the browser
+- Explore the K'UHUL glyph execution engine and XJSON language side by side
+- Visualize and compress model weights with SVG geometry and SCXQ2 encodings
+- Swap between local models, hosted APIs, and service-worker-powered offline mode
+- Extend the stack with Python, PHP, or GAS backends depending on your environment
+
 ## 📁 Project Structure
 
 ```
